@@ -1,0 +1,8 @@
+
+# Tuist
+Tuist/.build/
+**/.build/
+**/Derived/
+**/DerivedData/
+*.xcworkspace/
+*.xcodeproj/
