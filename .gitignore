@@ -6,3 +6,6 @@ Tuist/.build/
 **/DerivedData/
 *.xcworkspace/
 *.xcodeproj/
+
+# macOS
+.DS_Store
