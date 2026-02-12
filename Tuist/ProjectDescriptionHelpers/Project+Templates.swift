@@ -1,25 +1,18 @@
-//
-//  Project.swift
-//  ProjectDescriptionHelpers
-//
-//  Created by 준표 on 2/3/26.
-//
-
 import ProjectDescription
 
 public extension Project {
     static func makeModule(
         name: String,
+        platform: Platform = .iOS,
         product: Product,
         organizationName: String = "HARIBO",
         packages: [Package] = [],
-        deploymentTargets: DeploymentTargets = .iOS("15.0"),
+        deploymentTargets: DeploymentTargets? = .iOS("15.0"),
         dependencies: [TargetDependency] = [],
         sources: SourceFilesList = ["Sources/**"],
         resources: ResourceFileElements? = nil,
         infoPlist: InfoPlist = .default
     ) -> Project {
-
         let settings: Settings = .settings(
             base: [:],
             configurations: [
@@ -29,9 +22,9 @@ public extension Project {
             defaultSettings: .recommended
         )
 
-        let appTarget: Target = .target(
+        let appTarget = Target.target(
             name: name,
-            destinations: .iOS,
+            destinations: [.iPhone, .iPad],
             product: product,
             bundleId: "\(organizationName).\(name)",
             deploymentTargets: deploymentTargets,
@@ -40,6 +33,7 @@ public extension Project {
             resources: resources,
             dependencies: dependencies
         )
+
 
         return Project(
             name: name,

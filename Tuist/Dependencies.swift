@@ -2,15 +2,14 @@
 //  Dependencies.swift
 //  ProjectDescriptionHelpers
 //
-//  Created by 준표 on 2/9/26.
+//  Created by 준표 on 2/12/26.
 //
-
 import ProjectDescription
 
 let dependencies = Dependencies(
+    carthage: [],
     swiftPackageManager: .init(
-        
-        [
+        packages: [
             .remote(
                 url: "https://github.com/ReactiveX/RxSwift.git",
                 requirement: .upToNextMajor(from: "6.5.0")
@@ -44,24 +43,17 @@ let dependencies = Dependencies(
                 requirement: .upToNextMajor(from: "10.1.0")
             )
         ],
-
-
-        products: [
-            .product(name: "RxSwift", package: "RxSwift"),
-            .product(name: "RxCocoa", package: "RxSwift"),
-            .product(name: "RxRelay", package: "RxSwift"),
-
-            .product(name: "SnapKit", package: "SnapKit"),
-            .product(name: "Then", package: "Then"),
-
-            .product(name: "Moya", package: "Moya"),
-            .product(name: "Alamofire", package: "Alamofire"),
-
-            .product(name: "Kingfisher", package: "Kingfisher"),
-
- 
-            .product(name: "GAuthSignin", package: "GAuthSignin")
+        productTypes: [
+            "RxSwift": .framework,
+            "SnapKit": .framework,
+            "Then": .framework,
+            "Moya": .framework,
+            "Kingfisher": .framework,
+            "GAuthSignin": .framework,
+            "QRCode": .framework,
+            "QRCodeReader": .framework
         ]
     ),
     platforms: [.iOS]
 )
+
