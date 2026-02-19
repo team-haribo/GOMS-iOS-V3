@@ -12,6 +12,12 @@ import Then
 
 public final class MapSearchBar: UIView {
     
+    // MARK: - State Enum
+    public enum SearchBarState {
+        case home    // 곰돌이 모드
+        case search  // 뒤로가기 모드
+    }
+    
     // MARK: - UI Components
     private let containerView = UIView().then {
         $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1) // #191919
@@ -19,15 +25,13 @@ public final class MapSearchBar: UIView {
     }
     
     private let leftIcon = UIImageView().then {
-        
-        let bundle = Bundle(for: MapSearchBar.self)
-        let image = UIImage(named: "ic_graybear", in: bundle, with: nil)
-        
-        $0.image = image?.withRenderingMode(.alwaysTemplate)
-        
+        $0.image = UIImage(systemName: "pawprint.fill")
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
         $0.contentMode = .scaleAspectFit
     }
+    
+    // 뒤로가기 동작을 위한 투명 버튼 (민선님 코드 반영)
+    public let backButton = UIButton()
     
     public let textField = UITextField().then {
         $0.attributedPlaceholder = NSAttributedString(
@@ -39,10 +43,7 @@ public final class MapSearchBar: UIView {
     }
     
     private let searchIcon = UIImageView().then {
-        let bundle = Bundle(for: MapSearchBar.self)
-        let image = UIImage(named: "ic_search", in: bundle, with: nil)
-        
-        $0.image = image?.withRenderingMode(.alwaysTemplate)
+        $0.image = UIImage(systemName: "magnifyingglass")
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
         $0.contentMode = .scaleAspectFit
     }
@@ -59,7 +60,8 @@ public final class MapSearchBar: UIView {
     // MARK: - Setup
     private func addView() {
         addSubview(containerView)
-        [leftIcon, textField, searchIcon].forEach { containerView.addSubview($0) }
+        // 민선님이 주신 순서대로 버튼까지 추가
+        [leftIcon, textField, searchIcon, backButton].forEach { containerView.addSubview($0) }
     }
     
     private func setLayout() {
@@ -68,7 +70,13 @@ public final class MapSearchBar: UIView {
         leftIcon.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(16)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(24) // 크기는 그대로 유지합니다.
+            $0.size.equalTo(24)
+        }
+        
+        // 버튼 영역: 왼쪽 아이콘을 충분히 덮도록 설정 (민선님 로직)
+        backButton.snp.makeConstraints {
+            $0.leading.top.bottom.equalToSuperview()
+            $0.width.equalTo(50)
         }
         
         searchIcon.snp.makeConstraints {
@@ -81,6 +89,21 @@ public final class MapSearchBar: UIView {
             $0.leading.equalTo(leftIcon.snp.trailing).offset(8)
             $0.trailing.equalTo(searchIcon.snp.leading).offset(-8)
             $0.centerY.equalToSuperview()
+        }
+    }
+    
+    // MARK: - Public Method
+    public func updateState(_ state: SearchBarState) {
+        // 아이콘 선명도를 위해 굵기 설정 추가
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        
+        switch state {
+        case .home:
+            leftIcon.image = UIImage(systemName: "pawprint.fill", withConfiguration: config)
+            backButton.isEnabled = false // 홈일 때는 클릭 안 되게
+        case .search:
+            leftIcon.image = UIImage(systemName: "chevron.left", withConfiguration: config)
+            backButton.isEnabled = true  // 검색창 눌렀을 때만 뒤로가기 활성화
         }
     }
 }
