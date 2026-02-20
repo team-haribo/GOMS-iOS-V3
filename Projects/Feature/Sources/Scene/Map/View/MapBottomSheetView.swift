@@ -15,9 +15,8 @@ public final class MapBottomSheetView: UIView {
     private var recommendedCount: Int = 2
     private var reviewCount: Int = 3
     
-    // GOMS 프로젝트의 Primary 색상 및 삭제(Red) 색상 정의
-    private let primaryColor = UIColor(red: 255/255, green: 110/255, blue: 15/255, alpha: 1) // 알려준 프리매리 색상
-    private let deleteColor = UIColor.systemRed // 쓰레기통 빨간색
+    private let primaryColor = UIColor(red: 255/255, green: 110/255, blue: 15/255, alpha: 1)
+    private let deleteColor = UIColor.systemRed
     
     private let handleView = UIView().then {
         $0.backgroundColor = .white.withAlphaComponent(0.2)
@@ -30,6 +29,8 @@ public final class MapBottomSheetView: UIView {
     private let contentStackView = UIStackView().then {
         $0.axis = .vertical
         $0.spacing = 0
+        $0.isLayoutMarginsRelativeArrangement = true
+        $0.layoutMargins = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
     }
 
     override init(frame: CGRect) {
@@ -76,7 +77,6 @@ public final class MapBottomSheetView: UIView {
         let popularTitle = createTitleLabel("최근 인기 장소 🔥", fontSize: 20)
         contentStackView.addArrangedSubview(popularTitle)
         popularTitle.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(24)
             $0.height.equalTo(24)
         }
         addSpacer(16)
@@ -90,7 +90,6 @@ public final class MapBottomSheetView: UIView {
         let myActivityTitle = createTitleLabel("내 활동", fontSize: 20)
         contentStackView.addArrangedSubview(myActivityTitle)
         myActivityTitle.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(24)
             $0.height.equalTo(24)
         }
         addSpacer(16)
@@ -99,7 +98,6 @@ public final class MapBottomSheetView: UIView {
             let recommendedLabel = createSubTitleLabel(title: "추천한 가게", count: recommendedCount, unit: "곳", fontSize: 18)
             contentStackView.addArrangedSubview(recommendedLabel)
             recommendedLabel.snp.makeConstraints {
-                $0.leading.equalToSuperview().offset(24)
                 $0.height.equalTo(24)
             }
             addSpacer(16)
@@ -113,7 +111,6 @@ public final class MapBottomSheetView: UIView {
             let reviewLabel = createSubTitleLabel(title: "작성한 후기", count: reviewCount, unit: "건", fontSize: 18)
             contentStackView.addArrangedSubview(reviewLabel)
             reviewLabel.snp.makeConstraints {
-                $0.leading.equalToSuperview().offset(24)
                 $0.height.equalTo(24)
             }
             addSpacer(16)
@@ -128,10 +125,9 @@ public final class MapBottomSheetView: UIView {
     private func addCard(type: MapCardType, isFavorite: Bool) {
         let card = MapCardView(type: type)
         
-        // 하트 버튼 혹은 쓰레기통 버튼을 찾아 색상 및 액션 설정
         if let actionButton = card.subviews.first(where: { $0 is UIButton }) as? UIButton {
             if type == .reviewed {
-                actionButton.tintColor = deleteColor // 쓰레기통은 빨간색
+                actionButton.tintColor = deleteColor
             } else {
                 actionButton.isSelected = isFavorite
                 actionButton.tintColor = isFavorite ? primaryColor : .white.withAlphaComponent(0.3)
@@ -145,7 +141,6 @@ public final class MapBottomSheetView: UIView {
         
         contentStackView.addArrangedSubview(card)
         card.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(92)
         }
     }

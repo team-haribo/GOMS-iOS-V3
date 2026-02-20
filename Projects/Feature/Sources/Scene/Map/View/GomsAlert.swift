@@ -10,8 +10,8 @@ import UIKit
 import SnapKit
 import Then
 
-// MARK: - 디자인 전용 클래스
-private class GomsAlertView: UIView {
+// MARK: - 디자인 전용 클래스 (이름을 유니크하게 변경하여 충돌 방지)
+private class GomsCustomAlertView: UIView {
     let containerView = UIView().then {
         $0.backgroundColor = UIColor(red: 37/255, green: 37/255, blue: 37/255, alpha: 0.82)
         $0.layer.cornerRadius = 14
@@ -119,16 +119,16 @@ public class GomsAlert {
         rightColor: UIColor = .systemBlue,
         completion: @escaping () -> Void = {}
     ) {
-        let alert = GomsAlertView(title: title, message: message, leftTitle: leftTitle, rightTitle: rightTitle, rightColor: rightColor)
+        let alert = GomsCustomAlertView(title: title, message: message, leftTitle: leftTitle, rightTitle: rightTitle, rightColor: rightColor)
         vc.view.addSubview(alert)
         alert.snp.makeConstraints { $0.edges.equalToSuperview() }
         
-        // 오류 해결 지점: (action: UIAction) 타입을 명시적으로 적어줌
-        alert.leftButton.addAction(UIAction { (action: UIAction) in
+        //  UIAction 클로저 문법 수정
+        alert.leftButton.addAction(UIAction { _ in
             alert.removeFromSuperview()
         }, for: .touchUpInside)
         
-        alert.rightButton.addAction(UIAction { (action: UIAction) in
+        alert.rightButton.addAction(UIAction { _ in
             alert.removeFromSuperview()
             completion()
         }, for: .touchUpInside)
