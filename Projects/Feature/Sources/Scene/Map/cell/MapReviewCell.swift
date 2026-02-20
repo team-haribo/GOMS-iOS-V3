@@ -25,23 +25,23 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private let nameLabel = UILabel().then {
-        $0.textColor = UIColor(red: 176/255, green: 176/255, blue: 176/255, alpha: 1) // #B0B0B0
+        $0.textColor = .white // 이미지 가이드 반영: 흰색
         $0.font = .systemFont(ofSize: 20, weight: .bold)
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
+        $0.textColor = UIColor(red: 176/255, green: 176/255, blue: 176/255, alpha: 1)
         $0.font = .systemFont(ofSize: 16)
     }
     
     private let contentLabel = UILabel().then {
-        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
+        $0.textColor = .white
         $0.font = .systemFont(ofSize: 16)
         $0.numberOfLines = 0
     }
     
     private let dateLabel = UILabel().then {
-        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
+        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
         $0.font = .systemFont(ofSize: 15)
     }
     
@@ -62,7 +62,6 @@ public final class MapReviewCell: UITableViewCell {
         $0.backgroundColor = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1)
     }
 
-    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupView()
@@ -85,38 +84,31 @@ public final class MapReviewCell: UITableViewCell {
             $0.top.leading.equalToSuperview().inset(16)
             $0.size.equalTo(48)
         }
-        
         nameLabel.snp.makeConstraints {
             $0.top.equalTo(profileImageView)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
-            $0.height.equalTo(20)
         }
-        
         infoLabel.snp.makeConstraints {
             $0.centerY.equalTo(nameLabel)
             $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
         }
-        
         contentLabel.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.bottom).offset(8)
             $0.leading.equalTo(nameLabel)
             $0.trailing.equalToSuperview().inset(50)
         }
-        
         dateLabel.snp.makeConstraints {
             $0.top.equalTo(contentLabel.snp.bottom).offset(8)
             $0.leading.equalTo(nameLabel)
             $0.bottom.equalToSuperview().inset(20)
         }
-        
         [reportButton, deleteButton].forEach {
             $0.snp.makeConstraints { make in
                 make.top.equalTo(profileImageView).offset(4)
                 make.trailing.equalToSuperview().inset(16)
-                make.size.equalTo(28) // 크기 28로 키움
+                make.size.equalTo(28)
             }
         }
-        
         cellDivider.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(1)

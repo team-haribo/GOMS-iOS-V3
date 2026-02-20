@@ -1,4 +1,3 @@
-//
 //  MapViewController.swift
 //  Feature
 //
@@ -33,7 +32,6 @@ public final class MapViewController: UIViewController {
     private var bottomSheetHeight: Constraint?
     private let defaultHeight: CGFloat = 330
 
-    // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -45,69 +43,41 @@ public final class MapViewController: UIViewController {
     
     private func setupView() {
         view.backgroundColor = UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1)
-        routeSelectionView.backgroundColor = .clear
-        
         [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, popupView, routeSelectionView].forEach {
             view.addSubview($0)
         }
-        
         recentSearchView.isHidden = true
         placeDetailView.isHidden = true
     }
     
     private func setupLayout() {
-        routeSelectionView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
-        
-        // 서치바 위치 (60 고정)
+        routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
         searchBar.snp.makeConstraints {
             $0.top.equalTo(view.snp.top).offset(60)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
-                
-        recentSearchView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
-            
-        // 최근 검색 리스트 위치 (서치바 아래 50pt)
+        recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
         recentSearchView.tableView.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(50)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
-
-        // "최근 검색" 글자 강제 위치 조정
-        recentSearchView.subviews.forEach { subview in
-            if !(subview is UITableView) && subview.backgroundColor != .black {
-                 subview.snp.remakeConstraints {
-                     $0.top.equalTo(searchBar.snp.bottom).offset(20)
-                     $0.leading.equalToSuperview().inset(24)
-                 }
-            }
-        }
-                
         tabBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(90)
         }
-                
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
-                
         placeDetailView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
-            $0.height.equalTo(600) // 후기 리스트가 잘 보이도록 충분한 높이 확보
+            $0.height.equalTo(600)
         }
-                
-        popupView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
+        popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
     
     private func setupDelegate() {
@@ -120,31 +90,79 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupActions() {
+        placeDetailView.heartButton.addTarget(self, action: #selector(didTapHeart), for: .touchUpInside)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         routeSelectionView.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
-        placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
-        placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
-        routeSelectionView.reverseButton.addTarget(self, action: #selector(didTapReverseRoute), for: .touchUpInside)
-        routeSelectionView.startDropdownButton.addTarget(self, action: #selector(didTapDropdown), for: .touchUpInside)
-        searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
+        bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
+        searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
+    }
 
-        bottomSheetView.onCardTapped = { [weak self] in
-            self?.showDetailView()
+    // MARK: - Alert Logic (분리된 GomsAlert 사용)
+    private func showDeleteAlert(at index: Int) {
+        GomsAlert.show(
+            in: self,
+            title: "후기 삭제",
+            message: "정말 후기를 삭제하시겠습니까?",
+            leftTitle: "취소",
+            rightTitle: "삭제하기",
+            rightColor: .systemRed
+        ) { [weak self] in
+            self?.dummyReviews.remove(at: index)
+            self?.placeDetailView.tableView.reloadData()
+            self?.showSimpleAlert(title: "후기 삭제 완료", message: "후기 삭제를 성공적으로 완료했습니다.")
         }
     }
 
+    private func showReportAlert() {
+        GomsAlert.show(
+            in: self,
+            title: "후기 신고",
+            message: "이 후기를 신고하시겠습니까?\n신고 내용은 운영팀의 검토 후 처리됩니다.",
+            leftTitle: "취소",
+            rightTitle: "신고하기",
+            rightColor: .systemRed
+        ) { [weak self] in
+            self?.showSimpleAlert(title: "후기 신고 완료", message: "신고가 접수되었습니다.\n더 나은 GOMS가 되기위해 노력하겠습니다!")
+        }
+    }
+
+    private func showSimpleAlert(title: String, message: String) {
+        GomsAlert.show(
+            in: self,
+            title: title,
+            message: message,
+            rightTitle: "돌아가기",
+            rightColor: UIColor(red: 0/255, green: 122/255, blue: 255/255, alpha: 1)
+        )
+    }
+
     // MARK: - Logic
+    @objc private func didTapHeart(_ sender: UIButton) {
+        sender.isSelected.toggle()
+        sender.tintColor = sender.isSelected ? UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1) : .white
+        let imageName = sender.isSelected ? "heart.fill" : "heart"
+        sender.setImage(UIImage(systemName: imageName), for: .normal)
+    }
+
     @objc private func backToHome() {
-        routeSelectionView.isHidden = true
-        recentSearchView.isHidden = true
-        placeDetailView.isHidden = true
-        searchBar.isHidden = false
-        bottomSheetView.isHidden = false
-        searchBar.updateState(.home) // 서치바 상태를 다시 홈으로 (돋보기 보임)
+        routeSelectionView.isHidden = true; recentSearchView.isHidden = true; placeDetailView.isHidden = true
+        searchBar.isHidden = false; bottomSheetView.isHidden = false; searchBar.updateState(.home)
         view.endEditing(true)
     }
 
+    @objc private func didTapSearchBar() {
+        searchBar.updateState(.search); recentSearchView.isHidden = false; bottomSheetView.isHidden = true
+    }
+
+    private func showDetailView() {
+        placeDetailView.isHidden = false; bottomSheetView.isHidden = true; recentSearchView.isHidden = true
+    }
+    
+    @objc private func hideDetailView() {
+        placeDetailView.isHidden = true; bottomSheetView.isHidden = false
+    }
+    
     @objc private func didTapArriveRoute() {
         searchBar.isHidden = true; placeDetailView.isHidden = true; routeSelectionView.isHidden = false
         routeSelectionView.updateLocation(start: "출발 위치를 선택해주세요", end: "짬뽕관 광주송정선운점")
@@ -161,29 +179,8 @@ public final class MapViewController: UIViewController {
         routeSelectionView.updateLocation(start: currentEnd, end: currentStart)
     }
     
-    @objc private func didTapDropdown() {
-        routeSelectionView.dropdownTableView.isHidden.toggle()
-    }
-
-    @objc private func didTapSearchBar() {
-        UIView.animate(withDuration: 0.3) {
-            self.searchBar.updateState(.search) // ★ 가이드: 검색 시 출발/도착 아이콘 노출 상태로 전환
-            self.recentSearchView.isHidden = false
-            self.bottomSheetView.isHidden = true
-        }
-    }
-
-    private func showDetailView() {
-        placeDetailView.isHidden = false
-        bottomSheetView.isHidden = true
-        recentSearchView.isHidden = true
-    }
+    @objc private func didTapDropdown() { routeSelectionView.dropdownTableView.isHidden.toggle() }
     
-    @objc private func hideDetailView() {
-        placeDetailView.isHidden = true
-        bottomSheetView.isHidden = false
-    }
-
     private func setupGesture() {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         bottomSheetView.addGestureRecognizer(pan)
@@ -193,11 +190,8 @@ public final class MapViewController: UIViewController {
         let translation = gesture.translation(in: view)
         let newHeight = defaultHeight - translation.y
         let maxHeight = view.frame.height - (searchBar.frame.maxY + 8)
-        
         if gesture.state == .changed {
-            if newHeight >= defaultHeight && newHeight <= maxHeight {
-                bottomSheetHeight?.update(offset: newHeight)
-            }
+            if newHeight >= defaultHeight && newHeight <= maxHeight { bottomSheetHeight?.update(offset: newHeight) }
         } else if gesture.state == .ended {
             let target = newHeight > (defaultHeight + maxHeight) / 2 ? maxHeight : defaultHeight
             UIView.animate(withDuration: 0.3) {
@@ -208,12 +202,10 @@ public final class MapViewController: UIViewController {
     }
 }
 
-// MARK: - TableView 연결
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }
-        if tableView == recentSearchView.tableView { return dummyRecentSearches.count }
-        return dummyReviews.count
+        return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
     }
     
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -223,29 +215,23 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             cell.textLabel?.text = indexPath.row == 0 ? "내 위치" : "학교"
             return cell
         }
-        
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
             cell.configure(title: dummyRecentSearches[indexPath.row], date: "카페")
             return cell
         } else {
-            // ★ 가이드: 후기 카드(셀) 구성
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             let data = dummyReviews[indexPath.row]
             cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
-            
-            // 삭제/신고 버튼 이벤트 연결 (필요 시 팝업 로직 추가)
-            cell.onDeleteTap = { print("\(data.name)의 후기 삭제 팝업 띄우기") }
-            cell.onReportTap = { print("\(data.name)의 후기 신고 팝업 띄우기") }
-            
+            cell.onDeleteTap = { [weak self] in self?.showDeleteAlert(at: indexPath.row) }
+            cell.onReportTap = { [weak self] in self?.showReportAlert() }
             return cell
         }
     }
     
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if tableView == recentSearchView.tableView {
-            showDetailView()
-        } else if tableView == routeSelectionView.dropdownTableView {
+        if tableView == recentSearchView.tableView { showDetailView() }
+        else if tableView == routeSelectionView.dropdownTableView {
             let selectedText = indexPath.row == 0 ? "내 위치" : "학교"
             routeSelectionView.updateLocation(start: selectedText, end: "짬뽕관 광주송정선운점")
             routeSelectionView.dropdownTableView.isHidden = true
