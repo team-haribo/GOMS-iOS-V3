@@ -13,20 +13,25 @@ import Then
 public final class MapViewController: UIViewController {
     
     // MARK: - Dummy Data
-    private let dummyRecentSearches = [
-        "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점",
-        "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점",
-        "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"
+    private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
+    private var dummyReviews: [(name: String, info: String, content: String, date: String)] = [
+        ("김민솔", "8기 | AI", "굳굳", "26.02.12"),
+        ("권재현", "8기 | AI", "매워요", "26.02.12"),
+        ("김태은", "8기 | AI", "맛있어요", "26.02.12"),
+        ("이주언", "8기 | AI", "가성비 좋음", "26.02.12")
     ]
     
     // MARK: - UI Components
+    private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
     private let recentSearchView = MapRecentSearchView()
     private let bottomSheetView = MapBottomSheetView()
     private let tabBar = TabBar()
+    private let placeDetailView = MapPlaceDetailView()
+    private let popupView = MapPopupView().then { $0.isHidden = true }
     
     private var bottomSheetHeight: Constraint?
-    private let defaultHeight: CGFloat = 216
+    private let defaultHeight: CGFloat = 280
 
     // MARK: - Life Cycle
     public override func viewDidLoad() {
@@ -39,16 +44,22 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupView() {
-        view.backgroundColor = .white
-        // 순서: 뒤에 있을수록 화면 위로 올라옵니다. searchBar를 가장 마지막에 추가.
-        [bottomSheetView, recentSearchView, tabBar, searchBar].forEach { view.addSubview($0) }
+        // [수정] 배경만 확실한 회색으로 설정 (흰색 아님)
+        view.backgroundColor = UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1)
         
-        recentSearchView.isHidden = true // 초기엔 최근 검색 화면 숨김
+        [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, routeSelectionView, popupView].forEach {
+            view.addSubview($0)
+        }
+        
+        recentSearchView.isHidden = true
+        placeDetailView.isHidden = true
     }
     
     private func setupLayout() {
+        routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
         searchBar.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(60)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
@@ -61,50 +72,100 @@ public final class MapViewController: UIViewController {
         
         tabBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(90)
+            $0.height.equalTo(84)
         }
-        tabBar.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
         
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
+        
+        placeDetailView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+            $0.height.equalTo(600)
+        }
+        
+        popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
     private func setupDelegate() {
-        // 테이블 뷰와 데이터를 연결합니다.
+        // [오류 수정] bottomSheetView.tableView 관련 코드 완전 제거
         recentSearchView.tableView.delegate = self
         recentSearchView.tableView.dataSource = self
+        placeDetailView.tableView.delegate = self
+        placeDetailView.tableView.dataSource = self
+        routeSelectionView.dropdownTableView.delegate = self
+        routeSelectionView.dropdownTableView.dataSource = self
     }
-
+    
     private func setupActions() {
-        // 1. 검색창 터치 시 (키보드 올라감)
-        searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
-        
-        // 2. 뒤로가기 버튼 클릭 시 (홈으로 복귀)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
+        routeSelectionView.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
+        placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
+        placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
+        routeSelectionView.reverseButton.addTarget(self, action: #selector(didTapReverseRoute), for: .touchUpInside)
+        routeSelectionView.startDropdownButton.addTarget(self, action: #selector(didTapDropdown), for: .touchUpInside)
+        searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
+        placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
+
+        // 바텀시트 카드 클릭 시 상세 페이지 이동 연결
+        bottomSheetView.onCardTapped = { [weak self] in
+            self?.showDetailView()
+        }
     }
 
     // MARK: - Logic
+    @objc private func backToHome() {
+        routeSelectionView.isHidden = true
+        recentSearchView.isHidden = true
+        placeDetailView.isHidden = true
+        searchBar.isHidden = false
+        bottomSheetView.isHidden = false
+        searchBar.updateState(.home)
+        view.endEditing(true)
+    }
+
+    @objc private func didTapArriveRoute() {
+        searchBar.isHidden = true; placeDetailView.isHidden = true; routeSelectionView.isHidden = false
+        routeSelectionView.updateLocation(start: "출발 위치를 선택해주세요", end: "짬뽕관 광주송정선운점")
+    }
+
+    @objc private func didTapStartRoute() {
+        searchBar.isHidden = true; placeDetailView.isHidden = true; routeSelectionView.isHidden = false
+        routeSelectionView.updateLocation(start: "짬뽕관 광주송정선운점", end: "도착 위치를 선택해주세요")
+    }
+    
+    @objc private func didTapReverseRoute() {
+        let currentStart = routeSelectionView.startDropdownButton.configuration?.title ?? ""
+        let currentEnd = routeSelectionView.endLocationLabel.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        routeSelectionView.updateLocation(start: currentEnd, end: currentStart)
+    }
+    
+    @objc private func didTapDropdown() {
+        routeSelectionView.dropdownTableView.isHidden.toggle()
+    }
+
     @objc private func didTapSearchBar() {
         UIView.animate(withDuration: 0.3) {
-            self.searchBar.updateState(.search) // 아이콘 '>' 변경
+            self.searchBar.updateState(.search)
             self.recentSearchView.isHidden = false
             self.bottomSheetView.isHidden = true
         }
     }
 
-    @objc private func backToHome() {
-        UIView.animate(withDuration: 0.3) {
-            self.searchBar.updateState(.home) // 아이콘 '곰돌이' 변경
-            self.recentSearchView.isHidden = true
-            self.bottomSheetView.isHidden = false
-            self.view.endEditing(true) // 키보드 내리기
-        }
+    private func showDetailView() {
+        placeDetailView.isHidden = false
+        bottomSheetView.isHidden = true
+        recentSearchView.isHidden = true
+    }
+    
+    @objc private func hideDetailView() {
+        placeDetailView.isHidden = true
+        bottomSheetView.isHidden = false
     }
 
-    // MARK: - Gesture (바텀시트 드래그)
     private func setupGesture() {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         bottomSheetView.addGestureRecognizer(pan)
@@ -113,7 +174,7 @@ public final class MapViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let newHeight = defaultHeight - translation.y
-        let maxHeight = view.frame.height - (searchBar.frame.maxY + 90 + 8)
+        let maxHeight = view.frame.height - (searchBar.frame.maxY + 100)
         
         if gesture.state == .changed {
             if newHeight >= defaultHeight && newHeight <= maxHeight {
@@ -129,22 +190,41 @@ public final class MapViewController: UIViewController {
     }
 }
 
-// MARK: - UITableViewDataSource & Delegate
+// MARK: - TableView 연결
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return dummyRecentSearches.count
+        if tableView == routeSelectionView.dropdownTableView { return 2 }
+        if tableView == recentSearchView.tableView { return dummyRecentSearches.count }
+        return dummyReviews.count
     }
     
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: MapRecentSearchCell.identifier, for: indexPath) as? MapRecentSearchCell else {
-            return UITableViewCell()
+        if tableView == routeSelectionView.dropdownTableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "dropdownCell", for: indexPath)
+            cell.backgroundColor = .clear; cell.textLabel?.textColor = .white
+            cell.textLabel?.text = indexPath.row == 0 ? "내 위치" : "학교"
+            return cell
         }
-        // 가짜 데이터 적용
-        cell.configure(title: dummyRecentSearches[indexPath.row], date: "26.02.11")
-        return cell
+        
+        if tableView == recentSearchView.tableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
+            cell.configure(title: dummyRecentSearches[indexPath.row], date: "카페")
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "MapReviewCell", for: indexPath) as! MapReviewCell
+            let data = dummyReviews[indexPath.row]
+            cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
+            return cell
+        }
     }
     
-    public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 52 // 리스트 한 칸의 높이
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if tableView == recentSearchView.tableView {
+            showDetailView()
+        } else if tableView == routeSelectionView.dropdownTableView {
+            let selectedText = indexPath.row == 0 ? "내 위치" : "학교"
+            routeSelectionView.updateLocation(start: selectedText, end: "짬뽕관 광주송정선운점")
+            routeSelectionView.dropdownTableView.isHidden = true
+        }
     }
 }

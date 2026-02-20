@@ -10,7 +10,7 @@ import UIKit
 import SnapKit
 import Then
 
-// 1. 타입을 파일 상단에 같이 둡니다 (에러 방지 최선책)
+// 1. 타입을 파일 상단에 같이 둠
 public enum MapCardType {
     case popular
     case recommended

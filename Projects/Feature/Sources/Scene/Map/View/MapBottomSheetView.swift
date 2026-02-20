@@ -12,6 +12,8 @@ import Then
 
 public final class MapBottomSheetView: UIView {
     
+    public var onCardTapped: (() -> Void)?
+    
     private var recommendedCount: Int = 2
     private var reviewCount: Int = 3
     
@@ -33,7 +35,6 @@ public final class MapBottomSheetView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
-        setupGesture()
         addView()
         setLayout()
         renderUI()
@@ -42,32 +43,12 @@ public final class MapBottomSheetView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     private func setupView() {
+        // [원상복구] 원래의 진회색 배경
         self.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
         self.layer.cornerRadius = 12
         self.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
 
-    private func setupGesture() {
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
-        self.addGestureRecognizer(panGesture)
-    }
-
-    @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: self)
-        let newY = self.frame.minY + translation.y
-        if newY >= 100 {
-            self.frame.origin.y = newY
-            gesture.setTranslation(.zero, in: self)
-        }
-        if gesture.state == .ended {
-            let velocity = gesture.velocity(in: self).y
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .allowUserInteraction, animations: {
-                if velocity < -500 || newY < 350 { self.frame.origin.y = 100 }
-                else { self.frame.origin.y = 600 }
-            }, completion: nil)
-        }
-    }
-    
     private func addView() {
         addSubview(handleView)
         addSubview(scrollView)
@@ -93,7 +74,6 @@ public final class MapBottomSheetView: UIView {
     private func renderUI() {
         contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        // 1. 최근 인기 장소
         let popularTitle = createTitleLabel("최근 인기 장소 🔥", fontSize: 20)
         contentStackView.addArrangedSubview(popularTitle)
         popularTitle.snp.makeConstraints {
@@ -104,18 +84,12 @@ public final class MapBottomSheetView: UIView {
         addSpacer(16)
 
         for _ in 0..<3 {
-            let card = MapCardView(type: .popular)
-            contentStackView.addArrangedSubview(card)
-            card.snp.makeConstraints {
-                $0.leading.trailing.equalToSuperview().inset(24)
-                $0.height.equalTo(93)
-            }
+            addCard(type: .popular)
             addSpacer(12)
         }
 
         addSpacer(24)
 
-        // 2. 내 활동 섹션
         let myActivityTitle = createTitleLabel("내 활동", fontSize: 20)
         contentStackView.addArrangedSubview(myActivityTitle)
         myActivityTitle.snp.makeConstraints {
@@ -134,12 +108,7 @@ public final class MapBottomSheetView: UIView {
             addSpacer(12)
 
             for _ in 0..<recommendedCount {
-                let card = MapCardView(type: .recommended)
-                contentStackView.addArrangedSubview(card)
-                card.snp.makeConstraints {
-                    $0.leading.trailing.equalToSuperview().inset(24)
-                    $0.height.equalTo(93)
-                }
+                addCard(type: .recommended)
                 addSpacer(12)
             }
         }
@@ -155,16 +124,28 @@ public final class MapBottomSheetView: UIView {
             addSpacer(12)
 
             for _ in 0..<reviewCount {
-                let card = MapCardView(type: .reviewed)
-                contentStackView.addArrangedSubview(card)
-                card.snp.makeConstraints {
-                    $0.leading.trailing.equalToSuperview().inset(24)
-                    $0.height.equalTo(93)
-                }
+                addCard(type: .reviewed)
                 addSpacer(12)
             }
         }
         addSpacer(40)
+    }
+
+    private func addCard(type: MapCardType) {
+        let card = MapCardView(type: type)
+        card.isUserInteractionEnabled = true
+        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapCard))
+        card.addGestureRecognizer(tap)
+        
+        contentStackView.addArrangedSubview(card)
+        card.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(93)
+        }
+    }
+
+    @objc private func didTapCard() {
+        onCardTapped?()
     }
 
     private func createTitleLabel(_ text: String, fontSize: CGFloat) -> UILabel {
@@ -179,13 +160,10 @@ public final class MapBottomSheetView: UIView {
         let countText = "\(count)"
         let fullText = "\(title) \(countText)\(unit)"
         let attributedString = NSMutableAttributedString(string: fullText)
-        let primaryColor = UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1)
         
         attributedString.addAttribute(.foregroundColor, value: UIColor.white, range: NSRange(location: 0, length: fullText.count))
         let countRange = (fullText as NSString).range(of: countText)
-        attributedString.addAttribute(.foregroundColor, value: primaryColor, range: countRange)
-        let unitRange = (fullText as NSString).range(of: unit)
-        attributedString.addAttribute(.foregroundColor, value: UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1), range: unitRange)
+        attributedString.addAttribute(.foregroundColor, value: UIColor.orange, range: countRange)
         
         label.attributedText = attributedString
         label.font = .systemFont(ofSize: fontSize, weight: .semibold)

@@ -12,67 +12,68 @@ import Then
 
 public final class TabBar: UIView {
     
-    // MARK: - UI Components
+    private let figmaDarkColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
+    
+    // 컴포넌트 선언 (기존 코드 유지)
     private let containerView = UIView().then {
-        // 배경색: #191919
         $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
-        $0.layer.cornerRadius = 12
-        $0.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        $0.clipsToBounds = true
     }
     
     private let stackView = UIStackView().then {
         $0.axis = .horizontal
         $0.distribution = .fillEqually
-        $0.alignment = .fill
     }
     
-    
-    private let mapButton = UIButton().then {
-        let image = UIImage(named: "ic_map")?.withRenderingMode(.alwaysTemplate)
-        $0.setImage(image, for: .normal)
-        $0.tintColor = UIColor(red: 176/255, green: 176/255, blue: 176/255, alpha: 1) // #B0B0B0
+    public let mapButton = UIButton().then {
+        $0.setImage(UIImage(systemName: "map.fill"), for: .normal)
+        $0.tintColor = UIColor(red: 176/255, green: 176/255, blue: 176/255, alpha: 1)
     }
     
-    private let homeButton = UIButton().then {
-        let image = UIImage(named: "ic_home")?.withRenderingMode(.alwaysTemplate)
-        $0.setImage(image, for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
+    public let homeButton = UIButton().then {
+        $0.setImage(UIImage(systemName: "house.fill"), for: .normal)
+        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
     }
     
-    private let profileButton = UIButton().then {
-        let image = UIImage(named: "ic_profile")?.withRenderingMode(.alwaysTemplate)
-        $0.setImage(image, for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
+    public let profileButton = UIButton().then {
+        $0.setImage(UIImage(systemName: "person.fill"), for: .normal)
+        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
     }
     
-    // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
-        addView()
-        setLayout()
+        setupView()
+        setupLayout()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupView() {
+        self.backgroundColor = figmaDarkColor
+        
+        // 탭바와 바텀시트가 자연스럽게 이어지도록 상단 그림자 추가
+        self.layer.shadowColor = UIColor.black.cgColor
+        self.layer.shadowOffset = CGSize(width: 0, height: -4)
+        self.layer.shadowOpacity = 0.3
+        self.layer.shadowRadius = 10
+        
+        self.layer.cornerRadius = 12
+        self.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        self.clipsToBounds = false // 그림자를 위해 false
     }
     
-    private func addView() {
+    private func setupLayout() {
         addSubview(containerView)
         containerView.addSubview(stackView)
         [mapButton, homeButton, profileButton].forEach { stackView.addArrangedSubview($0) }
-    }
-    
-    private func setLayout() {
+        
         containerView.snp.makeConstraints {
             $0.edges.equalToSuperview()
-            $0.height.equalTo(84)
         }
         
         stackView.snp.makeConstraints {
-            $0.top.equalToSuperview()
+            $0.top.equalToSuperview().offset(10) // 상단 여백
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(60)
+            $0.height.equalTo(60) // 아이콘 영역 높이
         }
     }
 }
