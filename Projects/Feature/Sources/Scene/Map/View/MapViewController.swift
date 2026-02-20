@@ -31,7 +31,7 @@ public final class MapViewController: UIViewController {
     private let popupView = MapPopupView().then { $0.isHidden = true }
     
     private var bottomSheetHeight: Constraint?
-    private let defaultHeight: CGFloat = 280
+    private let defaultHeight: CGFloat = 330
 
     // MARK: - Life Cycle
     public override func viewDidLoad() {
