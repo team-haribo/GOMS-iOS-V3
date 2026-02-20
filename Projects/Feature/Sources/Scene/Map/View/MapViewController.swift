@@ -12,7 +12,6 @@ import Then
 
 public final class MapViewController: UIViewController {
     
-    // MARK: - Dummy Data
     private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
     private var dummyReviews: [(name: String, info: String, content: String, date: String)] = [
         ("김민솔", "8기 | AI", "굳굳", "26.02.12"),
@@ -21,7 +20,6 @@ public final class MapViewController: UIViewController {
         ("이주언", "8기 | AI", "가성비 좋음", "26.02.12")
     ]
     
-    // MARK: - UI Components
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
     private let recentSearchView = MapRecentSearchView()
@@ -33,7 +31,6 @@ public final class MapViewController: UIViewController {
     private var bottomSheetHeight: Constraint?
     private let defaultHeight: CGFloat = 330
 
-    // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -44,9 +41,9 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupView() {
-        // 배경 회색
         view.backgroundColor = UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1)
         routeSelectionView.backgroundColor = .clear
+        
         [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, popupView, routeSelectionView].forEach {
             view.addSubview($0)
         }
@@ -56,51 +53,58 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupLayout() {
-            routeSelectionView.snp.makeConstraints {
-                $0.top.leading.trailing.equalToSuperview()
-                $0.bottom.equalTo(tabBar.snp.top)
-            }
+        routeSelectionView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
+        searchBar.snp.makeConstraints {
+            $0.top.equalTo(view.snp.top).offset(60)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(52)
+        }
+                
+        recentSearchView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
             
-            // 1. 서치바: 민선님이 조절한 위치(offset 60) 유지
-            searchBar.snp.makeConstraints {
-                $0.top.equalTo(view.snp.top).offset(60)
-                $0.leading.trailing.equalToSuperview().inset(24)
-                $0.height.equalTo(52)
-            }
-                
-            recentSearchView.snp.makeConstraints {
-                $0.top.equalTo(searchBar.snp.bottom).offset(8)
-                $0.leading.trailing.equalToSuperview()
-                $0.bottom.equalTo(tabBar.snp.top)
-            }
-                
-            tabBar.snp.makeConstraints {
-                $0.leading.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(90)
-            }
-                
-            // 2. 바텀시트: 기존 방식(height 조절) + 탭바 뒤까지 배경 채우기
-            bottomSheetView.snp.makeConstraints {
-                $0.leading.trailing.equalToSuperview()
-                // 바닥을 superview에 붙여야 시트가 올라와도 탭바 뒤가 안 비어보여
-                $0.bottom.equalToSuperview()
-                // 제스처로 높이(height)를 조절하는 방식 그대로 유지
-                self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
-            }
-                
-            placeDetailView.snp.makeConstraints {
-                $0.leading.trailing.equalToSuperview()
-                $0.bottom.equalTo(tabBar.snp.top)
-                $0.height.equalTo(600)
-            }
-                
-            popupView.snp.makeConstraints {
-                $0.edges.equalToSuperview()
+        recentSearchView.tableView.snp.remakeConstraints {
+            $0.top.equalTo(searchBar.snp.bottom).offset(50)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+        }
+
+        recentSearchView.subviews.forEach { subview in
+            if !(subview is UITableView) && subview.backgroundColor != .black {
+                 subview.snp.remakeConstraints {
+                     $0.top.equalTo(searchBar.snp.bottom).offset(20)
+                     $0.leading.equalToSuperview().inset(24)
+                 }
             }
         }
+                
+        tabBar.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(90)
+        }
+                
+        bottomSheetView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
+            self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+        }
+                
+        placeDetailView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+            $0.height.equalTo(600)
+        }
+                
+        popupView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+    }
     
     private func setupDelegate() {
-        // [오류 수정] bottomSheetView.tableView 관련 코드 완전 제거
         recentSearchView.tableView.delegate = self
         recentSearchView.tableView.dataSource = self
         placeDetailView.tableView.delegate = self
@@ -119,13 +123,11 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
 
-        // 바텀시트 카드 클릭 시 상세 페이지 이동 연결
         bottomSheetView.onCardTapped = { [weak self] in
             self?.showDetailView()
         }
     }
 
-    // MARK: - Logic
     @objc private func backToHome() {
         routeSelectionView.isHidden = true
         recentSearchView.isHidden = true
@@ -183,8 +185,6 @@ public final class MapViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let newHeight = defaultHeight - translation.y
-        
-        // 간격 8px 반영: 100 대신 8로 수정
         let maxHeight = view.frame.height - (searchBar.frame.maxY + 8)
         
         if gesture.state == .changed {
@@ -201,7 +201,6 @@ public final class MapViewController: UIViewController {
     }
 }
 
-// MARK: - TableView 연결
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }
