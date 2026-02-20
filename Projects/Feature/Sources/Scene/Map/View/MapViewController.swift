@@ -44,10 +44,10 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupView() {
-        // [수정] 배경만 확실한 회색으로 설정 (흰색 아님)
+        // 배경 회색
         view.backgroundColor = UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1)
-        
-        [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, routeSelectionView, popupView].forEach {
+        routeSelectionView.backgroundColor = .clear
+        [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, popupView, routeSelectionView].forEach {
             view.addSubview($0)
         }
         
@@ -56,39 +56,44 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupLayout() {
-        routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        
-        searchBar.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
-            $0.leading.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(52)
+        routeSelectionView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top) // [수정] 탭바 위까지만 블랙 배경이 오게 함
         }
         
-        recentSearchView.snp.makeConstraints {
-            $0.top.equalTo(searchBar.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
+            searchBar.snp.makeConstraints {
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.leading.trailing.equalToSuperview().inset(24)
+                $0.height.equalTo(52)
+            }
+            
+            recentSearchView.snp.makeConstraints {
+                $0.top.equalTo(searchBar.snp.bottom).offset(8)
+                $0.leading.trailing.equalToSuperview()
+                $0.bottom.equalTo(tabBar.snp.top)
+            }
+            
+            tabBar.snp.makeConstraints {
+                $0.leading.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(84)
+            }
+            
+            bottomSheetView.snp.makeConstraints {
+                $0.leading.trailing.equalToSuperview()
+                $0.bottom.equalTo(tabBar.snp.top)
+                self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+            }
+            
+            placeDetailView.snp.makeConstraints {
+                $0.leading.trailing.equalToSuperview()
+                $0.bottom.equalTo(tabBar.snp.top)
+                $0.height.equalTo(600)
+            }
+            
+            popupView.snp.makeConstraints {
+                $0.edges.equalToSuperview()
+            }
         }
-        
-        tabBar.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(84)
-        }
-        
-        bottomSheetView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
-            self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
-        }
-        
-        placeDetailView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
-            $0.height.equalTo(600)
-        }
-        
-        popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
-    }
 
     private func setupDelegate() {
         // [오류 수정] bottomSheetView.tableView 관련 코드 완전 제거
