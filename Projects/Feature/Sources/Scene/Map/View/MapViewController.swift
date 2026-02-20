@@ -56,45 +56,49 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupLayout() {
-        routeSelectionView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top) // [수정] 탭바 위까지만 블랙 배경이 오게 함
-        }
-        
+            routeSelectionView.snp.makeConstraints {
+                $0.top.leading.trailing.equalToSuperview()
+                $0.bottom.equalTo(tabBar.snp.top)
+            }
+            
+            // 1. 서치바: 민선님이 조절한 위치(offset 60) 유지
             searchBar.snp.makeConstraints {
-                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.top.equalTo(view.snp.top).offset(60)
                 $0.leading.trailing.equalToSuperview().inset(24)
                 $0.height.equalTo(52)
             }
-            
+                
             recentSearchView.snp.makeConstraints {
                 $0.top.equalTo(searchBar.snp.bottom).offset(8)
                 $0.leading.trailing.equalToSuperview()
                 $0.bottom.equalTo(tabBar.snp.top)
             }
-            
-            bottomSheetView.snp.makeConstraints {
-                $0.leading.trailing.equalToSuperview()
-                $0.bottom.equalToSuperview() // 탭바 뒤까지 꽉 채우기
-                $0.top.equalTo(view.snp.bottom).inset(300) // 초기 높이값
-            }
-
+                
             tabBar.snp.makeConstraints {
                 $0.leading.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(90) // 디자인 기준 높이
+                $0.height.equalTo(90)
             }
-            
+                
+            // 2. 바텀시트: 기존 방식(height 조절) + 탭바 뒤까지 배경 채우기
+            bottomSheetView.snp.makeConstraints {
+                $0.leading.trailing.equalToSuperview()
+                // 바닥을 superview에 붙여야 시트가 올라와도 탭바 뒤가 안 비어보여
+                $0.bottom.equalToSuperview()
+                // 제스처로 높이(height)를 조절하는 방식 그대로 유지
+                self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+            }
+                
             placeDetailView.snp.makeConstraints {
                 $0.leading.trailing.equalToSuperview()
                 $0.bottom.equalTo(tabBar.snp.top)
                 $0.height.equalTo(600)
             }
-            
+                
             popupView.snp.makeConstraints {
                 $0.edges.equalToSuperview()
             }
         }
-
+    
     private func setupDelegate() {
         // [오류 수정] bottomSheetView.tableView 관련 코드 완전 제거
         recentSearchView.tableView.delegate = self
@@ -179,7 +183,9 @@ public final class MapViewController: UIViewController {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
         let newHeight = defaultHeight - translation.y
-        let maxHeight = view.frame.height - (searchBar.frame.maxY + 100)
+        
+        // 간격 8px 반영: 100 대신 8로 수정
+        let maxHeight = view.frame.height - (searchBar.frame.maxY + 8)
         
         if gesture.state == .changed {
             if newHeight >= defaultHeight && newHeight <= maxHeight {
