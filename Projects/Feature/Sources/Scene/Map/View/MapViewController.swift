@@ -73,15 +73,15 @@ public final class MapViewController: UIViewController {
                 $0.bottom.equalTo(tabBar.snp.top)
             }
             
-            tabBar.snp.makeConstraints {
-                $0.leading.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(84)
-            }
-            
             bottomSheetView.snp.makeConstraints {
                 $0.leading.trailing.equalToSuperview()
-                $0.bottom.equalTo(tabBar.snp.top)
-                self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+                $0.bottom.equalToSuperview() // 탭바 뒤까지 꽉 채우기
+                $0.top.equalTo(view.snp.bottom).inset(300) // 초기 높이값
+            }
+
+            tabBar.snp.makeConstraints {
+                $0.leading.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(90) // 디자인 기준 높이
             }
             
             placeDetailView.snp.makeConstraints {

@@ -11,8 +11,8 @@ import SnapKit
 import Then
 
 public final class MapRouteSelectionView: UIView {
+    private let boxGray = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1)
     
-    // 상단 블랙 컨테이너 (디자인처럼 상단에만 위치)
     private let containerView = UIView().then {
         $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
         $0.layer.cornerRadius = 12
@@ -32,10 +32,9 @@ public final class MapRouteSelectionView: UIView {
         $0.text = "도착"; $0.textColor = .lightGray; $0.font = .systemFont(ofSize: 12)
     }
     
-    // 디자인과 동일한 회색 박스 스타일 (Configuration으로 통일)
     public let startDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1) // 디자인 회색
+        config.baseBackgroundColor = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1)
         config.baseForegroundColor = .white
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .systemFont(ofSize: 14)
@@ -43,17 +42,16 @@ public final class MapRouteSelectionView: UIView {
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 0)
         $0.configuration = config
         $0.contentHorizontalAlignment = .left
-        $0.layer.cornerRadius = 10 // 디자인에 맞춰 조정
+        $0.layer.cornerRadius = 10
         $0.clipsToBounds = true
     }
     
-    // Label도 Button과 똑같은 배경색, 여백, 곡률로 수정
     public let endLocationLabel = UILabel().then {
         $0.textColor = .white; $0.font = .systemFont(ofSize: 14)
         $0.backgroundColor = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1)
         $0.layer.cornerRadius = 10
         $0.clipsToBounds = true
-        $0.text = "  짬뽕관 광주송정선운점" // 실제 데이터 연결 전 가이드
+        $0.text = "  짬뽕관 광주송정선운점"
     }
     
     public let reverseButton = UIButton().then {
@@ -76,23 +74,19 @@ public final class MapRouteSelectionView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupLayout() {
-        // 배경은 투명하게 해서 뒤의 지도가 보이게 설정
         self.backgroundColor = .clear
-        
         addSubview(containerView)
         [backButton, startLabel, startDropdownButton, reverseButton, endLabel, endLocationLabel, dropdownTableView].forEach {
             containerView.addSubview($0)
         }
         
-        // 1. 컨테이너 위치: 위로 바짝 붙임
         containerView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24) // 디자인 여백 반영
+            $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24)
         }
         
-        // 2. 내부 요소 배치: 디자인 간격 정밀 조정
         backButton.snp.makeConstraints {
-            $0.top.equalTo(safeAreaLayoutGuide).offset(0) // 최상단 밀착
+            $0.top.equalTo(safeAreaLayoutGuide).offset(0)
             $0.leading.equalToSuperview().offset(16)
             $0.size.equalTo(44)
         }
@@ -131,7 +125,7 @@ public final class MapRouteSelectionView: UIView {
             $0.height.equalTo(88)
         }
     }
-
+    
     public func updateLocation(start: String, end: String) {
         var config = startDropdownButton.configuration
         var titleAttr = AttributedString(start)
