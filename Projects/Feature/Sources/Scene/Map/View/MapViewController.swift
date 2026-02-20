@@ -12,6 +12,7 @@ import Then
 
 public final class MapViewController: UIViewController {
     
+    // MARK: - Dummy Data
     private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
     private var dummyReviews: [(name: String, info: String, content: String, date: String)] = [
         ("김민솔", "8기 | AI", "굳굳", "26.02.12"),
@@ -20,6 +21,7 @@ public final class MapViewController: UIViewController {
         ("이주언", "8기 | AI", "가성비 좋음", "26.02.12")
     ]
     
+    // MARK: - UI Components
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
     private let recentSearchView = MapRecentSearchView()
@@ -31,6 +33,7 @@ public final class MapViewController: UIViewController {
     private var bottomSheetHeight: Constraint?
     private let defaultHeight: CGFloat = 330
 
+    // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -57,6 +60,7 @@ public final class MapViewController: UIViewController {
             $0.edges.equalToSuperview()
         }
         
+        // 서치바 위치 (60 고정)
         searchBar.snp.makeConstraints {
             $0.top.equalTo(view.snp.top).offset(60)
             $0.leading.trailing.equalToSuperview().inset(24)
@@ -67,12 +71,14 @@ public final class MapViewController: UIViewController {
             $0.edges.equalToSuperview()
         }
             
+        // 최근 검색 리스트 위치 (서치바 아래 50pt)
         recentSearchView.tableView.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(50)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
 
+        // "최근 검색" 글자 강제 위치 조정
         recentSearchView.subviews.forEach { subview in
             if !(subview is UITableView) && subview.backgroundColor != .black {
                  subview.snp.remakeConstraints {
@@ -96,7 +102,7 @@ public final class MapViewController: UIViewController {
         placeDetailView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
-            $0.height.equalTo(600)
+            $0.height.equalTo(600) // 후기 리스트가 잘 보이도록 충분한 높이 확보
         }
                 
         popupView.snp.makeConstraints {
@@ -128,13 +134,14 @@ public final class MapViewController: UIViewController {
         }
     }
 
+    // MARK: - Logic
     @objc private func backToHome() {
         routeSelectionView.isHidden = true
         recentSearchView.isHidden = true
         placeDetailView.isHidden = true
         searchBar.isHidden = false
         bottomSheetView.isHidden = false
-        searchBar.updateState(.home)
+        searchBar.updateState(.home) // 서치바 상태를 다시 홈으로 (돋보기 보임)
         view.endEditing(true)
     }
 
@@ -160,7 +167,7 @@ public final class MapViewController: UIViewController {
 
     @objc private func didTapSearchBar() {
         UIView.animate(withDuration: 0.3) {
-            self.searchBar.updateState(.search)
+            self.searchBar.updateState(.search) // ★ 가이드: 검색 시 출발/도착 아이콘 노출 상태로 전환
             self.recentSearchView.isHidden = false
             self.bottomSheetView.isHidden = true
         }
@@ -201,6 +208,7 @@ public final class MapViewController: UIViewController {
     }
 }
 
+// MARK: - TableView 연결
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }
@@ -221,9 +229,15 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             cell.configure(title: dummyRecentSearches[indexPath.row], date: "카페")
             return cell
         } else {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "MapReviewCell", for: indexPath) as! MapReviewCell
+            // ★ 가이드: 후기 카드(셀) 구성
+            let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             let data = dummyReviews[indexPath.row]
             cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
+            
+            // 삭제/신고 버튼 이벤트 연결 (필요 시 팝업 로직 추가)
+            cell.onDeleteTap = { print("\(data.name)의 후기 삭제 팝업 띄우기") }
+            cell.onReportTap = { print("\(data.name)의 후기 신고 팝업 띄우기") }
+            
             return cell
         }
     }
