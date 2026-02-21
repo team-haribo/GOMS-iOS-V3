@@ -20,7 +20,7 @@ public final class MapCardView: UIView {
     
     private let titleLabel = UILabel().then {
         $0.textColor = .white
-        $0.font = .systemFont(ofSize: 16, weight: .medium)
+        $0.font = .systemFont(ofSize: 18, weight: .medium)
     }
     
     private let categoryLabel = UILabel().then {

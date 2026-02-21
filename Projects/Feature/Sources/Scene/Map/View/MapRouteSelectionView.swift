@@ -12,19 +12,19 @@ import Then
 
 public final class MapRouteSelectionView: UIView {
     
+    private let locations = ["내 위치", "학교", "광주송정역"]
+    
     private let containerView = UIView().then {
-        $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1) // #191919
+        $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
         $0.layer.cornerRadius = 12
         $0.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
     }
     
-    // ✅ 사이즈 24x24로 고정
     public let backButton = UIButton().then {
         $0.setImage(UIImage(systemName: "chevron.left"), for: .normal)
         $0.tintColor = .white
     }
     
-    // ✅ 텍스트 높이감 있게 폰트 사이즈 살짝 조정 (14pt)
     private let startLabel = UILabel().then {
         $0.text = "출발"; $0.textColor = .lightGray; $0.font = .systemFont(ofSize: 14, weight: .medium)
     }
@@ -35,7 +35,7 @@ public final class MapRouteSelectionView: UIView {
     
     public let startDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1) // #1F1F1F
+        config.baseBackgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
         config.baseForegroundColor = .white
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .systemFont(ofSize: 14)
@@ -51,32 +51,35 @@ public final class MapRouteSelectionView: UIView {
     
     public let endLocationLabel = UILabel().then {
         $0.textColor = .white; $0.font = .systemFont(ofSize: 14)
-        $0.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1) // #1F1F1F
+        $0.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
         $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
         $0.text = "  짬뽕관 광주송정선운점"
     }
     
-    // ✅ 사이즈 24x24, 틴트 오렌지
     public let reverseButton = UIButton().then {
         $0.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
         $0.tintColor = .orange
+        $0.isUserInteractionEnabled = false
     }
     
     public let dropdownTableView = UITableView().then {
         $0.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
         $0.isHidden = true
         $0.layer.cornerRadius = 8
-        $0.separatorStyle = .none
+        $0.separatorStyle = .singleLine
+        $0.separatorColor = .darkGray
         $0.register(UITableViewCell.self, forCellReuseIdentifier: "dropdownCell")
     }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
+        setupActions()
+        setupTableView()
     }
     
-    required init?(coder: NSCoder) { fatalError() }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private func setupLayout() {
         self.backgroundColor = .clear
@@ -90,9 +93,8 @@ public final class MapRouteSelectionView: UIView {
             $0.height.equalTo(238)
         }
         
-        // 📏 도착 박스: 하단에서 20 (민선 가이드)
         endLocationLabel.snp.makeConstraints {
-            $0.bottom.equalTo(containerView.snp.bottom).inset(20)
+            $0.bottom.equalToSuperview().inset(20)
             $0.leading.equalToSuperview().offset(56)
             $0.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
@@ -103,14 +105,12 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalTo(endLocationLabel)
         }
 
-        // 📏 출발 박스: 하단에서 103 (민선 가이드)
         startDropdownButton.snp.makeConstraints {
-            $0.bottom.equalTo(containerView.snp.bottom).inset(103)
+            $0.bottom.equalToSuperview().inset(103)
             $0.leading.trailing.equalTo(endLocationLabel)
             $0.height.equalTo(52)
         }
         
-        // ✅ 뒤로가기 버튼: 출발 박스 옆, 사이즈 24x24
         backButton.snp.makeConstraints {
             $0.centerY.equalTo(startLabel)
             $0.leading.equalToSuperview().offset(16)
@@ -122,30 +122,61 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalTo(backButton.snp.trailing).offset(8)
         }
 
-        // 📏 전환 아이콘: 하단에서 87, 사이즈 24x24 (민선 가이드)
         reverseButton.snp.makeConstraints {
             $0.centerX.equalTo(backButton)
-            $0.bottom.equalTo(containerView.snp.bottom).inset(87)
+            $0.bottom.equalToSuperview().inset(87)
             $0.size.equalTo(24)
         }
 
         dropdownTableView.snp.makeConstraints {
             $0.top.equalTo(startDropdownButton.snp.bottom).offset(2)
             $0.leading.trailing.equalTo(startDropdownButton)
-            $0.height.equalTo(100)
+            $0.height.equalTo(120)
         }
     }
-    
+
+    private func setupActions() {
+        startDropdownButton.addTarget(self, action: #selector(toggleDropdown), for: .touchUpInside)
+    }
+
+    private func setupTableView() {
+        dropdownTableView.delegate = self
+        dropdownTableView.dataSource = self
+    }
+
+    @objc private func toggleDropdown() {
+        dropdownTableView.isHidden.toggle()
+    }
+
     public func updateLocation(start: String? = nil, end: String? = nil) {
-        if let startText = start {
-            var config = startDropdownButton.configuration
-            var titleAttr = AttributedString(startText)
-            titleAttr.font = .systemFont(ofSize: 14)
-            config?.attributedTitle = titleAttr
-            startDropdownButton.configuration = config
-        }
-        if let endText = end {
-            endLocationLabel.text = "  \(endText)"
-        }
+        guard let locationText = start else { return }
+        
+        var config = startDropdownButton.configuration
+        var titleAttr = AttributedString(locationText)
+        titleAttr.font = .systemFont(ofSize: 14)
+        config?.attributedTitle = titleAttr
+        startDropdownButton.configuration = config
+        
+        dropdownTableView.isHidden = true
+    }
+}
+
+extension MapRouteSelectionView: UITableViewDelegate, UITableViewDataSource {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return locations.count
+    }
+    
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "dropdownCell", for: indexPath)
+        cell.textLabel?.text = locations[indexPath.row]
+        cell.textLabel?.textColor = .white
+        cell.textLabel?.font = .systemFont(ofSize: 14)
+        cell.backgroundColor = .clear
+        cell.selectionStyle = .none
+        return cell
+    }
+    
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        updateLocation(start: locations[indexPath.row])
     }
 }
