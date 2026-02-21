@@ -5,6 +5,14 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+//
+//  MapViewController.swift
+//  Feature
+//
+//  Created by 김민선 on 2/13/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
+//
+
 import UIKit
 import SnapKit
 import Then
@@ -52,31 +60,37 @@ public final class MapViewController: UIViewController {
     
     private func setupLayout() {
         routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
         searchBar.snp.makeConstraints {
             $0.top.equalTo(view.snp.top).offset(60)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
+        
         recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
         recentSearchView.tableView.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(50)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
+        
         tabBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(90)
         }
+        
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
+        
+        // ✅ [수정] offset(-90)을 없애서 탭바와의 간격을 제거하고 바닥에 딱 붙였습니다.
         placeDetailView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
+            $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(600)
         }
+        
         popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
     
@@ -90,15 +104,21 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupActions() {
+        // 기존 액션
         placeDetailView.heartButton.addTarget(self, action: #selector(didTapHeart), for: .touchUpInside)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         routeSelectionView.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
+        
+        // ✅ [수정] 출발/도착 버튼 클릭 시 페이지 이동 로직 연결
+        placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
+        placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
+        
         bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
     }
 
-    // MARK: - Alert Logic (분리된 GomsAlert 사용)
+    // MARK: - Alert Logic
     private func showDeleteAlert(at index: Int) {
         GomsAlert.show(
             in: self,
@@ -137,7 +157,7 @@ public final class MapViewController: UIViewController {
         )
     }
 
-    // MARK: - Logic
+    // MARK: - Selectors
     @objc private func didTapHeart(_ sender: UIButton) {
         sender.isSelected.toggle()
         sender.tintColor = sender.isSelected ? UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1) : .white
@@ -202,6 +222,7 @@ public final class MapViewController: UIViewController {
     }
 }
 
+// MARK: - TableView Delegate & DataSource
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }

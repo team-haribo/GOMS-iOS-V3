@@ -12,7 +12,6 @@ import Then
 
 public final class MapPlaceDetailView: UIView {
     
-    // MARK: - UI Components
     private let dragHandle = UIView().then {
         $0.backgroundColor = UIColor(red: 65/255, green: 65/255, blue: 65/255, alpha: 1)
         $0.layer.cornerRadius = 2.5
@@ -33,14 +32,12 @@ public final class MapPlaceDetailView: UIView {
     public let heartButton = UIButton().then {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         $0.setImage(UIImage(systemName: "heart", withConfiguration: config), for: .normal)
-        // ★ 수정 위치: 아이콘 색상 #5F5F5F (95, 95, 95)
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
     }
     
     public let closeButton = UIButton().then {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         $0.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
-        // ★ 수정 위치: 아이콘 색상 #5F5F5F (95, 95, 95)
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
     }
     
@@ -92,6 +89,8 @@ public final class MapPlaceDetailView: UIView {
         $0.backgroundColor = .clear
         $0.separatorStyle = .none
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
+        // ✅ 탭바 높이(90)만큼 내부에 여백을 줘서 마지막 셀이 가려지지 않게 함
+        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
     }
 
     override init(frame: CGRect) {
@@ -119,7 +118,6 @@ public final class MapPlaceDetailView: UIView {
             $0.width.equalTo(36); $0.height.equalTo(5)
         }
         
-        // ★ 제목 제약 조건: 오른쪽 하트와 겹치지 않게 trailing 여백 확보
         titleLabel.snp.makeConstraints {
             $0.top.equalTo(dragHandle.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(24)
@@ -131,16 +129,15 @@ public final class MapPlaceDetailView: UIView {
             $0.bottom.equalTo(titleLabel.snp.bottom).offset(-4)
         }
         
-        // ★ 수정 위치: 아이콘들을 오른쪽 끝(trailing) 기준으로 배치해서 고정
         closeButton.snp.makeConstraints {
             $0.centerY.equalTo(titleLabel)
-            $0.trailing.equalToSuperview().inset(24) // 오른쪽 끝에서 24pt
+            $0.trailing.equalToSuperview().inset(24)
             $0.size.equalTo(28)
         }
         
         heartButton.snp.makeConstraints {
             $0.centerY.equalTo(titleLabel)
-            $0.trailing.equalTo(closeButton.snp.leading).offset(-4) // 엑스랑 간격 4
+            $0.trailing.equalTo(closeButton.snp.leading).offset(-4)
             $0.size.equalTo(28)
         }
         
@@ -178,7 +175,8 @@ public final class MapPlaceDetailView: UIView {
 
         tableView.snp.makeConstraints {
             $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(16)
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview() // 시트 끝까지 채우기
         }
     }
 }
