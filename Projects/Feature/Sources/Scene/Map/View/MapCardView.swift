@@ -20,22 +20,24 @@ public final class MapCardView: UIView {
     
     private let titleLabel = UILabel().then {
         $0.textColor = .white
-        //  카드 제목을 18로 낮춰서 밖의 큰 제목(22)과 확실히 차이를 줌
-        $0.font = .systemFont(ofSize: 18, weight: .bold)
+        $0.font = .systemFont(ofSize: 16, weight: .medium)
     }
+    
     private let categoryLabel = UILabel().then {
         $0.textColor = .white.withAlphaComponent(0.4)
-        //  나머지 텍스트도 14로 낮춰서 카드 안에 쏙 들어가게 조절
         $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
+    
     private let addressLabel = UILabel().then {
         $0.textColor = .white.withAlphaComponent(0.4)
         $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
+    
     private let statusLabel = UILabel().then {
         $0.textColor = .white.withAlphaComponent(0.4)
         $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
+    
     private let actionButton = UIButton()
     
     private let textStackView = UIStackView().then {
@@ -68,7 +70,6 @@ public final class MapCardView: UIView {
         addSubview(actionButton)
         
         textStackView.snp.makeConstraints {
-            // 이 부분이 위아래 16px 여백을 유지하면서 중앙에 두는 핵심
             $0.centerY.equalToSuperview()
             $0.leading.equalToSuperview().offset(16)
             $0.trailing.lessThanOrEqualTo(actionButton.snp.leading).offset(-8)

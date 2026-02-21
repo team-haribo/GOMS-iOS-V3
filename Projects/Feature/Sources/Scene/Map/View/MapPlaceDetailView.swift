@@ -89,7 +89,6 @@ public final class MapPlaceDetailView: UIView {
         $0.backgroundColor = .clear
         $0.separatorStyle = .none
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
-        // ✅ 탭바 높이(90)만큼 내부에 여백을 줘서 마지막 셀이 가려지지 않게 함
         $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
     }
 
