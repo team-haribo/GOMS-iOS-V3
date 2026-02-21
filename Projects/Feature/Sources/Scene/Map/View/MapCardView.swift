@@ -10,7 +10,6 @@ import UIKit
 import SnapKit
 import Then
 
-// 1. 타입을 파일 상단에 같이 둠
 public enum MapCardType {
     case popular
     case recommended
@@ -19,29 +18,36 @@ public enum MapCardType {
 
 public final class MapCardView: UIView {
     
-    // UI 컴포넌트 선언
     private let titleLabel = UILabel().then {
         $0.textColor = .white
-        $0.font = .systemFont(ofSize: 16, weight: .semibold)
+        // ✅ 카드 제목을 18로 낮춰서 밖의 큰 제목(22)과 확실히 차이를 줌
+        $0.font = .systemFont(ofSize: 18, weight: .bold)
     }
     private let categoryLabel = UILabel().then {
-        $0.textColor = .lightGray
-        $0.font = .systemFont(ofSize: 12, weight: .regular)
+        $0.textColor = .white.withAlphaComponent(0.4)
+        // ✅ 나머지 텍스트도 14로 낮춰서 카드 안에 쏙 들어가게 조절
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
     private let addressLabel = UILabel().then {
-        $0.textColor = .lightGray
-        $0.font = .systemFont(ofSize: 12, weight: .regular)
+        $0.textColor = .white.withAlphaComponent(0.4)
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
     private let statusLabel = UILabel().then {
-        $0.textColor = .lightGray
-        $0.font = .systemFont(ofSize: 12, weight: .regular)
+        $0.textColor = .white.withAlphaComponent(0.4)
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
     private let actionButton = UIButton()
+    
+    private let textStackView = UIStackView().then {
+        $0.axis = .vertical
+        $0.spacing = 4
+        $0.alignment = .leading
+        $0.distribution = .fill
+    }
 
     public init(type: MapCardType) {
         super.init(frame: .zero)
         setupView(type: type)
-        // 시안용 임시 데이터 세팅
         configureData(type: type)
     }
     
@@ -49,34 +55,29 @@ public final class MapCardView: UIView {
     
     private func setupView(type: MapCardType) {
         self.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
-        self.layer.cornerRadius = 8
+        self.layer.cornerRadius = 12
         
-        [titleLabel, categoryLabel, addressLabel, statusLabel, actionButton].forEach { addSubview($0) }
+        let titleStack = UIStackView(arrangedSubviews: [titleLabel, categoryLabel]).then {
+            $0.axis = .horizontal
+            $0.spacing = 6
+            $0.alignment = .lastBaseline
+        }
         
-        titleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(16)
+        addSubview(textStackView)
+        [titleStack, addressLabel, statusLabel].forEach { textStackView.addArrangedSubview($0) }
+        addSubview(actionButton)
+        
+        textStackView.snp.makeConstraints {
+            // ✅ 이 부분이 위아래 16px 여백을 유지하면서 중앙에 두는 핵심
+            $0.centerY.equalToSuperview()
             $0.leading.equalToSuperview().offset(16)
-        }
-        
-        categoryLabel.snp.makeConstraints {
-            $0.centerY.equalTo(titleLabel)
-            $0.leading.equalTo(titleLabel.snp.trailing).offset(4)
-        }
-        
-        addressLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(4)
-            $0.leading.equalTo(titleLabel)
-        }
-        
-        statusLabel.snp.makeConstraints {
-            $0.top.equalTo(addressLabel.snp.bottom).offset(4)
-            $0.leading.equalTo(titleLabel)
+            $0.trailing.lessThanOrEqualTo(actionButton.snp.leading).offset(-8)
         }
         
         actionButton.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview().offset(-16)
-            $0.size.equalTo(24)
+            $0.size.equalTo(26)
         }
         
         setupButton(type: type)
@@ -84,25 +85,26 @@ public final class MapCardView: UIView {
 
     private func setupButton(type: MapCardType) {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        let orangeColor = UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1)
+        
         if type == .reviewed {
             actionButton.setImage(UIImage(systemName: "trash", withConfiguration: config), for: .normal)
             actionButton.tintColor = .systemRed
         } else {
             actionButton.setImage(UIImage(systemName: "heart", withConfiguration: config), for: .normal)
             actionButton.setImage(UIImage(systemName: "heart.fill", withConfiguration: config), for: .selected)
-            actionButton.tintColor = (type == .recommended) ? .orange : .lightGray
+            actionButton.tintColor = (type == .recommended) ? orangeColor : .white.withAlphaComponent(0.3)
             actionButton.isSelected = (type == .recommended)
         }
     }
 
     private func configureData(type: MapCardType) {
-        // 시안(image_07e901.png) 기반 데이터
         titleLabel.text = "메가MGC커피 광주송정시장점"
         categoryLabel.text = "카페"
         addressLabel.text = "광주 광산구 내상로 23 가동 1층"
         
         if type == .reviewed {
-            statusLabel.text = "군군군군군군군군군...  작성일: 26.02.11"
+            statusLabel.text = "작성한 후기가 이곳에 표시됩니다."
         } else {
             statusLabel.text = "학생 후기 10+ | 추천 20+"
         }
