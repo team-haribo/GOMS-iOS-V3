@@ -100,13 +100,12 @@ public final class MapSearchBar: UIView {
     }
     
     public func updateState(_ state: SearchBarState) {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
         switch state {
         case .home:
             leftIcon.image = UIImage(named: "GOMS_GOMS", in: Bundle.module, compatibleWith: nil)
             backButton.isEnabled = false
         case .search:
-            leftIcon.image = UIImage(systemName: "chevron.left", withConfiguration: config)
+            leftIcon.image = UIImage(named: "Directional", in: Bundle.module, compatibleWith: nil)
             backButton.isEnabled = true
         }
     }
