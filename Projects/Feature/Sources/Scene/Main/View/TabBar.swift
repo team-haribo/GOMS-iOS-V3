@@ -32,8 +32,7 @@ public final class TabBar: UIView {
     }
     
     public let homeButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "house"), for: .normal)
-        $0.tintColor = UIColor(red: 73/255, green: 73/255, blue: 73/255, alpha: 1) // #494949
+        $0.setImage(UIImage(named: "House", in: Bundle.module, compatibleWith: nil ), for: .normal)
     }
     
     public let profileButton = UIButton().then {
