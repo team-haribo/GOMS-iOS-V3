@@ -21,10 +21,11 @@ public final class MapRecentSearchView: UIView {
         $0.textColor = UIColor(red: 158/255, green: 158/255, blue: 158/255, alpha: 1)
         $0.font = .systemFont(ofSize: 14, weight: .semibold)
     }
+    
     private let clockIcon = UIImageView().then {
-        $0.image = UIImage(systemName: "clock.arrow.circlepath")
-        $0.tintColor = UIColor(red: 158/255, green: 158/255, blue: 158/255, alpha: 1)
+        $0.image = UIImage(named: "Time", in: Bundle.module, compatibleWith: nil)
     }
+    
     public let tableView = UITableView().then {
         $0.backgroundColor = .clear
         $0.separatorStyle = .none

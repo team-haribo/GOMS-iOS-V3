@@ -46,14 +46,12 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     public let reportButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "exclamationmark.circle", withConfiguration: config), for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.setImage(UIImage(named: "Warning", in: Bundle.module, compatibleWith: nil), for: .normal)
     }
     
     public let deleteButton = UIButton().then {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "trash", withConfiguration: config), for: .normal)
+        $0.setImage(UIImage(named: "Trash", in: Bundle.module, compatibleWith: nil), for: .normal)
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
         $0.isHidden = true
     }
