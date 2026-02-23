@@ -29,7 +29,7 @@ public final class MapBottomSheetView: UIView {
         $0.axis = .vertical
         $0.spacing = 0
         $0.isLayoutMarginsRelativeArrangement = true
-        $0.layoutMargins = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        $0.layoutMargins = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
     }
 
     override init(frame: CGRect) {
@@ -68,12 +68,44 @@ public final class MapBottomSheetView: UIView {
             $0.width.equalTo(scrollView.frameLayoutGuide)
         }
     }
+    
+    private func createPopularTitleView() -> UIView {
+
+        let titleLabel = createTitleLabel("최근 인기 장소", fontSize: 22)
+
+        let fireImageView = UIImageView().then {
+            $0.image = UIImage(
+                named: "Fire",
+                in: Bundle.module,
+                compatibleWith: nil
+            )
+            $0.contentMode = .scaleAspectFit
+            $0.snp.makeConstraints { $0.size.equalTo(24) }
+        }
+
+        let stack = UIStackView(arrangedSubviews: [titleLabel, fireImageView]).then {
+            $0.axis = .horizontal
+            $0.alignment = .center
+            $0.spacing = 6.77
+        }
+
+        let container = UIView()
+        container.addSubview(stack)
+
+        stack.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.top.bottom.equalToSuperview()
+        }
+
+        return container
+    }
 
     private func renderUI() {
         contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         addSpacer(32)
-        contentStackView.addArrangedSubview(createTitleLabel("최근 인기 장소 🔥", fontSize: 22))
+        contentStackView.addArrangedSubview(createPopularTitleView())
+        
         addSpacer(16)
 
         for _ in 0..<3 {

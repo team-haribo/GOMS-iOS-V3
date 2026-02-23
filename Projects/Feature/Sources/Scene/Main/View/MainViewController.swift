@@ -63,7 +63,13 @@ public final class MainViewController: BaseViewController {
     // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .color.gomsNegative.color
+    }
+
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        let mapVC = MapViewController()
+        navigationController?.pushViewController(mapVC, animated: true)
     }
     
     // MARK: - Add View
