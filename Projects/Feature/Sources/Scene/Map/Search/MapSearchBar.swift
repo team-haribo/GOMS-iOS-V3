@@ -25,9 +25,9 @@ public final class MapSearchBar: UIView {
     }
     
     private let leftIcon = UIImageView().then {
-        $0.image = UIImage(systemName: "pawprint.fill") // 준표 아이콘 들어오면 갈아끼울 것
+        $0.image = UIImage(named: "GOMS_GOMS", in: Bundle.module, compatibleWith: nil) // 준표 아이콘 들어오면 갈아끼울 것
         $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
-        $0.contentMode = .scaleAspectFit
+      
     }
     
     public let backButton = UIButton()
@@ -103,7 +103,7 @@ public final class MapSearchBar: UIView {
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
         switch state {
         case .home:
-            leftIcon.image = UIImage(systemName: "pawprint.fill", withConfiguration: config)
+            leftIcon.image = UIImage(named: "GOMS_GOMS", in: Bundle.module, compatibleWith: nil)
             backButton.isEnabled = false
         case .search:
             leftIcon.image = UIImage(systemName: "chevron.left", withConfiguration: config)
