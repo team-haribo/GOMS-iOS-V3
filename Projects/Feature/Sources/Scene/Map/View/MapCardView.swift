@@ -92,8 +92,17 @@ public final class MapCardView: UIView {
             actionButton.setImage(UIImage(systemName: "trash", withConfiguration: config), for: .normal)
             actionButton.tintColor = .systemRed
         } else {
-            actionButton.setImage(UIImage(systemName: "heart", withConfiguration: config), for: .normal)
-            actionButton.setImage(UIImage(systemName: "heart.fill", withConfiguration: config), for: .selected)
+            
+            actionButton.setImage(
+                UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil),
+                for: .normal
+            )
+
+            actionButton.setImage(
+                UIImage(systemName: "heart.fill", withConfiguration: config),
+                for: .selected
+            )
+
             actionButton.tintColor = (type == .recommended) ? orangeColor : .white.withAlphaComponent(0.3)
             actionButton.isSelected = (type == .recommended)
         }
