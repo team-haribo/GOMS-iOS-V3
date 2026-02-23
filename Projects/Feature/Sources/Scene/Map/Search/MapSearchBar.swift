@@ -47,9 +47,7 @@ public final class MapSearchBar: UIView {
     }
     
     private let searchIcon = UIImageView().then {
-        $0.image = UIImage(systemName: "magnifyingglass")
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1) // #5F5F5F
-        $0.contentMode = .scaleAspectFit
+        $0.image = UIImage(named: "Search", in: Bundle.module, compatibleWith: nil)
     }
 
     // MARK: - Init
