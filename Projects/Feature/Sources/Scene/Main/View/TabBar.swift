@@ -27,7 +27,7 @@ public final class TabBar: UIView {
     }
     
     public let mapButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "map.fill"), for: .normal)
+        $0.setImage(UIImage(named: "Map", in: Bundle.module, compatibleWith: nil), for: .normal)
         $0.tintColor = .white
     }
     
