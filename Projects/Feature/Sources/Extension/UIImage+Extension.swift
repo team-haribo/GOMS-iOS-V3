@@ -2,11 +2,12 @@
 //  UIImage+Extension.swift
 //  Feature
 //
-//  Created by 새미 on 1/11/24.
-//  Copyright © 2024 HARIBO. All rights reserved.
+//  Created by 김준표 on 2/24/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+
 
 extension UIImage {
     static let image = FeatureAsset.Images.self

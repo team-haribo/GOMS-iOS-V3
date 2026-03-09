@@ -1,30 +1,34 @@
 //
-//  UIf.swift
+//  UIFont+Extension.swift
 //  Feature
 //
-//  Created by 새미 on 1/10/24.
-//  Copyright © 2024 HARIBO. All rights reserved.
+//  Created by 김준표 on 2/24/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
 
 extension UIFont {
+
     static func pretendard(size fontSize: CGFloat, weight: UIFont.Weight) -> UIFont {
         let familyName = "Pretendard"
+        let weightString = pretendardWeightString(for: weight)
 
-        var weightString: String
-        
+        return UIFont(name: "\(familyName)-\(weightString)", size: fontSize)
+            ?? .systemFont(ofSize: fontSize, weight: weight)
+    }
+
+    private static func pretendardWeightString(for weight: UIFont.Weight) -> String {
         switch weight {
         case .bold:
-            weightString = "Blod"
+            return "Bold"
         case .regular:
-            weightString = "Regular"
+            return "Regular"
         case .semibold:
-            weightString = "SemiBold"
+            return "SemiBold"
         default:
-            weightString = "Regular"
+            return "Regular"
         }
-
-        return UIFont(name: "\(familyName)-\(weightString)", size: fontSize) ?? .systemFont(ofSize: fontSize, weight: weight)
     }
 }
+
