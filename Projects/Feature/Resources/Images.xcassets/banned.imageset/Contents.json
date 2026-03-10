@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Vector.pdf",
+      "filename" : "banned@1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "banned@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "banned@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

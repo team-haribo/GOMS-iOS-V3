@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Vector.pdf",
+      "filename" : "Load.pdf",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "Load 1.pdf",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "Load 2.pdf",
       "idiom" : "universal",
       "scale" : "3x"
     }
