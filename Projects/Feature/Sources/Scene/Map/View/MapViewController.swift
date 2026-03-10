@@ -1,31 +1,25 @@
-//  MapViewController.swift
-//  Feature
-//
-//  Created by 김민선 on 2/13/26.
-//  Copyright © 2026 HARIBO. All rights reserved.
-//
-
-//
-//  MapViewController.swift
-//  Feature
-//
-//  Created by 김민선 on 2/13/26.
-//  Copyright © 2026 HARIBO. All rights reserved.
-//
-
 import UIKit
 import SnapKit
 import Then
+
+// SwiftLint 에러(Large Tuple) 떄문에 모델 정의
+struct ReviewModel {
+    let name: String
+    let info: String
+    let content: String
+    let date: String
+}
 
 public final class MapViewController: UIViewController {
     
     // MARK: - Dummy Data
     private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
-    private var dummyReviews: [(name: String, info: String, content: String, date: String)] = [
-        ("김민솔", "8기 | AI", "굳굳", "26.02.12"),
-        ("권재현", "8기 | AI", "매워요", "26.02.12"),
-        ("김태은", "8기 | AI", "맛있어요", "26.02.12"),
-        ("이주언", "8기 | AI", "가성비 좋음", "26.02.12")
+    
+    private var dummyReviews: [ReviewModel] = [
+        ReviewModel(name: "김민솔", info: "8기 | AI", content: "굳굳", date: "26.02.12"),
+        ReviewModel(name: "권재현", info: "8기 | AI", content: "매워요", date: "26.02.12"),
+        ReviewModel(name: "김태은", info: "8기 | AI", content: "맛있어요", date: "26.02.12"),
+        ReviewModel(name: "이주언", info: "8기 | AI", content: "가성비 좋음", date: "26.02.12")
     ]
     
     // MARK: - UI Components
@@ -85,7 +79,6 @@ public final class MapViewController: UIViewController {
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
         
-        // ✅ [수정] offset(-90)을 없애서 탭바와의 간격을 제거하고 바닥에 딱 붙였습니다.
         placeDetailView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(600)
@@ -104,13 +97,11 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupActions() {
-        // 기존 액션
         placeDetailView.heartButton.addTarget(self, action: #selector(didTapHeart), for: .touchUpInside)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         routeSelectionView.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
         
-        // ✅ [수정] 출발/도착 버튼 클릭 시 페이지 이동 로직 연결
         placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
         placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
         
@@ -118,7 +109,6 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
     }
 
-    // MARK: - Alert Logic
     private func showDeleteAlert(at index: Int) {
         GomsAlert.show(
             in: self,
@@ -157,7 +147,6 @@ public final class MapViewController: UIViewController {
         )
     }
 
-    // MARK: - Selectors
     @objc private func didTapHeart(_ sender: UIButton) {
         sender.isSelected.toggle()
         sender.tintColor = sender.isSelected ? UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1) : .white
@@ -193,14 +182,6 @@ public final class MapViewController: UIViewController {
         routeSelectionView.updateLocation(start: "짬뽕관 광주송정선운점", end: "도착 위치를 선택해주세요")
     }
     
-    @objc private func didTapReverseRoute() {
-        let currentStart = routeSelectionView.startDropdownButton.configuration?.title ?? ""
-        let currentEnd = routeSelectionView.endLocationLabel.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        routeSelectionView.updateLocation(start: currentEnd, end: currentStart)
-    }
-    
-    @objc private func didTapDropdown() { routeSelectionView.dropdownTableView.isHidden.toggle() }
-    
     private func setupGesture() {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         bottomSheetView.addGestureRecognizer(pan)
@@ -222,7 +203,6 @@ public final class MapViewController: UIViewController {
     }
 }
 
-// MARK: - TableView Delegate & DataSource
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }
