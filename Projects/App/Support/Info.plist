@@ -55,5 +55,7 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>SchoolBaseURL</key>
+	<string>https://api.goms.co.kr</string>
 </dict>
 </plist>
