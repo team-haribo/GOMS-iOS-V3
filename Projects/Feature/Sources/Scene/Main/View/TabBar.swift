@@ -12,10 +12,10 @@ import Then
 
 public final class TabBar: UIView {
     private let iconSize: CGFloat = 28
-    private let grayPoint = UIColor(red: 73/255, green: 73/255, blue: 73/255, alpha: 1) // #494949
+    private let grayPoint = UIColor.color.button.color
     
     private let containerView = UIView().then {
-        $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1) // #191919
+        $0.backgroundColor = UIColor.color.surface.color
         $0.layer.cornerRadius = 12
         $0.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
@@ -27,21 +27,37 @@ public final class TabBar: UIView {
     }
     
     public let mapButton = UIButton().then {
-        $0.setImage(UIImage(named: "Map", in: Bundle.module, compatibleWith: nil), for: .normal)
-        $0.tintColor = .white
+        $0.setImage(UIImage(named: "Map", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
     }
     
     public let homeButton = UIButton().then {
-        $0.setImage(UIImage(named: "House", in: Bundle.module, compatibleWith: nil ), for: .normal)
+        $0.setImage(UIImage(named: "House", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
     }
     
     public let profileButton = UIButton().then {
-        $0.setImage(UIImage(named: "User", in: Bundle.module, compatibleWith: nil), for: .normal)
+        $0.setImage(UIImage(named: "User", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
+    }
+
+    public enum TabType {
+        case map
+        case home
+        case profile
+    }
+
+    public var onTabSelected: ((TabType) -> Void)?
+
+    public var selectedTab: TabType = .home {
+        didSet {
+            updateSelectedState()
+        }
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        self.backgroundColor = UIColor.color.surface.color
         setupLayout()
+        setupAction()
+        updateSelectedState()
     }
     
     private func setupLayout() {
@@ -59,6 +75,35 @@ public final class TabBar: UIView {
             $0.top.equalToSuperview().offset(24)
             $0.leading.trailing.equalToSuperview().inset(52)
         }
+    }
+
+    private func setupAction() {
+        mapButton.addTarget(self, action: #selector(mapButtonTapped), for: .touchUpInside)
+        homeButton.addTarget(self, action: #selector(homeButtonTapped), for: .touchUpInside)
+        profileButton.addTarget(self, action: #selector(profileButtonTapped), for: .touchUpInside)
+    }
+
+    @objc private func mapButtonTapped() {
+        selectedTab = .map
+        onTabSelected?(.map)
+    }
+
+    @objc private func homeButtonTapped() {
+        selectedTab = .home
+        onTabSelected?(.home)
+    }
+
+    @objc private func profileButtonTapped() {
+        selectedTab = .profile
+        onTabSelected?(.profile)
+    }
+
+    private func updateSelectedState() {
+        let activeColor = UIColor.color.sub2.color
+
+        mapButton.tintColor = selectedTab == .map ? activeColor : grayPoint
+        homeButton.tintColor = selectedTab == .home ? activeColor : grayPoint
+        profileButton.tintColor = selectedTab == .profile ? activeColor : grayPoint
     }
     
     required init?(coder: NSCoder) { fatalError() }

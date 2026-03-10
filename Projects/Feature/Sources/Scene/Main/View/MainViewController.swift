@@ -2,80 +2,77 @@
 //  MainViewController.swift
 //  Feature
 //
-//  Created by 김준표 on 2/24/26.
-//  Copyright © 2026 HARIBO. All rights reserved.
+//  Created by 새미 on 1/10/24.
+//  Copyright © 2024 HARIBO. All rights reserved.
 //
 
 import UIKit
-import Then
 
 public final class MainViewController: BaseViewController {
-
-    // MARK: - UI
-
+    
+    // MARK: - Properties
     private let profileView = UIView()
-    private let latecomerView = UIView()
-    private let outingStatusView = UIView()
-    private let dividingLineView = UIView()
-
-    private let profileImageView = UIImageView()
-
-    private let nameLabel = UILabel().then {
+    
+    let profileImageView = UIImageView()
+    
+    let nameLabel = UILabel().then {
         $0.text = "홍길동"
         $0.textColor = .white
-        $0.font = .pretendard(size: 19, weight: .semibold)
+        $0.font = UIFont.pretendard(size: 19, weight: .semibold)
     }
-
-    private let studentIDLabel = UILabel().then {
+     
+    let studentIDLabel = UILabel().then {
         $0.text = "1학년 5반 1번"
-        $0.font = .pretendard(size: 16, weight: .regular)
+        $0.font = UIFont.pretendard(size: 16, weight: .regular)
     }
-
-    private let myOutingStatusLabel = UILabel().then {
+    
+    let myOutingStatusLabel = UILabel().then {
         $0.text = "외출 대기 중"
-        $0.font = .pretendard(size: 19, weight: .semibold)
+        $0.font = UIFont.pretendard(size: 19, weight: .semibold)
     }
-
+    
+    private let latecomerView = UIView()
+    
     private let latecomerLabel = UILabel().then {
         $0.text = "지각자 TOP 3"
         $0.textColor = .white
-        $0.font = .pretendard(size: 24, weight: .bold)
+        $0.font = UIFont.pretendard(size: 24, weight: .bold)
     }
-
+    
+    private let outingStatusView = UIView()
+    
     private let outingStatusLabel = UILabel().then {
         $0.text = "외출 현황"
         $0.textColor = .white
-        $0.font = .pretendard(size: 24, weight: .bold)
+        $0.font = UIFont.pretendard(size: 24, weight: .bold)
     }
-
-    private let moreOutingStatusButton = UIButton()
-    private let qrButton = UIButton()
-
-    private let numberOfPeopleOutingLabel = UILabel().then {
+    
+    private let moreOutingStatusButton = UIButton() 
+    
+    private let dividingLineView = UIView()
+    
+    let numberOfPeopleOutingLabel = UILabel().then {
         $0.text = "66명이 외출 중"
-        $0.font = .pretendard(size: 16, weight: .regular)
+        $0.font = UIFont.pretendard(size: 16, weight: .regular)
     }
+    
+    private let QRButton = UIButton()
+    
+    // MARK: - Selectors
 
-    // MARK: - Lifecycle
-
+    // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .color.gomsNegative.color
     }
+    
+    // MARK: - Add View
+    override func addView() {
 
-    public override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        let mapVC = MapViewController()
-        navigationController?.pushViewController(mapVC, animated: true)
     }
-
-    // MARK: - Base Overrides
-
-    public override func addView() {
-     
-    }
-
-    public override func setLayout() {
+    
+    // MARK: - Layout
+    override func setLayout() {
  
     }
 }
