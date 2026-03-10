@@ -10,99 +10,124 @@ import UIKit
 import SnapKit
 import Then
 
-open class BaseViewController: UIViewController {
+public class BaseViewController: UIViewController {
+    
+    
 
     // MARK: - Properties
-    
-    public let screenBounds: CGRect = UIScreen.main.bounds
+    let bounds = UIScreen.main.bounds
 
-    // MARK: - Lifecycle
-    open override func viewDidLoad() {
+    // MARK: - Custom Navigation
+    private let customNavView = UIView()
+    private let backButton = UIButton(type: .system)
+
+    // MARK: - Life Cycle
+
+    public override func viewDidLoad() {
         super.viewDidLoad()
+        
+        view.setDynamicBackgroundColor(
+            darkModeColor: .color.background.color,
+            lightModeColor: .color.background.color
+        )
 
-        addKeyboardObservers()
-
+        navigationController?.navigationBar.isHidden = true
+        setupKeyboardEvent()
+        setupCustomNavigation()
         configureUI()
         addView()
         setLayout()
     }
 
-    open override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        applyDynamicBackground()
-        applyNavigationAppearance()
+        navigationController?.navigationBar.isHidden = true
+
+        if navigationController?.viewControllers.first === self {
+            customNavView.isHidden = true
+        } else {
+            customNavView.isHidden = false
+        }
+
+        configNavigation()
     }
 
-    deinit {
-        removeKeyboardObservers()
+    func configNavigation() { }
+
+    // MARK: Navigation Setup
+
+    private func setupCustomNavigation() {
+        customNavView.backgroundColor = .color.background.color
+        view.addSubview(customNavView)
+
+        customNavView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(100)
+        }
+
+        let backImage = UIImage(
+            named: "Back",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+
+        let backImageView = UIImageView(image: backImage)
+        backImageView.contentMode = .scaleAspectFit
+
+        let backLabel = UILabel()
+        backLabel.text = "돌아가기"
+        backLabel.font = .suit(size: 16, weight: .medium)
+        backLabel.textColor = .color.gomsPrimary.color
+
+        let backStack = UIStackView(arrangedSubviews: [backImageView, backLabel])
+        backStack.axis = .horizontal
+        backStack.alignment = .center
+        backStack.spacing = 4
+
+        customNavView.addSubview(backStack)
+
+        backStack.snp.makeConstraints {
+            $0.leading.equalTo(31)
+            $0.bottom.equalTo(-12)
+        }
+
+        backStack.isUserInteractionEnabled = true
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backTapped))
+        backStack.addGestureRecognizer(tapGesture)
     }
 
-    // MARK: - Touch
-    open override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    // MARK: - Keyboard
+
+    @objc func keyboardWillShow(_ sender: Notification) { }
+    @objc func keyboardWillHide(_ sender: Notification) { }
+
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
-        super.touchesBegan(touches, with: event)
     }
 
-    // MARK: - Keyboard Observers
-    private func addKeyboardObservers() {
+    func setupKeyboardEvent() {
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(keyboardWillShow(_:)),
+            selector: #selector(keyboardWillShow),
             name: UIResponder.keyboardWillShowNotification,
             object: nil
         )
-
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(keyboardWillHide(_:)),
+            selector: #selector(keyboardWillHide),
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
     }
 
-    private func removeKeyboardObservers() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-    }
-
- 
-    @objc open func keyboardWillShow(_ notification: Notification) { }
-    @objc open func keyboardWillHide(_ notification: Notification) { }
-
-    // MARK: - Background
-    private func applyDynamicBackground() {
-        view.backgroundColor = .color.background.color
-    }
-
-    // MARK: - Navigation
-    private func applyNavigationAppearance() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .clear
-
-        navigationController?.navigationBar.tintColor = .systemBlue
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.compactAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
-        navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        navigationController?.navigationBar.shadowImage = UIImage()
-
-        let backBarButtonItem = UIBarButtonItem(
-            title: "돌아가기",
-            style: .plain,
-            target: nil,
-            action: nil
-        )
-        navigationItem.backBarButtonItem = backBarButtonItem
-
-        navigationController?.navigationBar.clipsToBounds = true
-        navigationController?.navigationBar.isHidden = false
-    }
-
-    // MARK: - Template Methods
-   
-    open func configureUI() { }
-    open func addView() { }
-    open func setLayout() { }
+    // MARK: - Layout Hooks
+    func configureUI() {}
+    func addView() {}
+    func setLayout() {}
 }

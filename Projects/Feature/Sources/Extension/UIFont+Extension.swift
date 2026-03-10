@@ -10,25 +10,24 @@ import UIKit
 
 extension UIFont {
 
-    static func pretendard(size fontSize: CGFloat, weight: UIFont.Weight) -> UIFont {
-        let familyName = "Pretendard"
-        let weightString = pretendardWeightString(for: weight)
-
-        return UIFont(name: "\(familyName)-\(weightString)", size: fontSize)
-            ?? .systemFont(ofSize: fontSize, weight: weight)
-    }
-
-    private static func pretendardWeightString(for weight: UIFont.Weight) -> String {
+    static func suit(size fontSize: CGFloat, weight: UIFont.Weight) -> UIFont {
         switch weight {
         case .bold:
-            return "Bold"
-        case .regular:
-            return "Regular"
+            return FeatureFontFamily.Suit.bold.font(size: fontSize)
         case .semibold:
-            return "SemiBold"
+            return FeatureFontFamily.Suit.semiBold.font(size: fontSize)
+        case .medium:
+            return FeatureFontFamily.Suit.medium.font(size: fontSize)
+        case .light:
+            return FeatureFontFamily.Suit.light.font(size: fontSize)
+        case .thin:
+            return FeatureFontFamily.Suit.thin.font(size: fontSize)
+        case .heavy:
+            return FeatureFontFamily.Suit.heavy.font(size: fontSize)
+        case .regular:
+            return FeatureFontFamily.Suit.regular.font(size: fontSize)
         default:
-            return "Regular"
+            return FeatureFontFamily.Suit.regular.font(size: fontSize)
         }
     }
 }
-
