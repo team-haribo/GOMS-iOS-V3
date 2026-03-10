@@ -30,15 +30,11 @@ public final class MapPlaceDetailView: UIView {
     }
     
     public let heartButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "heart", withConfiguration: config), for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.setImage(UIImage(named: "Heart", in: Bundle.module, compatibleWith: nil), for: .normal)
     }
     
     public let closeButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.setImage(UIImage(named: "Cancel", in: Bundle.module, compatibleWith: nil), for: .normal)
     }
     
     private let addressLabel = UILabel().then {

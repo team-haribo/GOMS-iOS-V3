@@ -15,8 +15,7 @@ public final class MapRecentSearchCell: UITableViewCell {
     public var onDeleteTap: (() -> Void)?
     
     private let pinIcon = UIImageView().then {
-        $0.image = UIImage(systemName: "mappin.circle")
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.image = UIImage(named: "Destination", in: Bundle.module, compatibleWith: nil)
     }
     private let titleLabel = UILabel().then {
         $0.textColor = .white
@@ -28,8 +27,10 @@ public final class MapRecentSearchCell: UITableViewCell {
         $0.textAlignment = .right
     }
     private let deleteButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "xmark"), for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.setImage(
+            UIImage(named: "Cancel", in: Bundle.module, compatibleWith: nil),
+            for: .normal
+        )
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {

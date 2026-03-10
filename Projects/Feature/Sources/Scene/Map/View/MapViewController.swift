@@ -1,8 +1,15 @@
+//  MapViewController.swift
+//  Feature
+//
+//  Created by 김민선 on 2/13/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
+//
+
 import UIKit
 import SnapKit
 import Then
 
-// SwiftLint 에러(Large Tuple) 떄문에 모델 정의
+// SwiftLint 에러(Large Tuple) 때문에 모델 정의
 struct ReviewModel {
     let name: String
     let info: String

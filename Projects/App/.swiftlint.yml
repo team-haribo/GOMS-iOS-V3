@@ -1,0 +1,16 @@
+warning_threshold: 1000
+
+disabled_rules:
+  - identifier_name
+  - line_length
+  - type_name
+  - trailing_whitespace
+  - function_body_length
+
+included:
+  - Projects
+
+excluded:
+  - Projects/App/Sources/AppDelegate.swift
+  - Projects/App/Sources/SceneDelegate.swift
+  - Tuist

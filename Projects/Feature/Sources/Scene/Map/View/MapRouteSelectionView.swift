@@ -21,8 +21,7 @@ public final class MapRouteSelectionView: UIView {
     }
     
     public let backButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "chevron.left"), for: .normal)
-        $0.tintColor = .white
+        $0.setImage(UIImage(named: "Directional", in: Bundle.module, compatibleWith: nil), for: .normal)
     }
     
     private let startLabel = UILabel().then {
@@ -40,7 +39,7 @@ public final class MapRouteSelectionView: UIView {
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .systemFont(ofSize: 14)
         config.attributedTitle = titleAttr
-        config.image = UIImage(systemName: "chevron.down")
+        $0.setImage(UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil), for: .normal)
         config.imagePlacement = .trailing
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         $0.configuration = config
@@ -58,7 +57,7 @@ public final class MapRouteSelectionView: UIView {
     }
     
     public let reverseButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
+        $0.setImage(UIImage(named: "Shift", in: Bundle.module, compatibleWith: nil), for: .normal)
         $0.tintColor = .orange
         $0.isUserInteractionEnabled = false
     }
