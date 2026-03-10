@@ -1,8 +1,9 @@
 //
 //  Project.swift
-//  ProjectDescriptionHelpers
+//  Feature
 //
-//  Created by 새미 on 1/10/24.
+//  Created by 김준표 on 2/24/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import ProjectDescription
@@ -10,9 +11,15 @@ import ProjectDescriptionHelpers
 
 let project = Project.makeModule(
     name: "Feature",
+    platform: .iOS,
     product: .staticFramework,
+    organizationName: "HARIBO",
+    deploymentTargets: .iOS("16.0"),
     dependencies: [
-        .project(target: "Service", path: .relativeToRoot("Projects/Service"))
+        .project(target: "Service", path: .relativeToRoot("Projects/Service")),
+        .project(target: "ThirdPartyLib", path: .relativeToRoot("Projects/ThirdPartyLib"))
     ],
-    resources: ["Resources/**"]
+    sources: ["Sources/**"],
+    resources: ["Resources/**"],
+    infoPlist: .default
 )
