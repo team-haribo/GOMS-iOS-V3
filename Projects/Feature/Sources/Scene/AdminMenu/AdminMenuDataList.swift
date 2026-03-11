@@ -18,7 +18,11 @@ final class AdminMenuDataList {
             AdminMenu(icon: .image.studentCouncilIcon.image, title: "학생 관리"),
             AdminMenu(icon: .image.outingStatusIcon.image, title: "외출 현황"),
             AdminMenu(icon: .image.lateIcon.image, title: "지각자 명단"),
+<<<<<<< HEAD
             AdminMenu(icon: .image.satting.image, title: "개인 설정")
+=======
+            AdminMenu(icon: .image.settingIcon.image, title: "개인 설정")
+>>>>>>> 50497c2 (✨ - feat :: [#32] Admin 메뉴 및 학생 관리 기능 구현)
         ]
     }
     
