@@ -9,7 +9,6 @@ import UIKit
 import SnapKit
 import Then
 
-// SwiftLint 에러(Large Tuple) 때문에 모델 정의
 struct ReviewModel {
     let name: String
     let info: String
@@ -49,9 +48,10 @@ public final class MapViewController: UIViewController {
         setupGesture()
         setupActions()
     }
-    
+
     private func setupView() {
-        view.backgroundColor = UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1)
+        view.backgroundColor = .color.background.color
+        
         [bottomSheetView, recentSearchView, placeDetailView, tabBar, searchBar, popupView, routeSelectionView].forEach {
             view.addSubview($0)
         }
@@ -123,7 +123,7 @@ public final class MapViewController: UIViewController {
             message: "정말 후기를 삭제하시겠습니까?",
             leftTitle: "취소",
             rightTitle: "삭제하기",
-            rightColor: .systemRed
+            rightColor: .color.gomsNegative.color
         ) { [weak self] in
             self?.dummyReviews.remove(at: index)
             self?.placeDetailView.tableView.reloadData()
@@ -138,7 +138,7 @@ public final class MapViewController: UIViewController {
             message: "이 후기를 신고하시겠습니까?\n신고 내용은 운영팀의 검토 후 처리됩니다.",
             leftTitle: "취소",
             rightTitle: "신고하기",
-            rightColor: .systemRed
+            rightColor: .color.gomsNegative.color
         ) { [weak self] in
             self?.showSimpleAlert(title: "후기 신고 완료", message: "신고가 접수되었습니다.\n더 나은 GOMS가 되기위해 노력하겠습니다!")
         }
@@ -150,13 +150,14 @@ public final class MapViewController: UIViewController {
             title: title,
             message: message,
             rightTitle: "돌아가기",
-            rightColor: UIColor(red: 0/255, green: 122/255, blue: 255/255, alpha: 1)
+            rightColor: .color.admin.color
         )
     }
 
     @objc private func didTapHeart(_ sender: UIButton) {
         sender.isSelected.toggle()
-        sender.tintColor = sender.isSelected ? UIColor(red: 255/255, green: 165/255, blue: 0/255, alpha: 1) : .white
+        // 주황색 포인트 컬러 적용
+        sender.tintColor = sender.isSelected ? .color.gomsPrimary.color : .white
         let imageName = sender.isSelected ? "heart.fill" : "heart"
         sender.setImage(UIImage(systemName: imageName), for: .normal)
     }
@@ -218,11 +219,13 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == routeSelectionView.dropdownTableView {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "dropdownCell", for: indexPath)
-            cell.backgroundColor = .clear; cell.textLabel?.textColor = .white
-            cell.textLabel?.text = indexPath.row == 0 ? "내 위치" : "학교"
-            return cell
-        }
+                let cell = tableView.dequeueReusableCell(withIdentifier: "dropdownCell", for: indexPath)
+                cell.backgroundColor = .clear
+                cell.textLabel?.textColor = .color.mainText.color
+                cell.textLabel?.text = indexPath.row == 0 ? "내 위치" : "학교"
+                return cell
+            }
+        
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
             cell.configure(title: dummyRecentSearches[indexPath.row], date: "카페")
