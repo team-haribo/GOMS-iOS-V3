@@ -25,6 +25,14 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let contentView = UIView().then {
         $0.translatesAutoresizingMaskIntoConstraints = false
     }
+    
+    let logo = UIImageView().then {
+        $0.image = UIImage(
+            named: "graylogo",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+    }
 
     let userProfile = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
@@ -37,44 +45,49 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let userProfilePencil = UIButton().then {
         $0.setImage(.image.gomsProfilePencil.image, for: .normal)
         $0.addTarget(self, action: #selector(ShowActionSheetProfilImageChange), for: .touchUpInside)
+
+        $0.layer.shadowColor = UIColor.black.cgColor
+        $0.layer.shadowOpacity = 0.25
+        $0.layer.shadowRadius = 6
+        $0.layer.shadowOffset = CGSize(width: 0, height: 3)
     }
     
     let userName = UILabel().then {
-        $0.text = ""
+        $0.text = "테스트 사용자"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .bold)
     }
     
     let userGradeDepartment = UILabel().then {
-        $0.text = ""
-        $0.textColor = .color.gomsSecondary.color
-        $0.font = .suit(size: 16, weight: .regular)
+        $0.text = "3기 | AI"
+        $0.textColor = .color.sub2.color
+        $0.font = .suit(size: 14, weight: .medium)
     }
     
     let perceptionCount = UILabel().then {
         $0.text = "지각 횟수"
-        $0.textColor = .color.sub1.color
+        $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
     
     let perceptionNum = UILabel().then {
         $0.text = "\(0)"
         $0.textColor = .color.gomsNegative.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .semibold)
     }
     
     let perceptionText = UILabel().then {
         $0.text = "번"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .semibold)
     }
     
     let themeTopLine = UIView().then {
-        $0.backgroundColor = .color.gomsDivider.color
+        $0.backgroundColor = .color.button.color
     }
     
     let themeBottomLine = UIView().then {
-        $0.backgroundColor = .color.gomsDivider.color
+        $0.backgroundColor = .color.button.color
     }
     
     let themeChangText = UILabel().then {
@@ -86,9 +99,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let themeChangRec = UIButton().then {
         $0.backgroundColor = .color.gomsTheme.color
         $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
-        $0.layer.cornerRadius = 12
+        $0.layer.cornerRadius = 8
         $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.color.gomsCoverDivider.color.cgColor
+        $0.layer.borderColor = UIColor.color.surface.color.cgColor
     }
     
     let themeChangLine = UIButton().then {
@@ -101,6 +114,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.textColor = .color.gomsSecondary.color
         $0.font = .suit(size: 16, weight: .regular)
     }
+    
+ 
     
     let themeSettingImg = UIImageView().then {
         $0.image = .image.gomsBottomButton.image
@@ -115,7 +130,28 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let cameraNowOnDescription = UILabel().then {
         $0.text = "앱을 실행하면 즉시 카메라가 켜져요"
         $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
+        $0.font = .suit(size: 14, weight: .regular)
+    }
+    
+    
+    let alarmsettingButton: UISwitch = UISwitch().then {
+        $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.onTintColor = .color.gomsPrimary.color
+        $0.tintColor = .color.sub2.color
+        $0.addTarget(self, action: #selector(switchQROn(_:)), for: .valueChanged)
+        $0.isOn = false
+    }
+    
+    let alarmText = UILabel().then {
+        $0.text = "외출제 푸쉬 알림"
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 16, weight: .semibold)
+    }
+    
+    let alarmDescription = UILabel().then {
+        $0.text = "외출할 시간이 될 때마다 알려드려요"
+        $0.textColor = .color.sub2.color
+        $0.font = .suit(size: 14, weight: .regular)
     }
     
     let cameraNowOntoggleButton: UISwitch = UISwitch().then {
@@ -135,7 +171,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let clockDescription = UILabel().then {
         $0.text = "프로필 카드에 초 단위의 시간을 나타내요"
         $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
+        $0.font = .suit(size: 14, weight: .regular)
     }
     
     let clockToggleButton: UISwitch = UISwitch().then {
@@ -198,32 +234,31 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     
     @IBAction private func ShowActionSheetClick(_ sender: UIButton) {
         updateImage(isActionSheetShowing: true)
+
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        actionSheet.addAction(UIAlertAction(title: "다크(기본)", style: .default, handler: { [weak self] _ in
-            self?.setTheme(.dark, themeText: "다크(기본)")
-            self?.updateImage(isActionSheetShowing: false)
-        }))
-        actionSheet.addAction(UIAlertAction(title: "라이트", style: .default, handler: { [weak self] _ in
-            self?.setTheme(.light, themeText: "라이트")
-            self?.updateImage(isActionSheetShowing: false)
-        }))
-        actionSheet.addAction(UIAlertAction(title: "시스템 테마 설정", style: .default, handler: { [weak self] _ in
-            self?.setTheme(.unspecified, themeText: "시스템 테마 설정")
-            self?.updateImage(isActionSheetShowing: false)
-        }))
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel, handler: { [weak self] _ in
-            self?.updateImage(isActionSheetShowing: false)
-        }))
+        actionSheet.view.tintColor = .color.blue.color
 
-        // iPad 대응: popover anchor 지정
-        if let popover = actionSheet.popoverPresentationController {
-            popover.sourceView = sender
-            popover.sourceRect = sender.bounds
-            popover.permittedArrowDirections = .any
+        let darkAction = UIAlertAction(title: "다크(기본)", style: .default) { [weak self] _ in
+            self?.setTheme(.dark, themeText: "다크(기본)")
         }
 
-        self.present(actionSheet, animated: true, completion: nil)
+        let lightAction = UIAlertAction(title: "라이트", style: .default) { [weak self] _ in
+            self?.setTheme(.light, themeText: "라이트")
+        }
+
+        let systemAction = UIAlertAction(title: "시스템 기본 설정", style: .default) { [weak self] _ in
+            self?.setTheme(.unspecified, themeText: "시스템 기본 설정")
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        actionSheet.addAction(darkAction)
+        actionSheet.addAction(lightAction)
+        actionSheet.addAction(systemAction)
+        actionSheet.addAction(cancelAction)
+
+        present(actionSheet, animated: true)
     }
 
     
@@ -336,7 +371,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-        // iPad 대응: popover anchor 지정
+      
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
@@ -471,12 +506,15 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         
         view.backgroundColor = .color.background.color
         
-        let backBarButtonItem = UIBarButtonItem(title: "돌아가기", style: .plain, target: self, action: nil)
-        self.navigationItem.backBarButtonItem = backBarButtonItem
         
         imagePickerController.delegate = self
         
         configureRefreshControl()
+
+        if let tabBarHeight = tabBarController?.tabBar.frame.height {
+            scrollView.contentInset.bottom = tabBarHeight
+            scrollView.verticalScrollIndicatorInsets.bottom = tabBarHeight
+        }
     }
     
     func configureRefreshControl () {
@@ -507,6 +545,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         view.addSubview(scrollView)
 
         [
+            logo,
             userProfile,
             userName,
             userGradeDepartment,
@@ -517,6 +556,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             passwordResetButton,
             themeTopLine,
             themeBottomLine,
+            alarmText,
+            alarmDescription,
+            alarmsettingButton,
             cameraNowOnText,
             cameraNowOnDescription,
             cameraNowOntoggleButton,
@@ -532,20 +574,28 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             logoutButton,
             withdrawalButton
         ].forEach {
-            self.scrollView.addSubview($0)
+            self.contentView.addSubview($0)
         }
     }
 
+    //Layout
+    
     public override func setLayout() {
         scrollView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
+        logo.snp.makeConstraints {
+            $0.top.equalTo(contentView.safeAreaLayoutGuide.snp.top).offset(0)
+            $0.leading.equalToSuperview().inset(20)
+            $0.width.equalTo(135)
+            $0.height.equalTo(56)
+        }
         userProfile.snp.makeConstraints {
             $0.width.equalTo(64)
             $0.height.equalTo(64)
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalToSuperview().inset(16)
+            $0.top.equalTo(logo.snp.bottom).offset(16)
         }
 
         userProfilePencil.snp.makeConstraints {
@@ -555,32 +605,27 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
 
         userName.snp.makeConstraints {
             $0.width.equalTo(100)
-            $0.height.equalTo(32)
-            $0.leading.equalTo(userProfile.snp.trailing).offset(16)
-            $0.top.equalTo(userProfile.snp.top)
+            $0.leading.equalTo(userProfile.snp.trailing).offset(12)
+            $0.top.equalTo(userProfile.snp.top).offset(12)
         }
 
         userGradeDepartment.snp.makeConstraints {
-            $0.height.equalTo(28)
             $0.leading.equalTo(userName.snp.leading)
             $0.top.equalTo(userName.snp.bottom).offset(4)
         }
 
         perceptionCount.snp.makeConstraints {
-            $0.height.equalTo(28)
             $0.trailing.equalToSuperview().inset(20)
-            $0.top.equalTo(userName.snp.top).inset(0)
+            $0.top.equalTo(userName.snp.top)
         }
 
         perceptionNum.snp.makeConstraints {
-            $0.height.equalTo(32)
             $0.trailing.equalTo(perceptionText.snp.leading).inset(-1)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
 
         perceptionText.snp.makeConstraints {
             $0.width.equalTo(17)
-            $0.height.equalTo(32)
             $0.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
@@ -626,16 +671,15 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         clockText.snp.makeConstraints {
-            $0.width.equalTo(184)
+            $0.width.equalTo(200)
             $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(25)
         }
 
         clockDescription.snp.makeConstraints {
-            $0.width.equalTo(200)
-            $0.height.equalTo(20)
             $0.leading.equalTo(clockText.snp.leading)
+            $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
             $0.top.equalTo(clockText.snp.bottom)
         }
 
@@ -644,23 +688,41 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.top.equalTo(themeChangRec.snp.bottom).offset(32)
         }
 
+        alarmText.snp.makeConstraints {
+            $0.width.equalTo(200)
+            $0.height.equalTo(28)
+            $0.leading.equalToSuperview().inset(28)
+            $0.top.equalTo(clockDescription.snp.bottom).offset(25)}
+        
+        alarmDescription.snp.makeConstraints {
+            $0.leading.equalTo(clockText.snp.leading)
+            $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
+            $0.top.equalTo(alarmText.snp.bottom)
+        }
+        
+        alarmsettingButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(28)
+            $0.top.equalTo(clockDescription.snp.bottom).offset(32)
+        }
+        
+            
         cameraNowOnText.snp.makeConstraints {
             $0.width.equalTo(184)
             $0.height.equalTo(28)
             $0.leading.equalTo(clockDescription.snp.leading)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(25)
+            $0.top.equalTo(alarmDescription.snp.bottom).offset(25)
         }
 
         cameraNowOnDescription.snp.makeConstraints {
-            $0.width.equalTo(184)
-            $0.height.equalTo(20)
             $0.leading.equalTo(cameraNowOnText.snp.leading)
+            $0.trailing.lessThanOrEqualTo(cameraNowOntoggleButton.snp.leading).offset(-8)
             $0.top.equalTo(cameraNowOnText.snp.bottom)
         }
 
         cameraNowOntoggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(35)
+            $0.trailing.equalToSuperview().inset(28)
+            $0.top.equalTo(alarmDescription.snp.bottom).offset(35)
         }
 
         passwordResetButton.snp.makeConstraints {
