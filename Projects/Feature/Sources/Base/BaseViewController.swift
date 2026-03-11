@@ -44,10 +44,18 @@ public class BaseViewController: UIViewController {
 
         navigationController?.navigationBar.isHidden = true
 
-        if navigationController?.viewControllers.first === self {
+     
+        if parent != nil {
             customNavView.isHidden = true
-        } else {
+        }
+       
+        else if let nav = navigationController,
+                nav.viewControllers.contains(self),
+                nav.viewControllers.first !== self {
             customNavView.isHidden = false
+        }
+        else {
+            customNavView.isHidden = true
         }
 
         configNavigation()
