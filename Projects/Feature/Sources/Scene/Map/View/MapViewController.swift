@@ -41,9 +41,8 @@ public final class MapViewController: UIViewController {
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
     
-    // 높이 상수 (민선이 요청 수치 반영)
     private let defaultHeight: CGFloat = 330
-    private let detailMinHeight: CGFloat = 261 // 도착/출발 아이콘까지만 보이는 높이
+    private let detailMinHeight: CGFloat = 330
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,8 +55,8 @@ public final class MapViewController: UIViewController {
 
     private func setupView() {
         view.backgroundColor = .color.background.color
-        // 레이어 순서: 기본 시트 -> 최근검색 -> 상세뷰 순서로 쌓음
-        [bottomSheetView, recentSearchView, tabBar, searchBar, popupView, routeSelectionView, placeDetailView].forEach {
+        // 탭바가 항상 맨 위에 오도록 마지막에 추가
+        [bottomSheetView, recentSearchView, searchBar, popupView, routeSelectionView, placeDetailView, tabBar].forEach {
             view.addSubview($0)
         }
     }
@@ -90,7 +89,7 @@ public final class MapViewController: UIViewController {
         
         placeDetailView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            self.detailSheetHeight = $0.height.equalTo(0).constraint // 초기값 0
+            self.detailSheetHeight = $0.height.equalTo(0).constraint
         }
         
         popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -119,11 +118,6 @@ public final class MapViewController: UIViewController {
         
         let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         placeDetailView.addGestureRecognizer(detailSheetPan)
-        
-        // 상세뷰 터치 간섭 방지
-        let detailTap = UITapGestureRecognizer(target: nil, action: nil)
-        detailTap.cancelsTouchesInView = false
-        placeDetailView.addGestureRecognizer(detailTap)
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -132,7 +126,7 @@ public final class MapViewController: UIViewController {
         let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
         let newHeight = currentHeight - translation.y
         
-        let minH = isDetail ? detailMinHeight : defaultHeight
+        let minH = defaultHeight
         let gap = dummyReviews.isEmpty ? 233 : 43
         let maxH = view.frame.height - (searchBar.frame.maxY + CGFloat(gap))
         
@@ -151,18 +145,14 @@ public final class MapViewController: UIViewController {
         }
         gesture.setTranslation(.zero, in: view)
     }
+    
 
     private func showDetailView() {
-        // 기존 바텀시트를 숨겨서 겹침 방지
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
-        
         view.layoutIfNeeded()
-        detailSheetHeight?.update(offset: detailMinHeight) // 261로 시작
-        
-        UIView.animate(withDuration: 0.3) {
-            self.view.layoutIfNeeded()
-        }
+        detailSheetHeight?.update(offset: detailMinHeight)
+        UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
     }
 
     @objc private func hideDetailView() {
@@ -171,7 +161,7 @@ public final class MapViewController: UIViewController {
             self.view.layoutIfNeeded()
         } completion: { _ in
             self.placeDetailView.isHidden = true
-            self.bottomSheetView.isHidden = false // 다시 기본 시트 보여줌
+            self.bottomSheetView.isHidden = false
         }
     }
 
@@ -183,22 +173,23 @@ public final class MapViewController: UIViewController {
     }
 
     @objc private func didTapSearchBar() {
+        // [수정] 검색바 클릭 시 상세 뷰가 떠 있다면 내림
+        if !placeDetailView.isHidden {
+            hideDetailView()
+        }
         searchBar.updateState(.search)
         recentSearchView.isHidden = false
     }
 
     @objc private func didTapArriveRoute() {
         routeSelectionView.isHidden = false
-        routeSelectionView.updateLocation(start: "출발 위치를 선택해주세요", end: "짬뽕관 광주송정선운점")
     }
 
     @objc private func didTapStartRoute() {
         routeSelectionView.isHidden = false
-        routeSelectionView.updateLocation(start: "짬뽕관 광주송정선운점", end: "도착 위치를 선택해주세요")
     }
 }
 
-// MARK: - TableView Extension
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == routeSelectionView.dropdownTableView { return 2 }
