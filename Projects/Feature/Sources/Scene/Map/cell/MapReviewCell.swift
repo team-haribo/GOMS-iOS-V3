@@ -16,48 +16,47 @@ public final class MapReviewCell: UITableViewCell {
     public var onDeleteTap: (() -> Void)?
     public var onReportTap: (() -> Void)?
     
-    // MARK: - UI Components
     private let profileImageView = UIImageView().then {
         $0.image = UIImage(systemName: "person.circle.fill")
-        $0.tintColor = .lightGray
+        $0.tintColor = .color.sub2.color
         $0.layer.cornerRadius = 24
         $0.clipsToBounds = true
     }
     
     private let nameLabel = UILabel().then {
-        $0.textColor = .white // 이미지 가이드 반영: 흰색
-        $0.font = .systemFont(ofSize: 20, weight: .bold)
+        $0.textColor = .color.sub1.color
+        $0.font = UIFont(name: "SUIT-SemiBold", size: 20) ?? .systemFont(ofSize: 20, weight: .bold)
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = UIColor(red: 176/255, green: 176/255, blue: 176/255, alpha: 1)
-        $0.font = .systemFont(ofSize: 16)
+        $0.textColor = .color.sub1.color
+        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
     }
     
     private let contentLabel = UILabel().then {
-        $0.textColor = .white
-        $0.font = .systemFont(ofSize: 16)
+        $0.textColor = .color.sub1.color
+        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
         $0.numberOfLines = 0
     }
     
     private let dateLabel = UILabel().then {
-        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
-        $0.font = .systemFont(ofSize: 15)
+        $0.textColor = .color.sub2.color
+        $0.font = UIFont(name: "SUIT-Medium", size: 15) ?? .systemFont(ofSize: 15)
     }
     
     public let reportButton = UIButton().then {
-        $0.setImage(UIImage(named: "Warning", in: Bundle.module, compatibleWith: nil), for: .normal)
+        $0.setImage(UIImage(named: "Warning", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.sub2.color // sub2 색상 적용
     }
     
     public let deleteButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(named: "Trash", in: Bundle.module, compatibleWith: nil), for: .normal)
-        $0.tintColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
+        $0.setImage(UIImage(named: "Trash", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.sub2.color // sub2 색상 적용
         $0.isHidden = true
     }
     
     private let cellDivider = UIView().then {
-        $0.backgroundColor = UIColor(red: 45/255, green: 45/255, blue: 45/255, alpha: 1)
+        $0.backgroundColor = .color.sub2.color
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -104,7 +103,7 @@ public final class MapReviewCell: UITableViewCell {
             $0.snp.makeConstraints { make in
                 make.top.equalTo(profileImageView).offset(4)
                 make.trailing.equalToSuperview().inset(16)
-                make.size.equalTo(28)
+                make.size.equalTo(24) // 24*24로 수정
             }
         }
         cellDivider.snp.makeConstraints {
