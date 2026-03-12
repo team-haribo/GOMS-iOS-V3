@@ -13,7 +13,9 @@ import Then
 
 public class ProfileButton: UIButton {
     
-    let iconImage = UIImageView()
+    let iconImage = UIImageView().then {
+        $0.contentMode = .scaleAspectFit
+    }
     
     public let buttonTitle = UILabel().then {
         $0.textColor = .color.mainText.color
@@ -39,23 +41,30 @@ public class ProfileButton: UIButton {
         
         iconImage.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.height.equalTo(24)
-            $0.leading.equalToSuperview().inset(8)
+            $0.width.height.equalTo(24)
+            $0.leading.equalToSuperview().inset(16)
         }
         
         buttonTitle.snp.makeConstraints {
-            $0.leading.equalTo(iconImage.snp.trailing).offset(8)
+            $0.leading.equalTo(iconImage.snp.trailing).offset(12)
             $0.centerY.equalToSuperview()
         }
         
         arrowIcon.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.trailing.equalToSuperview().inset(8)
+            $0.trailing.equalToSuperview().inset(16)
         }
     }
     
     private func setButton(title: String, icon: UIImage) {
         buttonTitle.text = title
         iconImage.image = icon
+
+      
+        if title == "회원탈퇴" {
+            iconImage.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+        } else {
+            iconImage.transform = .identity
+        }
     }
 }
