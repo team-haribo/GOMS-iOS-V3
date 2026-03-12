@@ -33,7 +33,9 @@ public class BaseViewController: UIViewController {
 
         navigationController?.navigationBar.isHidden = true
         setupKeyboardEvent()
+        
         setupCustomNavigation()
+
         configureUI()
         addView()
         setLayout()
@@ -44,17 +46,28 @@ public class BaseViewController: UIViewController {
 
         navigationController?.navigationBar.isHidden = true
 
-     
-        if parent != nil {
-            customNavView.isHidden = true
-        }
-       
-        else if let nav = navigationController,
-                nav.viewControllers.contains(self),
-                nav.viewControllers.first !== self {
-            customNavView.isHidden = false
-        }
-        else {
+        if let nav = navigationController {
+
+        
+            if self is MainViewController {
+                customNavView.isHidden = true
+            }
+
+            
+            else if parent is MainViewController {
+                customNavView.isHidden = true
+            }
+
+    
+            else if nav.viewControllers.count > 1 {
+                customNavView.isHidden = false
+            }
+
+            else {
+                customNavView.isHidden = true
+            }
+
+        } else {
             customNavView.isHidden = true
         }
 

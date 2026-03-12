@@ -125,23 +125,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - Selectors
     @objc func settingButtonTapped() {
         settingButton.isUserInteractionEnabled = false
-
-        let vc = UserProfileViewController()
-        self.profileVC = vc
-
-        addChild(vc)
-        view.addSubview(vc.view)
-
-        vc.view.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
-        }
-
-        vc.didMove(toParent: self)
+        showProfileOverlay()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.settingButton.isUserInteractionEnabled = true
+            self?.settingButton.isUserInteractionEnabled = true
         }
     }
 
@@ -162,18 +149,41 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
     }
 
-    func selectHomeTab() {
-        selectedTab = .home
+    private func showProfileOverlay() {
+        if profileVC != nil { return }
 
-        if let profile = profileVC {
-            profile.willMove(toParent: nil)
-            profile.view.removeFromSuperview()
-            profile.removeFromParent()
-            profileVC = nil
+        let vc = UserProfileViewController()
+        profileVC = vc
+
+        addChild(vc)
+        view.addSubview(vc.view)
+
+        vc.view.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
         }
+
+        vc.didMove(toParent: self)
+        qrButton.isHidden = true
+        view.bringSubviewToFront(tabBar)
+    }
+
+    private func hideProfileOverlay() {
+        guard let profile = profileVC else { return }
+
+        profile.willMove(toParent: nil)
+        profile.view.removeFromSuperview()
+        profile.removeFromParent()
+        profileVC = nil
+    }
+
+    func selectHomeTab() {
+        hideProfileOverlay()
+        selectedTab = .home
     }
 
     func selectMapTab() {
+        hideProfileOverlay()
         selectedTab = .map
     }
 
@@ -183,9 +193,16 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         scrollView.isHidden = !isHome
         mapContainerView.isHidden = isHome
         qrButton.isHidden = !isHome
+        if profileVC != nil {
+            qrButton.isHidden = true
+        }
 
         view.bringSubviewToFront(tabBar)
         view.bringSubviewToFront(qrButton)
+        if let profileView = profileVC?.view {
+            view.bringSubviewToFront(profileView)
+            view.bringSubviewToFront(tabBar)
+        }
     }
 
     private func bindTabBar() {
@@ -196,30 +213,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             case .home:
                 self.tabBar.selectedTab = .home
                 self.selectHomeTab()
-                if let profile = self.profileVC {
-                    profile.willMove(toParent: nil)
-                    profile.view.removeFromSuperview()
-                    profile.removeFromParent()
-                    self.profileVC = nil
-                }
             case .map:
                 self.tabBar.selectedTab = .map
                 self.selectMapTab()
             case .profile:
-                if self.profileVC == nil {
-                    let vc = UserProfileViewController()
-                    self.profileVC = vc
-
-                    self.addChild(vc)
-                    self.view.addSubview(vc.view)
-
-                    vc.view.snp.makeConstraints {
-                        $0.top.leading.trailing.equalToSuperview()
-                        $0.bottom.equalTo(self.tabBar.snp.top)
-                    }
-
-                    vc.didMove(toParent: self)
-                }
+                self.tabBar.selectedTab = .profile
+                self.showProfileOverlay()
             }
         }
     }
