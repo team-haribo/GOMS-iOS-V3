@@ -25,7 +25,8 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     let passwordErrorLabel = UILabel().then {
         $0.text = "잘못된 비밀번호입니다."
         $0.textColor = .color.gomsNegative.color
-        $0.font = .suit(size: 16, weight: .medium)
+        $0.font = .suit(size: 15, weight: .medium)
+        $0.textAlignment = .right
         $0.isHidden = true
     }
     
@@ -36,7 +37,9 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     }
     
     lazy var visiblePasswordButton = UIButton().then {
-        $0.setImage(.image.on.image, for: .normal)
+        $0.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = UIColor.color.sub2.color
+        $0.adjustsImageWhenHighlighted = false
         $0.addTarget(self, action: #selector(visiblePasswordButtonTapped), for: .touchUpInside)
         $0.isEnabled = true
     }
@@ -45,8 +48,6 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         $0.addTarget(self, action: #selector(doneButtonTapped), for: .touchUpInside)
     }
     
-    private var doneButtonBottomConstraint: Constraint?
-    private var textFieldBottomConstraint: Constraint?
     
     @objc func doneButtonTapped() {
         let defaults = UserDefaults.standard
@@ -61,7 +62,7 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     }
     
     func passwordErrorUI() {
-        passwordTextField.setPlaceholderColor(.color.gomsNegative.color)
+        passwordTextField.setPlaceholderColor(UIColor.color.gomsNegative.color)
         passwordErrorLabel.isHidden = false
         passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
         passwordTextField.layer.borderWidth = 1
@@ -72,10 +73,16 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         passwordTextField.isSelected.toggle()
         
         if passwordTextField.isSelected {
-            visiblePasswordButton.setImage(.image.off.image, for: .normal)
+            visiblePasswordButton.setImage(UIImage.image.off.image.withRenderingMode(.alwaysTemplate), for: .normal)
+            visiblePasswordButton.tintColor = UIColor.color.sub2.color
         } else {
-            visiblePasswordButton.setImage(.image.on.image, for: .normal)
+            visiblePasswordButton.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+            visiblePasswordButton.tintColor = UIColor.color.sub2.color
         }
+    }
+    
+    @objc private func backButtonTapped() {
+        navigationController?.popViewController(animated: true)
     }
     
     public override func viewDidLoad() {
@@ -87,9 +94,7 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
-    public override func configNavigation() {
-        navigationController?.navigationBar.tintColor = .color.admin.color
-    }
+
     
     public override func addView() {
         [
@@ -105,11 +110,11 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     public override func setLayout() {
         navigationTitle.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.width.equalTo(183)
             $0.top.equalToSuperview().inset(100)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.trailing.lessThanOrEqualToSuperview().inset(24)
         }
-        
+
         passwordTextField.snp.makeConstraints {
             $0.height.equalTo(64)
             $0.width.equalTo(335)
@@ -117,45 +122,51 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
             $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
         }
-        
+
         passwordErrorLabel.snp.makeConstraints {
             $0.height.equalTo(48)
             $0.top.equalTo(passwordTextField.snp.bottom)
-            $0.leading.equalTo(bounds.width * 0.07)
+            $0.leading.equalTo(passwordTextField.snp.leading)
+            $0.trailing.equalTo(passwordTextField.snp.trailing)
         }
-        
+
         doneButton.snp.makeConstraints {
-            doneButtonBottomConstraint = $0.bottom.equalToSuperview().inset(bounds.height * 0.19).constraint
             $0.height.equalTo(48)
-            $0.width.equalTo(335)
-            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
-            $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
     
     public override func keyboardWillShow(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
-            return
+        guard
+            let userInfo = notification.userInfo,
+            let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
+
+        doneButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
         }
-        
-        let keyboardHeight = keyboardFrame.height
-        
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.doneButtonBottomConstraint?.update(inset: keyboardHeight + 13)
-            self.textFieldBottomConstraint?.update(inset: keyboardHeight + (self.bounds.height * 0.2))
-            
+
+        UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
         }
     }
-    
+
     public override func keyboardWillHide(_ notification: Notification) {
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.doneButtonBottomConstraint?.update(inset: self.bounds.height * 0.19)
-            self.textFieldBottomConstraint?.update(inset: self.bounds.height * 0.45)
-            
+        guard
+            let userInfo = notification.userInfo,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        doneButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
+
+        UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
         }
     }
@@ -172,5 +183,3 @@ extension ProfileChangRePasswordViewController: UITextFieldDelegate {
         return true
     }
 }
-
-
