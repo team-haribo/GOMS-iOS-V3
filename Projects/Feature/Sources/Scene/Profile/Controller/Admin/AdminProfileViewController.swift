@@ -146,7 +146,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
     }
     
-    lazy var logoutButton = ProfileButton(icon: .image.logout.image, title: "로그아웃").then {
+    lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
         $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
     }
     

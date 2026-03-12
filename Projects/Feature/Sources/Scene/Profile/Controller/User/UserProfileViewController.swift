@@ -104,14 +104,14 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     
     let themeSettingText = UILabel().then {
         $0.text = ""
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .regular)
     }
     
  
     
     let themeSettingImg = UIImageView().then {
-        $0.image = .image.gomsBottomButton.image
+        $0.image = .image.under.image
     }
     
     let cameraNowOnText = UILabel().then {
