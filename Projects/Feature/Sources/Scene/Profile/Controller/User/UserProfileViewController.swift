@@ -18,13 +18,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     var cancellables = Set<AnyCancellable>()
     let refreshControl = UIRefreshControl()
     
-    let scrollView = UIScrollView().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
-    }
-
-    let contentView = UIView().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
-    }
     
     let logo = UIImageView().then {
         $0.image = UIImage(
@@ -131,6 +124,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.text = "앱을 실행하면 즉시 카메라가 켜져요"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .regular)
+        $0.numberOfLines = 0
     }
     
     
@@ -152,6 +146,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.text = "외출할 시간이 될 때마다 알려드려요"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .regular)
+        $0.numberOfLines = 0
     }
     
     let cameraNowOntoggleButton: UISwitch = UISwitch().then {
@@ -172,6 +167,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.text = "프로필 카드에 초 단위의 시간을 나타내요"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .regular)
+        $0.numberOfLines = 0
     }
     
     let clockToggleButton: UISwitch = UISwitch().then {
@@ -182,15 +178,15 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.isOn = false
     }
     
-    lazy var passwordResetButton = ProfileButton(icon: .image.passwordReset.image, title: "비밀번호 재설정").then {
+    lazy var passwordResetButton = ProfileButton(icon: .image.settingIcon.image, title: "비밀번호 재설정").then {
         $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
     }
     
-    lazy var logoutButton = ProfileButton(icon: .image.logout.image, title: "로그아웃").then {
+    lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
         $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
     }
     
-    lazy var withdrawalButton = ProfileButton(icon: .image.withdrawal.image, title: "회원탈퇴").then {
+    lazy var withdrawalButton = ProfileButton(icon: .image.cancelUser.image, title: "회원탈퇴").then {
         $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
     }
     
@@ -424,29 +420,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         dismiss(animated: true, completion: nil)
     }
 
-    func setupScrollView() {
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-
-        scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        contentView.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView.contentLayoutGuide)
-            make.width.equalTo(scrollView.frameLayoutGuide)
-        }
-
-        contentView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(view.snp.height).priority(.low)
-        }
-
-        addView()
-    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
         applySavedTheme()
         self.navigationController?.navigationBar.prefersLargeTitles = false
         profileViewModel.loadProfileInfo { success, authority in
@@ -511,14 +487,10 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         
         configureRefreshControl()
 
-        if let tabBarHeight = tabBarController?.tabBar.frame.height {
-            scrollView.contentInset.bottom = tabBarHeight
-            scrollView.verticalScrollIndicatorInsets.bottom = tabBarHeight
-        }
+        
     }
     
     func configureRefreshControl () {
-        scrollView.refreshControl = refreshControl
         refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
         refreshControl.tintColor = .color.gomsPrimary.color
     }
@@ -542,8 +514,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     public override func addView() {
-        view.addSubview(scrollView)
-
         [
             logo,
             userProfile,
@@ -571,22 +541,17 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             themeSettingImg,
             themeSettingText,
             themeChangLine,
-            logoutButton,
             withdrawalButton
         ].forEach {
-            self.contentView.addSubview($0)
+            self.view.addSubview($0)
         }
     }
 
     //Layout
     
     public override func setLayout() {
-        scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
         logo.snp.makeConstraints {
-            $0.top.equalTo(contentView.safeAreaLayoutGuide.snp.top).offset(0)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
             $0.leading.equalToSuperview().inset(20)
             $0.width.equalTo(135)
             $0.height.equalTo(56)
@@ -604,8 +569,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         userName.snp.makeConstraints {
-            $0.width.equalTo(100)
             $0.leading.equalTo(userProfile.snp.trailing).offset(12)
+            $0.trailing.lessThanOrEqualTo(perceptionCount.snp.leading).offset(-8)
             $0.top.equalTo(userProfile.snp.top).offset(12)
         }
 
@@ -671,76 +636,72 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         clockText.snp.makeConstraints {
-            $0.width.equalTo(200)
-            $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
-            $0.top.equalTo(themeChangRec.snp.bottom).offset(25)
+            $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
 
         clockDescription.snp.makeConstraints {
             $0.leading.equalTo(clockText.snp.leading)
             $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
-            $0.top.equalTo(clockText.snp.bottom)
+            $0.top.equalTo(clockText.snp.bottom).offset(4)
         }
 
         clockToggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(themeChangRec.snp.bottom).offset(32)
+            $0.centerY.equalTo(clockText)
         }
 
         alarmText.snp.makeConstraints {
-            $0.width.equalTo(200)
-            $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(25)}
-        
+            $0.top.equalTo(clockDescription.snp.bottom).offset(24)
+        }
         alarmDescription.snp.makeConstraints {
-            $0.leading.equalTo(clockText.snp.leading)
-            $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
-            $0.top.equalTo(alarmText.snp.bottom)
+            $0.leading.equalTo(alarmText.snp.leading)
+            $0.trailing.lessThanOrEqualTo(alarmsettingButton.snp.leading).offset(-8)
+            $0.top.equalTo(alarmText.snp.bottom).offset(4)
         }
         
         alarmsettingButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(32)
+            $0.centerY.equalTo(alarmText)
         }
         
             
         cameraNowOnText.snp.makeConstraints {
             $0.width.equalTo(184)
             $0.height.equalTo(28)
-            $0.leading.equalTo(clockDescription.snp.leading)
-            $0.top.equalTo(alarmDescription.snp.bottom).offset(25)
+            $0.leading.equalToSuperview().inset(28)
+            $0.top.equalTo(alarmDescription.snp.bottom).offset(25.5)
         }
 
         cameraNowOnDescription.snp.makeConstraints {
-            $0.leading.equalTo(cameraNowOnText.snp.leading)
+            $0.leading.equalToSuperview().inset(28)
             $0.trailing.lessThanOrEqualTo(cameraNowOntoggleButton.snp.leading).offset(-8)
-            $0.top.equalTo(cameraNowOnText.snp.bottom)
+            $0.top.equalTo(cameraNowOnText.snp.bottom).offset(4)
         }
 
         cameraNowOntoggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(alarmDescription.snp.bottom).offset(35)
+            $0.centerY.equalTo(cameraNowOnText)
         }
 
         passwordResetButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(bounds.height * 0.08)
-            $0.top.equalTo(themeBottomLine.snp.bottom).offset(bounds.height * 0.01)
+            $0.height.equalTo(48)
+            $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
         }
 
         logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(22)
-            $0.height.equalTo(bounds.height * 0.08)
-            $0.top.equalTo(passwordResetButton.snp.bottom)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(48)
+            $0.top.equalTo(passwordResetButton.snp.bottom).offset(0)
         }
 
         withdrawalButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(bounds.height * 0.08)
+            $0.height.equalTo(48)
             $0.top.equalTo(logoutButton.snp.bottom)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
     }
 }
