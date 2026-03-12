@@ -41,7 +41,7 @@ public final class NewPasswordViewController: BaseViewController {
         $0.isHidden = true
     }
 
-    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호").then {
+    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "새패스워드뷰").then {
         $0.isSecureTextEntry = true
         $0.rightView = onPasswordButton
         $0.rightViewMode = .always
