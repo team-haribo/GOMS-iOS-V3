@@ -25,7 +25,8 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     let passwordErrorLabel = UILabel().then {
         $0.text = "잘못된 비밀번호입니다."
         $0.textColor = .color.gomsNegative.color
-        $0.font = .suit(size: 16, weight: .medium)
+        $0.font = .suit(size: 15, weight: .medium)
+        $0.textAlignment = .right
         $0.isHidden = true
     }
     
@@ -36,7 +37,9 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     }
     
     lazy var visiblePasswordButton = UIButton().then {
-        $0.setImage(.image.on.image, for: .normal)
+        $0.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = UIColor.color.sub2.color
+        $0.adjustsImageWhenHighlighted = false
         $0.addTarget(self, action: #selector(visiblePasswordButtonTapped), for: .touchUpInside)
         $0.isEnabled = true
     }
@@ -59,7 +62,7 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     }
     
     func passwordErrorUI() {
-        passwordTextField.setPlaceholderColor(.color.gomsNegative.color)
+        passwordTextField.setPlaceholderColor(UIColor.color.gomsNegative.color)
         passwordErrorLabel.isHidden = false
         passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
         passwordTextField.layer.borderWidth = 1
@@ -70,9 +73,11 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         passwordTextField.isSelected.toggle()
         
         if passwordTextField.isSelected {
-            visiblePasswordButton.setImage(.image.off.image, for: .normal)
+            visiblePasswordButton.setImage(UIImage.image.off.image.withRenderingMode(.alwaysTemplate), for: .normal)
+            visiblePasswordButton.tintColor = UIColor.color.sub2.color
         } else {
-            visiblePasswordButton.setImage(.image.on.image, for: .normal)
+            visiblePasswordButton.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+            visiblePasswordButton.tintColor = UIColor.color.sub2.color
         }
     }
     
@@ -89,19 +94,7 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
-    public override func configNavigation() {
-        super.configNavigation()
-        navigationController?.navigationBar.prefersLargeTitles = false
-        navigationItem.title = "비밀번호 재설정"
 
-        let backButton = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
-            style: .plain,
-            target: self,
-            action: #selector(backButtonTapped)
-        )
-        navigationItem.leftBarButtonItem = backButton
-    }
     
     public override func addView() {
         [
@@ -117,9 +110,9 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     public override func setLayout() {
         navigationTitle.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.width.equalTo(183)
             $0.top.equalToSuperview().inset(100)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.trailing.lessThanOrEqualToSuperview().inset(24)
         }
 
         passwordTextField.snp.makeConstraints {
@@ -133,7 +126,8 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
         passwordErrorLabel.snp.makeConstraints {
             $0.height.equalTo(48)
             $0.top.equalTo(passwordTextField.snp.bottom)
-            $0.leading.equalTo(bounds.width * 0.07)
+            $0.leading.equalTo(passwordTextField.snp.leading)
+            $0.trailing.equalTo(passwordTextField.snp.trailing)
         }
 
         doneButton.snp.makeConstraints {
@@ -189,4 +183,3 @@ extension ProfileChangRePasswordViewController: UITextFieldDelegate {
         return true
     }
 }
-
