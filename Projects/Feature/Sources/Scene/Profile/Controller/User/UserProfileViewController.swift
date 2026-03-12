@@ -178,7 +178,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.isOn = false
     }
     
-    lazy var passwordResetButton = ProfileButton(icon: .image.settingIcon.image, title: "비밀번호 재설정").then {
+    lazy var passwordResetButton = ProfileButton(icon: .image.satting.image, title: "비밀번호 재설정").then {
         $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
     }
     
