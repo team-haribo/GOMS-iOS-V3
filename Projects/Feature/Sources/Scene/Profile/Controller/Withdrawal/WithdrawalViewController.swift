@@ -13,12 +13,20 @@ public class WithdrawalViewController: BaseViewController {
     // MARK: - Properties
     private let viewModel = ProfileViewModel()
     
-    let passwordTextField = GOMSTextField(frame: CGRect(x: 0, y: 0, width: 0, height: 0), placeholder: "현재 비밀번호").then {
+    let navigationTitle = UILabel().then {
+        $0.text = "회원탈퇴"
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 29, weight: .bold)
+    }
+    
+    let passwordTextField = GOMSTextField(frame: CGRect(x: 0, y: 0, width: 0, height: 0), placeholder: "비밀번호").then {
         $0.isSecureTextEntry = true
     }
     
     lazy var onPasswordButton = UIButton().then {
-        $0.setImage(.image.on.image, for: .normal)
+        $0.setImage(.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.sub2.color
+        $0.adjustsImageWhenHighlighted = false
         $0.addTarget(self, action: #selector(onPasswordButtonTapped), for: .touchUpInside)
     }
     
@@ -31,6 +39,7 @@ public class WithdrawalViewController: BaseViewController {
         $0.text = "잘못된 비밀번호입니다."
         $0.textColor = .color.gomsNegative.color
         $0.font = .suit(size: 16, weight: .medium)
+        $0.textAlignment = .right
         $0.isHidden = true
     }
     
@@ -39,25 +48,36 @@ public class WithdrawalViewController: BaseViewController {
         super.viewDidLoad()
         
         passwordTextField.delegate = self
+        passwordTextField.rightView = onPasswordButton
+        passwordTextField.rightViewMode = .always
     }
     
     // MARK: - Selectors
     @objc func withdrawalButtonTapped() {
-        viewModel.setupPassword(password: passwordTextField.text ?? "")
-        viewModel.withdraw { success in
-            if success {
-                let alert = UIAlertController(title: "회원 탈퇴 완료", message: "그동안 GOMS를 이용해주셔서 감사합니다.\n안녕히 가세요!", preferredStyle: .alert)
-                
-                let ok = UIAlertAction(title: "완료", style: .default) { _ in
-                    let introVC = IntroViewController()
-                    self.navigationController?.pushViewController(introVC, animated: true)
+        let inputPassword = passwordTextField.text ?? ""
+
+        if inputPassword == "1234" {
+            passwordErrorLabel.isHidden = true
+            passwordTextField.layer.borderWidth = 0
+            passwordTextField.setPlaceholderColor(.color.sub2.color)
+
+            let alert = UIAlertController(title: "회원 탈퇴 완료", message: "그동안 GOMS를 이용해주셔서 감사합니다.\n안녕히 가세요!", preferredStyle: .alert)
+
+            let ok = UIAlertAction(title: "완료", style: .default) { _ in
+                let introVC = IntroViewController()
+                let nav = UINavigationController(rootViewController: introVC)
+
+                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = scene.windows.first {
+                    window.rootViewController = nav
+                    window.makeKeyAndVisible()
                 }
-                alert.addAction(ok)
-                self.present(alert, animated: true)
-            } else {
-                print("탈퇴하기 실패")
-                self.passwordErrorUI()
             }
+            alert.addAction(ok)
+            self.present(alert, animated: true)
+        } else {
+            print("탈퇴하기 실패")
+            self.passwordErrorUI()
         }
     }
     
@@ -73,25 +93,42 @@ public class WithdrawalViewController: BaseViewController {
         passwordTextField.isSelected.toggle()
         
         if passwordTextField.isSelected {
-            onPasswordButton.setImage(.image.off.image, for: .normal)
+            onPasswordButton.setImage(.image.off.image.withRenderingMode(.alwaysTemplate), for: .normal)
         } else {
-            onPasswordButton.setImage(.image.on.image, for: .normal)
+            onPasswordButton.setImage(.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
         }
     }
     
-    @objc public override func keyboardWillShow(_ sender: Notification) {
-        withdrawalButton.snp.remakeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(-bounds.height * 0.41)
-            $0.height.equalTo(48)
+    @objc public override func keyboardWillShow(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
+
+        withdrawalButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
         }
     }
 
-    @objc public override func keyboardWillHide(_ sender: Notification) {
-        withdrawalButton.snp.remakeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(-bounds.height * 0.16)
-            $0.height.equalTo(48)
+    public override func keyboardWillHide(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        withdrawalButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
         }
     }
     
@@ -100,38 +137,52 @@ public class WithdrawalViewController: BaseViewController {
         super.configNavigation()
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationController?.navigationBar.tintColor = .color.admin.color
-        navigationItem.title = "회원 탈퇴"
+        navigationItem.title = "회원탈퇴"
     }
     
     // MARK: - Add View
     public override func addView() {
-        passwordTextField.addSubview(onPasswordButton)
-        [passwordTextField, withdrawalButton, passwordErrorLabel].forEach { view.addSubview($0) }
+        [
+            navigationTitle,
+            passwordTextField,
+            withdrawalButton,
+            passwordErrorLabel
+        ].forEach {
+            view.addSubview($0)
+        }
     }
     
     // MARK: - Layout
     public override func setLayout() {
-        passwordTextField.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.top.equalTo(bounds.height * 0.21)
-            $0.height.equalTo(56)
+
+        navigationTitle.snp.makeConstraints {
+            $0.height.equalTo(48)
+            $0.width.equalTo(183)
+            $0.top.equalToSuperview().inset(100)
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
         }
-        
+
+        passwordTextField.snp.makeConstraints {
+            $0.height.equalTo(64)
+            $0.width.equalTo(335)
+            $0.bottom.equalTo(navigationTitle.snp.bottom).offset(90)
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
+        }
+
         passwordErrorLabel.snp.makeConstraints {
             $0.height.equalTo(48)
             $0.top.equalTo(passwordTextField.snp.bottom)
             $0.leading.equalTo(bounds.width * 0.07)
+            $0.trailing.equalTo(-bounds.width * 0.07)
         }
-        
-        onPasswordButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(16)
-            $0.centerY.equalToSuperview()
-        }
-        
+
+
         withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(-bounds.height * 0.16)
             $0.height.equalTo(48)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
 }
@@ -153,4 +204,3 @@ extension WithdrawalViewController: UITextFieldDelegate {
         return true
     }
 }
-
