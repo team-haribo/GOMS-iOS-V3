@@ -18,7 +18,14 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
         nameLabel.text = "김민솔"
         studentInfoLabel.text = "8기 | AI"
         outingTime.text = "10:31에 외출"
+
         profileImageView.image = .image.profile.image
+        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.clipsToBounds = true
+
+        // ensure circular image even before layout pass
+        layoutIfNeeded()
+        profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
     }
     
     // MARK: - Properties

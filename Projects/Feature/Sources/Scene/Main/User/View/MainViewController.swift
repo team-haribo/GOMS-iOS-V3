@@ -93,7 +93,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         $0.isScrollEnabled = true
         $0.showsHorizontalScrollIndicator = false
         $0.showsVerticalScrollIndicator = true
-        $0.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: -0)
+       
         $0.backgroundColor = .clear
     }
 
@@ -494,11 +494,15 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     func setupCountLable() {
-        let attributedString = NSMutableAttributedString(string: "\(self.mainViewModel.outingListDatas.count)명이 외출 중")
-        let range = (attributedString.string as NSString).range(of: "\(self.mainViewModel.outingListDatas.count)")
+        let count = mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
+
+        let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
+        let range = (attributedString.string as NSString).range(of: "\(count)")
+
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: range)
         attributedString.addAttribute(.font, value: UIFont.suit(size: 14, weight: .medium), range: range)
-        self.outingCountLabel.attributedText = attributedString
+
+        outingCountLabel.attributedText = attributedString
     }
 
     // MARK: - Configure UI
@@ -608,7 +612,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         outingStatusCollectionView.snp.makeConstraints {
             $0.top.equalTo(outingStatusLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
     }
@@ -649,7 +653,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         if collectionView == latecomerCollectionView {
             return mainViewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
-            return mainViewModel.outingListDatas.count
+            
+            return mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
         }
         return 0
     }
@@ -662,8 +667,15 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
-            let data = mainViewModel.outingListDatas[indexPath.row]
-            cell.configure(with: data)
+
+            if mainViewModel.outingListDatas.isEmpty {
+                // dummy UI
+                cell.configureDummy()
+            } else {
+                let data = mainViewModel.outingListDatas[indexPath.row]
+                cell.configure(with: data)
+            }
+
             return cell
         }
         return UICollectionViewCell()
@@ -678,8 +690,8 @@ extension MainViewController {
             let height: CGFloat = 136
             return CGSize(width: width, height: height)
         } else if collectionView == outingStatusCollectionView {
-            let width = bounds.width * 0.9
-            let height: CGFloat = 50
+            let width = collectionView.bounds.width
+            let height: CGFloat = 44
             return CGSize(width: width, height: height)
         }
         return CGSize(width: 0, height: 0)
@@ -692,5 +704,28 @@ extension MainViewController {
             return 0
         }
         return 0
+    }
+
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        if collectionView == outingStatusCollectionView {
+            return 4
+        }
+        return 10
+    }
+
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        insetForSectionAt section: Int
+    ) -> UIEdgeInsets {
+        if collectionView == outingStatusCollectionView {
+            // match design spacing (same as outer layout)
+            return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
+        }
+        return .zero
     }
 }
