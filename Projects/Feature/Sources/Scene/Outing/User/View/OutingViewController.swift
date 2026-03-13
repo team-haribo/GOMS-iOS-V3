@@ -46,6 +46,12 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         $0.textAlignment = .left
     }
     
+    private let searchResultLabel = UILabel().then {
+        $0.text = "검색 결과"
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 18, weight: .semibold)
+    }
+    
     lazy var outingListCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout.init()).then {
         $0.backgroundColor = .clear
         $0.isScrollEnabled = true
@@ -189,7 +195,7 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
     
     // MARK: - Add View
     public override func addView() {
-        [searchTitle, searchTextField, outingListCollectionView, coffeeIcon, outingNilLabel, qrButton].forEach { view.addSubview($0) }
+        [searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel, qrButton].forEach { view.addSubview($0) }
     }
     
     // MARK: - Layout
@@ -208,8 +214,14 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
             $0.height.equalTo(48)
         }
         
+        searchResultLabel.snp.makeConstraints {
+            $0.top.equalTo(searchTextField.snp.bottom).offset(24)
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.height.equalTo(24)
+        }
+        
         outingListCollectionView.snp.makeConstraints {
-            $0.top.equalTo(searchTextField.snp.bottom).offset(16)
+            $0.top.equalTo(searchResultLabel.snp.bottom).offset(8)
             $0.leading.equalTo(bounds.width * 0.05)
             $0.trailing.equalTo(-(bounds.width * 0.05))
             $0.bottom.equalToSuperview()
