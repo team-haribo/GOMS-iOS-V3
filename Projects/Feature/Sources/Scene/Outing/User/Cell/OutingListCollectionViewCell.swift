@@ -14,6 +14,13 @@ import Kingfisher
 
 final class OutingListCollectionViewCell: UICollectionViewCell {
     
+    func configureDummy() {
+        nameLabel.text = "김민솔"
+        studentInfoLabel.text = "8기 | AI"
+        outingTime.text = "10:31에 외출"
+        profileImageView.image = .image.profile.image
+    }
+    
     // MARK: - Properties
     static let identifier = "OutingListCell"
     

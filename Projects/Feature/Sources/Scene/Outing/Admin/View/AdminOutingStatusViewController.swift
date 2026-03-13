@@ -39,12 +39,12 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     }
     
     private let coffeeIcon = UIImageView().then {
-        $0.image = .image.grayCoffee.image
+        $0.image = .image.coffee.image
         $0.isHidden = true
     }
     
     private let outingNilLabel = UILabel().then {
-        $0.text = "텅 비어있네요... 다들 바쁜가 봐요!"
+        $0.text = "오늘은 외출하는 날이 아니에요!"
         $0.textColor = .color.sub2.color
         $0.font = UIFont.suit(size: 14, weight: .semibold)
         $0.isHidden = true
@@ -65,7 +65,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
         self.navigationItem.hidesSearchBarWhenScrolling = false
-        navigationItem.searchController = searchController
+    
     }
     
     func setup() {
@@ -126,7 +126,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     // MARK: - Add View
     public override func addView() {
-        [searchTitle, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
+        [searchTitle, searchController.searchBar, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
     }
         
     // MARK: - Layout
@@ -137,8 +137,14 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
             $0.height.equalTo(32)
         }
         
+        searchController.searchBar.snp.makeConstraints {
+            $0.top.equalTo(searchTitle.snp.bottom).offset(24)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(bounds.width * 0.05)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-(bounds.width * 0.05))
+        }
+        
         outingListCollectionView.snp.makeConstraints {
-            $0.top.equalTo(searchTitle.snp.bottom).offset(8)
+            $0.top.equalTo(searchController.searchBar.snp.bottom).offset(16)
             $0.leading.equalTo(view.safeAreaLayoutGuide).offset(bounds.width * 0.05)
             $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-(bounds.width * 0.05))
             $0.bottom.equalToSuperview()
