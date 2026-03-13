@@ -20,7 +20,7 @@ public final class PasswordSettingViewController: BaseViewController {
         $0.alignment = .fill
     }
 
-    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호").then {
+    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "패스워드세팅뷰").then {
         $0.isSecureTextEntry = true
         $0.rightView = onPasswordButton
         $0.rightViewMode = .always
