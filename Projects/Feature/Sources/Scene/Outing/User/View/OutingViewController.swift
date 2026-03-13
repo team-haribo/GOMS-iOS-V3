@@ -12,7 +12,7 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
     
     // MARK: - Properties
     private let viewModel = OutingViewModel()
-    
+     
     var outingList: [OutingListData] = [] {
         didSet {
             outingListCollectionView.reloadData()
@@ -139,13 +139,9 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         searchTitle.isHidden = false
         outingListCollectionView.isHidden = false
 
-        if outingList.isEmpty {
-            coffeeIcon.isHidden = false
-            outingNilLabel.isHidden = false
-        } else {
-            coffeeIcon.isHidden = true
-            outingNilLabel.isHidden = true
-        }
+        
+        coffeeIcon.isHidden = true
+        outingNilLabel.isHidden = true
     }
     
     // MARK: - Refresh Control Setup
