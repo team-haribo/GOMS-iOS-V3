@@ -20,7 +20,7 @@ public class GOMSTextFieldButton: UIButton {
     }
     
     func setButton(withTitle title: String) {
-        setButtonBackgroundColor(lightModeColor: UIColor(red: 0, green: 0, blue: 0, alpha: 0.05), darkModeColor: UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1))
+        backgroundColor = .color.surface.color
         setTitle(title, for: .normal)
         setTitleColor(.color.sub2.color, for: .normal)
         titleLabel?.font = .suit(size: 16, weight: .regular)
