@@ -20,19 +20,19 @@ public final class SignUpViewController: BaseViewController {
     }
 
     private lazy var textFieldStackView = UIStackView().then {
-        $0.spacing = 32
+        $0.spacing = 16
         $0.axis = .vertical
         $0.distribution = .fillEqually
         $0.alignment = .fill
     }
 
-    let nameTextField = GOMSTextField(frame: .zero, placeholder: "이름")
+    let nameTextField = GOMSTextField(frame: .zero, placeholder: "이름을 입력해주세요")
 
-    private let emailTextField = GOMSTextField(frame: .zero, placeholder: "이메일")
+    private let emailTextField = GOMSTextField(frame: .zero, placeholder: "이메일을 입력해주세요")
 
     private let defaultDomain = UILabel().then {
         $0.text = "@gsm.hs.kr"
-        $0.font = .suit(size: 16, weight: .regular)
+        $0.font = .suit(size: 16, weight: .medium)
         $0.textColor = .color.sub2.color
     }
 
@@ -40,6 +40,22 @@ public final class SignUpViewController: BaseViewController {
         $0.text = "입력되지 않았습니다."
         $0.textColor = .color.gomsNegative.color
         $0.font = .suit(size: 16, weight: .medium)
+        $0.isHidden = true
+    }
+
+    private let nameErrorLabel = UILabel().then {
+        $0.text = "이름을 입력해주세요."
+        $0.textColor = .color.gomsNegative.color
+        $0.font = .suit(size: 15, weight: .medium)
+        $0.textAlignment = .right
+        $0.isHidden = true
+    }
+
+    private let emailErrorLabel = UILabel().then {
+        $0.text = "올바른 이메일 형식이 아닙니다."
+        $0.textColor = .color.gomsNegative.color
+        $0.font = .suit(size: 15, weight: .medium)
+        $0.textAlignment = .right
         $0.isHidden = true
     }
 
@@ -122,6 +138,34 @@ public final class SignUpViewController: BaseViewController {
     }
 
     @objc private func authCodeButtonTapped() {
+        let name = nameTextField.text ?? ""
+        let email = emailTextField.text ?? ""
+
+        nameErrorLabel.isHidden = true
+        emailErrorLabel.isHidden = true
+
+        nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+
+        if name.isEmpty {
+            nameErrorLabel.isHidden = false
+            nameErrorLabel.text = "이름을 입력해주세요."
+            nameErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+            view.layoutIfNeeded()
+            return
+        }
+
+        let emailRegex = "^s[0-9]{5}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+
+        if !emailPredicate.evaluate(with: email) {
+            emailErrorLabel.isHidden = false
+            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+            view.layoutIfNeeded()
+            return
+        }
+
         DispatchQueue.main.async {
             self.present(self.loader, animated: true)
         }
@@ -186,19 +230,63 @@ public final class SignUpViewController: BaseViewController {
     public override func addView() {
         emailTextField.addSubview(defaultDomain)
 
-        [nameTextField, emailTextField, genderTextField, majorTextField]
-            .forEach { textFieldStackView.addArrangedSubview($0) }
-
-        [pageTitleLabel, textFieldStackView, authCodeButton]
+        [pageTitleLabel,
+         nameTextField,
+         nameErrorLabel,
+         emailTextField,
+         emailErrorLabel,
+         genderTextField,
+         majorTextField,
+         authCodeButton]
             .forEach { view.addSubview($0) }
     }
 
     public override func setLayout() {
 
-        nameTextField.snp.makeConstraints { $0.height.equalTo(56) }
-        emailTextField.snp.makeConstraints { $0.height.equalTo(56) }
-        genderTextField.snp.makeConstraints { $0.height.equalTo(56) }
-        majorTextField.snp.makeConstraints { $0.height.equalTo(56) }
+        pageTitleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(124)
+            $0.leading.equalTo(20)
+        }
+
+        nameTextField.snp.makeConstraints {
+            $0.leading.equalTo(bounds.width * 0.05)
+            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
+            $0.height.equalTo(56)
+        }
+
+        nameErrorLabel.snp.makeConstraints {
+            $0.trailing.equalTo(nameTextField.snp.trailing)
+            $0.top.equalTo(nameTextField.snp.bottom).offset(8)
+            $0.height.equalTo(0)
+        }
+
+        emailTextField.snp.makeConstraints {
+            $0.leading.equalTo(bounds.width * 0.05)
+            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.top.equalTo(nameErrorLabel.snp.bottom).offset(16)
+            $0.height.equalTo(56)
+        }
+
+        emailErrorLabel.snp.makeConstraints {
+            $0.trailing.equalTo(emailTextField.snp.trailing)
+            $0.top.equalTo(emailTextField.snp.bottom).offset(8)
+            $0.height.equalTo(0)
+        }
+
+        genderTextField.snp.makeConstraints {
+            $0.leading.equalTo(bounds.width * 0.05)
+            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.top.equalTo(emailErrorLabel.snp.bottom).offset(16)
+            $0.height.equalTo(56)
+        }
+
+        majorTextField.snp.makeConstraints {
+            $0.leading.equalTo(bounds.width * 0.05)
+            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.top.equalTo(genderTextField.snp.bottom).offset(16)
+            $0.height.equalTo(56)
+        }
 
         defaultDomain.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
@@ -206,22 +294,11 @@ public final class SignUpViewController: BaseViewController {
             $0.centerY.equalToSuperview()
         }
 
-        pageTitleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(124)
-            $0.leading.equalTo(20)
-        }
-
-        textFieldStackView.snp.makeConstraints {
-            $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-        }
-
         authCodeButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.bottom.equalTo(-bounds.height * 0.16)
             $0.height.equalTo(48)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
 
@@ -238,6 +315,39 @@ public final class SignUpViewController: BaseViewController {
 
     @objc private func dismissKeyboard() {
         view.endEditing(true)
+    }
+
+    @objc public override func keyboardWillShow(_ sender: Notification) {
+        guard
+            let userInfo = sender.userInfo,
+            let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
+
+        authCodeButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    @objc public override func keyboardWillHide(_ sender: Notification) {
+        guard
+            let userInfo = sender.userInfo,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        authCodeButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
+        }
     }
 }
 
