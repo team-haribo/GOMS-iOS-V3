@@ -302,7 +302,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         
         let messageAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 13, weight: .regular)
+            .font: UIFont.suit(size: 15, weight: .regular)
         ]
         let attributedMessage = NSAttributedString(string: "로그아웃 하시겠습니까?", attributes: messageAttributes)
         alertController.setValue(attributedMessage, forKey: "attributedMessage")
@@ -311,15 +311,20 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         alertController.addAction(cancelAction)
         
         let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            self?.profileViewModel.profileLogout { [weak self] success in
-                if success {
-                    let introVC = IntroViewController()
-                    self?.navigationController?.pushViewController(introVC, animated: true)
-                } else {
-                    print("실패")
-                }
+            
+            let introVC = IntroViewController()
+            let nav = UINavigationController(rootViewController: introVC)
+
+            if let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first?.windows.first {
+
+                window.rootViewController = nav
+                window.makeKeyAndVisible()
             }
         }
+        
+        
         alertController.addAction(confirmAction)
         
         alertController.view.subviews.first?.subviews.first?.subviews.first?.backgroundColor = .color.gomsTheme.color
