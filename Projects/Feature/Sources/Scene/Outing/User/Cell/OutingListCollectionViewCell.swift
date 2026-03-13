@@ -27,17 +27,17 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
     let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 48, height: 48))
     
     let nameLabel = UILabel().then {
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub1.color
         $0.font = UIFont.suit(size: 16, weight: .semibold)
     }
     
     let studentInfoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
+        $0.font = UIFont.suit(size: 13, weight: .regular)
     }
     
     private let divLine = UIView().then {
-        $0.backgroundColor = .white.withAlphaComponent(0.15)
+        $0.backgroundColor = .color.sub2.color
     }
     
     let outingTime = UILabel().then {
