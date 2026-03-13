@@ -431,7 +431,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     // MARK: - Setting
     func setup() {
-        if self.mainViewModel.lateListDatas.count >= 1 {
+       
+        if self.mainViewModel.lateListDatas.isEmpty {
             lateNilView.isHidden = true
         } else {
             lateNilView.isHidden = false
@@ -576,18 +577,18 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         lateNilView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(20)
-            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
+            $0.top.equalTo(latecomerLabel.snp.bottom)
         }
 
         latecomerCollectionView.snp.makeConstraints {
-            $0.top.equalTo(lateNilView.snp.bottom).offset(0)
+            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(136)
         }
 
         outingView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
-            $0.top.equalTo(lateNilView.snp.bottom).offset(24)
+            $0.top.equalTo(latecomerCollectionView.snp.bottom).offset(24)
             $0.bottom.equalTo(contentView.snp.bottom).offset(-100)
         }
 
@@ -611,7 +612,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         outingStatusCollectionView.snp.makeConstraints {
-            $0.top.equalTo(outingStatusLabel.snp.bottom).offset(16)
+            $0.top.equalTo(outingStatusLabel.snp.bottom).offset(17)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
@@ -651,9 +652,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - UICollectionViewDataSource
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView == latecomerCollectionView {
-            return mainViewModel.lateListDatas.count
+            return mainViewModel.lateListDatas.isEmpty ? 3 : mainViewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
-            
             return mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
         }
         return 0
@@ -662,8 +662,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if collectionView == latecomerCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LateCell.identifier, for: indexPath) as? LateCell else { return UICollectionViewCell() }
-            let data = mainViewModel.lateListDatas[indexPath.row]
-            cell.configure(with: data)
+            if mainViewModel.lateListDatas.isEmpty {
+                cell.configureDummy()
+            } else {
+                let data = mainViewModel.lateListDatas[indexPath.row]
+                cell.configure(with: data)
+            }
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
