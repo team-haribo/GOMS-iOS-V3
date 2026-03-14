@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import Then
 
-// MARK: - Model
+// MARK: - Model (기존 유지)
 struct ReviewModel {
     let name: String
     let info: String
@@ -19,7 +19,7 @@ struct ReviewModel {
 
 public final class MapViewController: UIViewController {
     
-    // MARK: - Dummy Data
+    // MARK: - Dummy Data (기존 유지)
     private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
     private var dummyReviews: [ReviewModel] = [
         ReviewModel(name: "김민솔", info: "8기 | AI", content: "굳굳", date: "26.02.12"),
@@ -28,7 +28,7 @@ public final class MapViewController: UIViewController {
         ReviewModel(name: "이주언", info: "8기 | AI", content: "가성비 좋음", date: "26.02.12")
     ]
     
-    // MARK: - UI Components
+    // MARK: - UI Components (기존 유지)
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
     private let recentSearchView = MapRecentSearchView().then { $0.isHidden = true }
@@ -36,7 +36,6 @@ public final class MapViewController: UIViewController {
     private let tabBar = TabBar()
     private let placeDetailView = MapPlaceDetailView().then { $0.isHidden = true }
     
-    // Constraints
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
     
@@ -54,7 +53,6 @@ public final class MapViewController: UIViewController {
 
     private func setupView() {
         view.backgroundColor = .color.background.color
-        // 탭바가 항상 맨 위에 오도록 마지막에 추가
         [bottomSheetView, recentSearchView, searchBar, routeSelectionView, placeDetailView, tabBar].forEach {
             view.addSubview($0)
         }
@@ -90,11 +88,11 @@ public final class MapViewController: UIViewController {
             $0.leading.trailing.bottom.equalToSuperview()
             self.detailSheetHeight = $0.height.equalTo(0).constraint
         }
-        
     }
     
     private func setupDelegate() {
-        [recentSearchView.tableView, placeDetailView.tableView, routeSelectionView.dropdownTableView].forEach {
+        // [오류 수정] routeSelectionView의 테이블뷰 참조 제거 (더 이상 테이블뷰가 아님)
+        [recentSearchView.tableView, placeDetailView.tableView].forEach {
             $0.delegate = self
             $0.dataSource = self
         }
@@ -104,6 +102,7 @@ public final class MapViewController: UIViewController {
         placeDetailView.closeButton.addTarget(self, action: #selector(hideDetailView), for: .touchUpInside)
         placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
         placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
+        routeSelectionView.backButton.addTarget(self, action: #selector(backFromRouteSelection), for: .touchUpInside)
         
         bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
@@ -113,7 +112,6 @@ public final class MapViewController: UIViewController {
     private func setupGesture() {
         let bottomSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         bottomSheetView.addGestureRecognizer(bottomSheetPan)
-        
         let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         placeDetailView.addGestureRecognizer(detailSheetPan)
     }
@@ -123,7 +121,6 @@ public final class MapViewController: UIViewController {
         let translation = gesture.translation(in: view)
         let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
         let newHeight = currentHeight - translation.y
-        
         let minH = defaultHeight
         let gap = dummyReviews.isEmpty ? 233 : 43
         let maxH = view.frame.height - (searchBar.frame.maxY + CGFloat(gap))
@@ -143,7 +140,6 @@ public final class MapViewController: UIViewController {
         }
         gesture.setTranslation(.zero, in: view)
     }
-    
 
     private func showDetailView() {
         bottomSheetView.isHidden = true
@@ -171,26 +167,32 @@ public final class MapViewController: UIViewController {
     }
 
     @objc private func didTapSearchBar() {
-        // [수정] 검색바 클릭 시 상세 뷰가 떠 있다면 내림
-        if !placeDetailView.isHidden {
-            hideDetailView()
-        }
+        if !placeDetailView.isHidden { hideDetailView() }
         searchBar.updateState(.search)
         recentSearchView.isHidden = false
     }
 
     @objc private func didTapArriveRoute() {
         routeSelectionView.isHidden = false
+        [searchBar, bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
     }
 
     @objc private func didTapStartRoute() {
         routeSelectionView.isHidden = false
+        [searchBar, bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
+    }
+
+    @objc private func backFromRouteSelection() {
+        routeSelectionView.isHidden = true
+        searchBar.isHidden = false
+        placeDetailView.isHidden = false
     }
 }
 
+// MARK: - TableView Delegate & DataSource (기존 유지 및 오류 수정)
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if tableView == routeSelectionView.dropdownTableView { return 2 }
+        // [오류 수정] routeSelectionView 관련 테이블뷰 체크 제거
         return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
     }
     
@@ -199,35 +201,25 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
             cell.configure(title: dummyRecentSearches[indexPath.row], date: "카페")
             return cell
-        } else if tableView == placeDetailView.tableView {
+        } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             let data = dummyReviews[indexPath.row]
             cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
-            
-            // 삭제 버튼 탭 이벤트
             cell.onDeleteTap = { [weak self] in
                 guard let self = self else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "정말 후기를 삭제하시겠습니까?") {
-                    // 1. 데이터 삭제
                     self.dummyReviews.remove(at: indexPath.row)
-                    // 2. 테이블뷰 갱신
                     self.placeDetailView.tableView.reloadData()
-                    // 3. 완료 팝업 노출
                     ReviewAlert.show(in: self, title: "후기 삭제 완료", message: "후기가 정상적으로 삭제되었습니다.")
                 }
             }
-            
-            // 신고 버튼 탭 이벤트
             cell.onReportTap = { [weak self] in
                 guard let self = self else { return }
-                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?\n신고 내용은 운영팀의 검토 후 처리됩니다.") {
-                    // 신고 완료 팝업 노출
-                    ReviewAlert.show(in: self, title: "후기 신고 완료", message: "신고가 접수되었습니다.\n더 나은 GOMS가 되도록 노력하겠습니다")
+                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") {
+                    ReviewAlert.show(in: self, title: "후기 신고 완료", message: "신고가 접수되었습니다.")
                 }
             }
-            
             return cell
         }
-        return UITableViewCell()
     }
 }
