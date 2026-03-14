@@ -35,7 +35,6 @@ public final class MapViewController: UIViewController {
     private let bottomSheetView = MapBottomSheetView()
     private let tabBar = TabBar()
     private let placeDetailView = MapPlaceDetailView().then { $0.isHidden = true }
-    private let popupView = MapPopupView().then { $0.isHidden = true }
     
     // Constraints
     private var bottomSheetHeight: Constraint?
@@ -56,7 +55,7 @@ public final class MapViewController: UIViewController {
     private func setupView() {
         view.backgroundColor = .color.background.color
         // 탭바가 항상 맨 위에 오도록 마지막에 추가
-        [bottomSheetView, recentSearchView, searchBar, popupView, routeSelectionView, placeDetailView, tabBar].forEach {
+        [bottomSheetView, recentSearchView, searchBar, routeSelectionView, placeDetailView, tabBar].forEach {
             view.addSubview($0)
         }
     }
@@ -92,7 +91,6 @@ public final class MapViewController: UIViewController {
             self.detailSheetHeight = $0.height.equalTo(0).constraint
         }
         
-        popupView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
     
     private func setupDelegate() {
@@ -205,6 +203,29 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             let data = dummyReviews[indexPath.row]
             cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
+            
+            // 삭제 버튼 탭 이벤트
+            cell.onDeleteTap = { [weak self] in
+                guard let self = self else { return }
+                ReviewAlert.show(in: self, title: "후기 삭제", message: "정말 후기를 삭제하시겠습니까?") {
+                    // 1. 데이터 삭제
+                    self.dummyReviews.remove(at: indexPath.row)
+                    // 2. 테이블뷰 갱신
+                    self.placeDetailView.tableView.reloadData()
+                    // 3. 완료 팝업 노출
+                    ReviewAlert.show(in: self, title: "후기 삭제 완료", message: "후기가 정상적으로 삭제되었습니다.")
+                }
+            }
+            
+            // 신고 버튼 탭 이벤트
+            cell.onReportTap = { [weak self] in
+                guard let self = self else { return }
+                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?\n신고 내용은 운영팀의 검토 후 처리됩니다.") {
+                    // 신고 완료 팝업 노출
+                    ReviewAlert.show(in: self, title: "후기 신고 완료", message: "신고가 접수되었습니다.\n더 나은 GOMS가 되도록 노력하겠습니다")
+                }
+            }
+            
             return cell
         }
         return UITableViewCell()

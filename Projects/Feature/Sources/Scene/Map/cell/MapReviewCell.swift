@@ -45,15 +45,13 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     public let reportButton = UIButton().then {
-        // withRenderingMode(.alwaysTemplate)로 틴트 컬러 적용
         $0.setImage(UIImage(named: "Warning", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
-        $0.tintColor = .color.sub2.color // 하드코딩 제거 및 sub2 적용
+        $0.tintColor = .color.sub2.color
     }
     
     public let deleteButton = UIButton().then {
-        // withRenderingMode(.alwaysTemplate)로 틴트 컬러 적용
         $0.setImage(UIImage(named: "Trash", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
-        $0.tintColor = .color.sub2.color // 하드코딩 제거 및 sub2 적용
+        $0.tintColor = .color.sub2.color
         $0.isHidden = true
     }
     
@@ -105,7 +103,7 @@ public final class MapReviewCell: UITableViewCell {
             $0.snp.makeConstraints { make in
                 make.top.equalTo(profileImageView).offset(4)
                 make.trailing.equalToSuperview().inset(16)
-                make.size.equalTo(24) // 24x24로 고정
+                make.size.equalTo(24)
             }
         }
         cellDivider.snp.makeConstraints {
@@ -128,12 +126,9 @@ public final class MapReviewCell: UITableViewCell {
         contentLabel.text = content
         dateLabel.text = date
         
-        if name == "김민솔" {
-            deleteButton.isHidden = false
-            reportButton.isHidden = true
-        } else {
-            deleteButton.isHidden = true
-            reportButton.isHidden = false
-        }
+        // 일단 이름으로 구분 (나중에 API 연결 시 member_id로 교체 예정)
+        let isMyReview = (name == "김민솔")
+        deleteButton.isHidden = !isMyReview
+        reportButton.isHidden = isMyReview
     }
 }
