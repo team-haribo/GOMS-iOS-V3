@@ -126,17 +126,28 @@ public final class AuthCodeViewController: BaseViewController {
             authCodeTextField.layer.borderWidth = 0
             self.authCodeSuccess()
 
-            if self.previousViewController is FindPasswordViewController {
-                let newPasswordVC = NewPasswordViewController(
-                    viewModel: self.viewModel,
-                    email: self.email ?? ""
-                )
-                self.navigationController?.pushViewController(newPasswordVC, animated: true)
+            let alert = UIAlertController(
+                title: "인증번호 확인",
+                message: "인증이 완료되었습니다.\n비밀번호 설정 페이지로 돌아갑니다.",
+                preferredStyle: .alert
+            )
 
-            } else if self.previousViewController is SignUpViewController {
-                let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
-                self.navigationController?.pushViewController(passwordSettingVC, animated: true)
-            }
+            alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+
+                if self.previousViewController is FindPasswordViewController {
+                    let newPasswordVC = NewPasswordViewController(
+                        viewModel: self.viewModel,
+                        email: self.email ?? ""
+                    )
+                    self.navigationController?.pushViewController(newPasswordVC, animated: true)
+
+                } else if self.previousViewController is SignUpViewController {
+                    let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
+                    self.navigationController?.pushViewController(passwordSettingVC, animated: true)
+                }
+            })
+
+            self.present(alert, animated: true)
 
         } else {
             authCodeTextField.layer.borderWidth = 1
