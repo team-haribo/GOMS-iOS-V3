@@ -128,7 +128,7 @@ public final class AuthCodeViewController: BaseViewController {
 
             let alert = UIAlertController(
                 title: "인증번호 확인",
-                message: "인증이 완료되었습니다.\n비밀번호 설정 페이지로 돌아갑니다.",
+                message: "인증이 완료되었습니다.",
                 preferredStyle: .alert
             )
 

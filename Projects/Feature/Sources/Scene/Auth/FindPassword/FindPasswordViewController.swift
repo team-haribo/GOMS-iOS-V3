@@ -86,28 +86,17 @@ public final class FindPasswordViewController: BaseViewController {
             return
         }
 
-        viewModel.setupEmail(email: email)
-        viewModel.setupEmailStatus(emailStatus: "AFTER_SIGNUP")
+        
+        successUI()
 
-        viewModel.sendAuthCode { success, statusCode in
+        let authCodeVC = AuthCodeViewController(
+            viewModel: self.viewModel,
+            previousViewController: self,
+            email: email
+        )
 
-            if statusCode == 204 {
-                self.successUI()
-                let authCodeVC = AuthCodeViewController(
-                    viewModel: self.viewModel,
-                    previousViewController: self,
-                    email: self.emailTextField.text ?? ""
-                )
-                self.navigationController?.pushViewController(authCodeVC,
-                                                              animated: true)
-
-            } else if statusCode == 404 {
-                self.nonExistentUser()
-
-            } else {
-                self.emailErrorUI()
-            }
-        }
+        self.navigationController?.pushViewController(authCodeVC,
+                                                     animated: true)
     }
 
     private func emailBlankValue() {
@@ -257,11 +246,17 @@ extension FindPasswordViewController: UITextFieldDelegate {
 
             if email.isEmpty {
                 emailErrorLabel.isHidden = true
+
+                emailTextField.setPlaceholderColor(.color.sub2.color)
+                defaultDomain.textColor = .color.sub2.color
+
                 emailTextField.layer.borderWidth = 0
+                emailTextField.layer.borderColor = UIColor.clear.cgColor
 
                 emailErrorLabel.snp.updateConstraints {
                     $0.height.equalTo(0)
                 }
+
                 view.layoutIfNeeded()
 
             } else if !emailPredicate.evaluate(with: email) {
