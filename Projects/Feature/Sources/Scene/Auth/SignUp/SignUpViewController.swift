@@ -80,6 +80,8 @@ public final class SignUpViewController: BaseViewController {
 
         nameTextField.delegate = self
         emailTextField.delegate = self
+        nameTextField.addTarget(self, action: #selector(nameEditingChanged(_:)), for: .editingChanged)
+        emailTextField.addTarget(self, action: #selector(emailEditingChanged(_:)), for: .editingChanged)
 
         authCodeButton.isEnabled = shouldEnableAuthCodeButton()
     }
@@ -166,63 +168,13 @@ public final class SignUpViewController: BaseViewController {
             return
         }
 
-        DispatchQueue.main.async {
-            self.present(self.loader, animated: true)
-        }
+        let authCodeVC = AuthCodeViewController(
+            viewModel: self.viewModel,
+            previousViewController: self,
+            email: email
+        )
 
-        viewModel.setupEmail(email: emailTextField.text ?? "")
-        viewModel.setupName(name: nameTextField.text ?? "")
-        viewModel.setupEmailStatus(emailStatus: "BEFORE_SIGNUP")
-
-        viewModel.sendAuthCode { [weak self] success, statusCode in
-            guard let self = self else { return }
-
-            DispatchQueue.main.async {
-
-                if success {
-                    switch statusCode {
-                    case 200:
-                        let authCodeVC = AuthCodeViewController(
-                            viewModel: self.viewModel,
-                            previousViewController: self,
-                            email: self.emailTextField.text ?? ""
-                        )
-                        self.navigationController?.pushViewController(authCodeVC, animated: true)
-                        self.loader.dismiss(animated: true)
-
-                    default:
-                        let alert = UIAlertController(title: "서버오류",
-                                                      message: "GOMS 서버  운영팀에게 문의주세요.",
-                                                      preferredStyle: .alert)
-                        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                        self.present(alert, animated: true)
-                        self.loader.dismiss(animated: true)
-                    }
-                } else {
-                    switch statusCode {
-                    case 429:
-                        let alert = UIAlertController(
-                            title: "이메일 요청 초과",
-                            message: "이메일 요청 한도인 5번을 초과했습니다.\n5분 후에 재시도해 주세요.",
-                            preferredStyle: .alert
-                        )
-                        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                        self.present(alert, animated: true)
-                        self.loader.dismiss(animated: true)
-
-                    default:
-                        let alert = UIAlertController(
-                            title: "인증코드 발송 실패",
-                            message: "인증코드 발송에 실패했습니다.\n다시 시도해 주세요.",
-                            preferredStyle: .alert
-                        )
-                        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                        self.present(alert, animated: true)
-                        self.loader.dismiss(animated: true)
-                    }
-                }
-            }
-        }
+        self.navigationController?.pushViewController(authCodeVC, animated: true)
     }
 
 
@@ -311,6 +263,43 @@ public final class SignUpViewController: BaseViewController {
             .contains(genderTextField.title(for: .normal) ?? "")
 
         return nameValid && emailValid && majorValid && genderValid
+    }
+
+    @objc private func nameEditingChanged(_ textField: UITextField) {
+        let name = textField.text ?? ""
+
+        if name.isEmpty {
+            nameErrorLabel.isHidden = true
+            nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        } else {
+            nameErrorLabel.isHidden = true
+            nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        }
+
+        viewModel.setupName(name: name)
+        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
+    }
+
+    @objc private func emailEditingChanged(_ textField: UITextField) {
+        let email = textField.text ?? ""
+
+        let emailRegex = "^s[0-9]{5}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+
+        if email.isEmpty {
+            emailErrorLabel.isHidden = true
+            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        } else if !emailPredicate.evaluate(with: email) {
+            emailErrorLabel.isHidden = false
+            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+        } else {
+            emailErrorLabel.isHidden = true
+            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        }
+
+        viewModel.setupEmail(email: email)
+        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
     }
 
     @objc private func dismissKeyboard() {
