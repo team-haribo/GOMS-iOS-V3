@@ -13,40 +13,60 @@ public final class PasswordSettingViewController: BaseViewController {
     private var viewModel: AuthViewModel
     private let loader = LoaderViewController()
 
+    private let pageTitleLabel = UILabel().then {
+        $0.text = "비밀번호 설정"
+        $0.font = .suit(size: 28, weight: .bold)
+        $0.textColor = .color.mainText.color
+    }
+
     private let textFieldStackView = UIStackView().then {
-        $0.spacing = 32
+        $0.spacing = 16
         $0.axis = .vertical
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
         $0.alignment = .fill
     }
 
-    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "패스워드세팅뷰").then {
+
+    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호를 입력해주세요").then {
         $0.isSecureTextEntry = true
         $0.rightView = onPasswordButton
         $0.rightViewMode = .always
     }
 
-    lazy var onPasswordButton = UIButton().then {
-        $0.setImage(.image.on.image, for: .normal)
-        $0.addTarget(self, action: #selector(onPasswordButtonTapped), for: .touchUpInside)
-        $0.isEnabled = true
-    }
-
-    private let checkPasswordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호 확인").then {
+    private let checkPasswordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호를 다시 입력해주세요").then {
         $0.isSecureTextEntry = true
     }
 
-    private let conditionsLabel = UILabel().then {
-        $0.text = "대/소문자, 숫자, 특수문자 포함 6자 이상"
-        $0.font = .suit(size: 16, weight: .regular)
-        $0.textColor = .color.sub2.color
+    lazy var onPasswordButton = UIButton().then {
+        $0.setImage(.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.sub2.color
+        $0.adjustsImageWhenHighlighted = false
+        $0.addTarget(self, action: #selector(onPasswordButtonTapped), for: .touchUpInside)
     }
 
-    private let passwordError = UILabel().then {
-        $0.text = "비밀번호가 일치하지 않습니다."
+    private let passwordFormatError = UILabel().then {
+        $0.text = "잘못된 형식의 비밀번호입니다"
         $0.textColor = .color.gomsNegative.color
         $0.font = .suit(size: 16, weight: .medium)
+        $0.textAlignment = .right
+        $0.numberOfLines = 0
         $0.isHidden = true
+    }
+
+    private let passwordMatchError = UILabel().then {
+        $0.text = "비밀번호가 일치하지 않습니다"
+        $0.textColor = .color.gomsNegative.color
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textAlignment = .right
+        $0.numberOfLines = 0
+        $0.isHidden = true
+    }
+
+    private let conditionsLabel = UILabel().then {
+        $0.text = "비밀번호는 6자 이상이, 대/소문자, 숫자, 특수문자를 포함해 주세요"
+        $0.font = .suit(size: 16, weight: .regular)
+        $0.textColor = .color.sub2.color
+        $0.numberOfLines = 0
     }
 
     private lazy var signUpButton = GOMSButton(frame: .zero, title: "회원가입").then {
@@ -66,50 +86,182 @@ public final class PasswordSettingViewController: BaseViewController {
         super.viewDidLoad()
         passwordTextField.delegate = self
         checkPasswordTextField.delegate = self
+
+        passwordTextField.addTarget(self, action: #selector(passwordEditingChanged), for: .editingChanged)
+        checkPasswordTextField.addTarget(self, action: #selector(checkPasswordEditingChanged), for: .editingChanged)
+    }
+
+    @objc private func passwordEditingChanged() {
+
+        let password = passwordTextField.text ?? ""
+
+        
+        if password.isEmpty {
+            passwordFormatError.isHidden = true
+
+            passwordTextField.setPlaceholderColor(.color.sub2.color)
+
+            passwordTextField.layer.borderColor = UIColor.clear.cgColor
+            passwordTextField.layer.borderWidth = 0
+
+            return
+        }
+
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
+
+        if !passwordPredicate.evaluate(with: password) {
+            passwordFormatError.isHidden = false
+            passwordFormatError.text = "잘못된 형식의 비밀번호입니다"
+
+            passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
+            passwordTextField.layer.borderWidth = 1
+        } else {
+            passwordFormatError.isHidden = true
+
+            passwordTextField.layer.borderColor = UIColor.clear.cgColor
+            passwordTextField.layer.borderWidth = 0
+        }
+
+        
+        let confirm = checkPasswordTextField.text ?? ""
+
+        if confirm.isEmpty {
+            passwordMatchError.isHidden = true
+            checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
+            checkPasswordTextField.layer.borderWidth = 0
+        } else if password == confirm {
+            passwordMatchError.isHidden = true
+            checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
+            checkPasswordTextField.layer.borderWidth = 0
+        } else {
+            passwordMatchError.isHidden = false
+            checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
+            checkPasswordTextField.layer.borderWidth = 1
+        }
+    }
+
+    @objc private func checkPasswordEditingChanged() {
+
+        let password = passwordTextField.text ?? ""
+        let confirm = checkPasswordTextField.text ?? ""
+
+        // 입력 없으면 초기 상태
+        if confirm.isEmpty {
+            passwordMatchError.isHidden = true
+            checkPasswordTextField.setPlaceholderColor(.color.sub2.color)
+            checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
+            checkPasswordTextField.layer.borderWidth = 0
+            return
+        }
+
+        // 비밀번호가 같으면 즉시 에러 제거
+        if password == confirm {
+            passwordMatchError.isHidden = true
+            checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
+            checkPasswordTextField.layer.borderWidth = 0
+            return
+        }
+
+        // 다르면 에러 표시
+        passwordMatchError.isHidden = false
+        checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
+        checkPasswordTextField.layer.borderWidth = 1
     }
 
     @objc private func signUpButtonTapped() {
+
+        if passwordTextField.text?.isEmpty == true {
+
+            passwordTextField.setPlaceholderColor(.color.gomsNegative.color)
+            passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
+            passwordTextField.layer.borderWidth = 1
+
+            passwordFormatError.isHidden = false
+            passwordFormatError.text = "비밀번호를 입력해주세요"
+
+            return
+        }
+
+        let password = passwordTextField.text ?? ""
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
+
+        if !passwordPredicate.evaluate(with: password) {
+
+            passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
+            passwordTextField.layer.borderWidth = 1
+
+            passwordFormatError.isHidden = false
+            passwordFormatError.text = "잘못된 형식의 비밀번호입니다"
+
+            return
+        }
+
+      
+        if passwordTextField.text != checkPasswordTextField.text {
+
+            passwordMatchError.isHidden = false
+
+            checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
+            checkPasswordTextField.layer.borderWidth = 1
+
+            return
+        } else {
+
+            passwordMatchError.isHidden = true
+            checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
+            checkPasswordTextField.layer.borderWidth = 0
+        }
 
         viewModel.setupNewPassword(
             newPassword: passwordTextField.text ?? "",
             checkPassword: checkPasswordTextField.text ?? ""
         )
 
-        DispatchQueue.main.async {
-            self.present(self.loader, animated: true)
-        }
+       
+        self.signUpSuccessUI()
 
-        viewModel.signUp { success in
+        let alert = UIAlertController(
+            title: "회원가입 완료",
+            message: "회원가입이 완료되었습니다.",
+            preferredStyle: .alert
+        )
 
-            if success {
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
 
-                self.signUpSuccessUI()
-                let signInVC = SignInViewController(viewModel: self.viewModel)
-                self.navigationController?.pushViewController(signInVC, animated: true)
-                self.loader.dismiss(animated: true)
+            let introVC = IntroViewController()
+            let nav = UINavigationController(rootViewController: introVC)
 
-            } else {
-
-                self.passwordErrorUI()
-                self.loader.dismiss(animated: true)
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController = nav
+                window.makeKeyAndVisible()
             }
-        }
+        })
+
+        self.present(alert, animated: true)
     }
 
     private func signUpSuccessUI() {
         checkPasswordTextField.setPlaceholderColor(.color.mainText.color)
-        passwordError.isHidden = true
+        passwordFormatError.isHidden = true
+        passwordMatchError.isHidden = true
+        passwordFormatError.isHidden = true
+        passwordMatchError.isHidden = true
         checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
         checkPasswordTextField.layer.borderWidth = 0
-        conditionsLabel.isHidden = false
+
     }
 
     private func passwordErrorUI() {
         checkPasswordTextField.setPlaceholderColor(.color.gomsNegative.color)
-        passwordError.isHidden = false
+
+        passwordMatchError.isHidden = false
+
         checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
         checkPasswordTextField.layer.borderWidth = 1
-        conditionsLabel.isHidden = true
+
     }
 
     @objc private func onPasswordButtonTapped() {
@@ -117,50 +269,66 @@ public final class PasswordSettingViewController: BaseViewController {
         passwordTextField.isSelected.toggle()
 
         if passwordTextField.isSelected {
-            onPasswordButton.setImage(.image.off.image, for: .normal)
+            onPasswordButton.setImage(.image.off.image.withRenderingMode(.alwaysTemplate), for: .normal)
         } else {
-            onPasswordButton.setImage(.image.on.image, for: .normal)
+            onPasswordButton.setImage(.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
         }
     }
 
     @objc public override func keyboardWillShow(_ sender: Notification) {
-        signUpButton.snp.remakeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.bottom.equalTo(-bounds.height * 0.42)
-            $0.height.equalTo(48)
+        guard
+            let userInfo = sender.userInfo,
+            let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
+
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
+
+        signUpButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
         }
     }
 
     @objc public override func keyboardWillHide(_ sender: Notification) {
-        signUpButton.snp.remakeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.bottom.equalTo(-bounds.height * 0.16)
-            $0.height.equalTo(48)
-        }
-    }
+        guard
+            let userInfo = sender.userInfo,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        else { return }
 
-    public override func configNavigation() {
-        super.configNavigation()
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationItem.title = "비밀번호 설정"
+        signUpButton.snp.updateConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
+
+        UIView.animate(withDuration: duration) {
+            self.view.layoutIfNeeded()
+        }
     }
 
     public override func addView() {
 
-        [passwordTextField, checkPasswordTextField]
-            .forEach { textFieldStackView.addArrangedSubview($0) }
+        textFieldStackView.addArrangedSubview(passwordTextField)
+        textFieldStackView.addArrangedSubview(passwordFormatError)
+        textFieldStackView.addArrangedSubview(checkPasswordTextField)
+        textFieldStackView.addArrangedSubview(passwordMatchError)
 
         [
+            pageTitleLabel,
             textFieldStackView,
             conditionsLabel,
-            passwordError,
             signUpButton
         ].forEach { view.addSubview($0) }
     }
 
     public override func setLayout() {
+
+        pageTitleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(124)
+            $0.leading.equalTo(20)
+        }
 
         passwordTextField.snp.makeConstraints { $0.height.equalTo(56) }
         checkPasswordTextField.snp.makeConstraints { $0.height.equalTo(56) }
@@ -168,26 +336,20 @@ public final class PasswordSettingViewController: BaseViewController {
         textFieldStackView.snp.makeConstraints {
             $0.leading.equalTo(bounds.width * 0.05)
             $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(bounds.height * 0.21)
+            $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
         }
 
         conditionsLabel.snp.makeConstraints {
-            $0.height.equalTo(48)
-            $0.top.equalTo(textFieldStackView.snp.bottom)
+            $0.top.equalTo(textFieldStackView.snp.bottom).offset(12)
             $0.leading.equalTo(bounds.width * 0.07)
-        }
-
-        passwordError.snp.makeConstraints {
-            $0.height.equalTo(48)
-            $0.top.equalTo(textFieldStackView.snp.bottom)
-            $0.leading.equalTo(bounds.width * 0.07)
+            $0.trailing.equalTo(-bounds.width * 0.05)
         }
 
         signUpButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.bottom.equalTo(-bounds.height * 0.16)
             $0.height.equalTo(48)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
 }
