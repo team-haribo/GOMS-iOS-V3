@@ -10,172 +10,263 @@ import UIKit
 import SnapKit
 import Then
 
+public final class PathRecommendationCard: UIView {
+    private let titleLabel = UILabel().then {
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 16, weight: .medium)
+    }
+    private let arrowIcon = UIImageView().then {
+        $0.image = UIImage(named: "rightArrow", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.tintColor = .color.sub1.color
+    }
+    private let timeLabel = UILabel().then {
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 20, weight: .bold)
+    }
+    private let infoLabel = UILabel().then {
+        $0.textColor = .color.sub2.color
+        $0.font = .suit(size: 14, weight: .regular)
+    }
+    public init(title: String, time: String, info: String) {
+        super.init(frame: .zero)
+        self.backgroundColor = .color.surface.color
+        self.layer.cornerRadius = 12
+        titleLabel.text = title
+        timeLabel.text = time
+        infoLabel.text = info
+        [titleLabel, arrowIcon, timeLabel, infoLabel].forEach { addSubview($0) }
+        titleLabel.snp.makeConstraints { $0.top.leading.equalToSuperview().offset(16) }
+        arrowIcon.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.leading.equalTo(titleLabel.snp.trailing).offset(2)
+            $0.size.equalTo(12)
+        }
+        timeLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+            $0.leading.equalTo(titleLabel)
+        }
+        infoLabel.snp.makeConstraints { $0.bottom.leading.equalToSuperview().inset(16) }
+    }
+    required init?(coder: NSCoder) { fatalError() }
+}
+
 public final class MapRouteSelectionView: UIView {
     
-    private let locations = ["내 위치", "학교", "광주송정역"]
+    private let locations = ["내 위치", "학교"]
+    private var destinationName: String = "짬뽕관 광주송정선운점"
     
     private let containerView = UIView().then {
-        $0.backgroundColor = UIColor(red: 25/255, green: 25/255, blue: 25/255, alpha: 1)
-        $0.layer.cornerRadius = 12
+        $0.backgroundColor = .color.surface.color
+        $0.layer.cornerRadius = 20
         $0.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
     }
     
     public let backButton = UIButton().then {
-        $0.setImage(UIImage(named: "Directional", in: Bundle.module, compatibleWith: nil), for: .normal)
-    }
-    
-    private let startLabel = UILabel().then {
-        $0.text = "출발"; $0.textColor = .lightGray; $0.font = .systemFont(ofSize: 14, weight: .medium)
+        $0.setImage(UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.sub1.color
     }
 
-    private let endLabel = UILabel().then {
-        $0.text = "도착"; $0.textColor = .lightGray; $0.font = .systemFont(ofSize: 14, weight: .medium)
+    private let startTitleLabel = UILabel().then {
+        $0.text = "출발"
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 16, weight: .medium)
     }
-    
+
     public let startDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
-        config.baseForegroundColor = .white
+        config.baseBackgroundColor = .color.button.color
+        
+        // 초기 텍스트: "출발 위치를 선택해주세요", 색상: sub2
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
-        titleAttr.font = .systemFont(ofSize: 14)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.sub2.color
         config.attributedTitle = titleAttr
-        $0.setImage(UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil), for: .normal)
+        
+        config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
         config.imagePlacement = .trailing
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+        
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+        
         $0.configuration = config
         $0.contentHorizontalAlignment = .fill
-        $0.layer.cornerRadius = 8
-        $0.clipsToBounds = true
     }
     
-    public let endLocationLabel = UILabel().then {
-        $0.textColor = .white; $0.font = .systemFont(ofSize: 14)
-        $0.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
+    private let selectionBox = UIView().then {
+        $0.backgroundColor = .color.button.color
+        $0.layer.cornerRadius = 8
+        $0.isHidden = true
+        $0.clipsToBounds = true
+    }
+
+    private lazy var myLocationBtn = UIButton().then {
+        var config = UIButton.Configuration.plain()
+        var titleAttr = AttributedString(locations[0])
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config.attributedTitle = titleAttr
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 0)
+        $0.configuration = config
+        $0.contentHorizontalAlignment = .leading
+    }
+
+    private lazy var schoolLocationBtn = UIButton().then {
+        var config = UIButton.Configuration.plain()
+        var titleAttr = AttributedString(locations[1])
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config.attributedTitle = titleAttr
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 0)
+        $0.configuration = config
+        $0.contentHorizontalAlignment = .leading
+    }
+
+    private let line = UIView().then {
+        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3)
+    }
+
+    private let endTitleLabel = UILabel().then {
+        $0.text = "도착"
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 16, weight: .medium)
+    }
+
+    public lazy var endLocationLabel = UILabel().then {
+        $0.text = "   \(destinationName)"
+        $0.textColor = .color.mainText.color // 도착지도 mainText로 변경
+        $0.font = .suit(size: 17, weight: .medium)
+        $0.backgroundColor = .color.button.color
         $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
-        $0.text = "  짬뽕관 광주송정선운점"
     }
     
     public let reverseButton = UIButton().then {
-        $0.setImage(UIImage(named: "Shift", in: Bundle.module, compatibleWith: nil), for: .normal)
-        $0.tintColor = .orange
-        $0.isUserInteractionEnabled = false
+        $0.setImage(UIImage(named: "Shift", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
     }
-    
-    public let dropdownTableView = UITableView().then {
-        $0.backgroundColor = UIColor(red: 31/255, green: 31/255, blue: 31/255, alpha: 1)
-        $0.isHidden = true
-        $0.layer.cornerRadius = 8
-        $0.separatorStyle = .singleLine
-        $0.separatorColor = .darkGray
-        $0.register(UITableViewCell.self, forCellReuseIdentifier: "dropdownCell")
+
+    public let recommendationStackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.spacing = 12
+        $0.distribution = .fillEqually
     }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
         setupActions()
-        setupTableView()
+        addCards()
     }
     
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    required init?(coder: NSCoder) { fatalError() }
 
     private func setupLayout() {
-        self.backgroundColor = .clear
         addSubview(containerView)
-        [backButton, startLabel, startDropdownButton, reverseButton, endLabel, endLocationLabel, dropdownTableView].forEach {
+        [startTitleLabel, backButton, startDropdownButton, endTitleLabel, endLocationLabel, reverseButton, selectionBox].forEach {
             containerView.addSubview($0)
         }
+        [myLocationBtn, schoolLocationBtn, line].forEach { selectionBox.addSubview($0) }
+        addSubview(recommendationStackView)
         
         containerView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(238)
+            $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24)
         }
         
-        endLocationLabel.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(20)
-            $0.leading.equalToSuperview().offset(56)
-            $0.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(52)
-        }
-        
-        endLabel.snp.makeConstraints {
-            $0.bottom.equalTo(endLocationLabel.snp.top).offset(-6)
-            $0.leading.equalTo(endLocationLabel)
-        }
-
-        startDropdownButton.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(103)
-            $0.leading.trailing.equalTo(endLocationLabel)
-            $0.height.equalTo(52)
+        startTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(safeAreaLayoutGuide).offset(-30)
+            $0.leading.equalToSuperview().offset(52)
         }
         
         backButton.snp.makeConstraints {
-            $0.centerY.equalTo(startLabel)
-            $0.leading.equalToSuperview().offset(16)
-            $0.size.equalTo(24)
+            $0.centerY.equalTo(startTitleLabel)
+            $0.trailing.equalTo(startTitleLabel.snp.leading).offset(-4)
+            $0.size.equalTo(22)
         }
 
-        startLabel.snp.makeConstraints {
-            $0.bottom.equalTo(startDropdownButton.snp.top).offset(-6)
-            $0.leading.equalTo(backButton.snp.trailing).offset(8)
+        startDropdownButton.snp.makeConstraints {
+            $0.top.equalTo(startTitleLabel.snp.bottom).offset(6)
+            $0.leading.equalToSuperview().offset(52)
+            $0.trailing.equalToSuperview().offset(-24)
+            $0.height.equalTo(52)
         }
 
-        reverseButton.snp.makeConstraints {
-            $0.centerX.equalTo(backButton)
-            $0.bottom.equalToSuperview().inset(87)
-            $0.size.equalTo(24)
-        }
-
-        dropdownTableView.snp.makeConstraints {
+        selectionBox.snp.makeConstraints {
             $0.top.equalTo(startDropdownButton.snp.bottom).offset(2)
             $0.leading.trailing.equalTo(startDropdownButton)
-            $0.height.equalTo(120)
+            $0.height.equalTo(104)
+        }
+
+        myLocationBtn.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(52)
+        }
+
+        line.snp.makeConstraints {
+            $0.centerY.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1)
+        }
+
+        schoolLocationBtn.snp.makeConstraints {
+            $0.bottom.leading.trailing.equalToSuperview()
+            $0.height.equalTo(52)
+        }
+        
+        reverseButton.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(20)
+            $0.centerY.equalTo(startDropdownButton.snp.bottom).offset(6)
+            $0.size.equalTo(24)
+        }
+
+        endTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(startDropdownButton.snp.bottom).offset(10)
+            $0.leading.equalTo(startTitleLabel)
+        }
+        
+        endLocationLabel.snp.makeConstraints {
+            $0.top.equalTo(endTitleLabel.snp.bottom).offset(6)
+            $0.leading.equalToSuperview().offset(52)
+            $0.trailing.equalToSuperview().offset(-24)
+            $0.height.equalTo(52)
+        }
+
+        recommendationStackView.snp.makeConstraints {
+            $0.bottom.equalToSuperview().inset(110)
+            $0.leading.equalToSuperview().offset(20)
+            $0.height.equalTo(106)
+            $0.width.equalTo(192 * 2 + 12)
         }
     }
 
     private func setupActions() {
-        startDropdownButton.addTarget(self, action: #selector(toggleDropdown), for: .touchUpInside)
+        startDropdownButton.addTarget(self, action: #selector(didTapDropdown), for: .touchUpInside)
+        myLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
+        schoolLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
     }
 
-    private func setupTableView() {
-        dropdownTableView.delegate = self
-        dropdownTableView.dataSource = self
+    @objc private func didTapDropdown() {
+        selectionBox.isHidden.toggle()
+        containerView.bringSubviewToFront(selectionBox)
     }
 
-    @objc private func toggleDropdown() {
-        dropdownTableView.isHidden.toggle()
-    }
-
-    public func updateLocation(start: String? = nil, end: String? = nil) {
-        guard let locationText = start else { return }
+    @objc private func didSelectOption(_ sender: UIButton) {
+        guard let title = sender.configuration?.attributedTitle else { return }
+        let plainTitle = String(title.characters)
         
         var config = startDropdownButton.configuration
-        var titleAttr = AttributedString(locationText)
-        titleAttr.font = .systemFont(ofSize: 14)
+        var titleAttr = AttributedString(plainTitle)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color // 선택 시 색상 변경
         config?.attributedTitle = titleAttr
         startDropdownButton.configuration = config
         
-        dropdownTableView.isHidden = true
+        selectionBox.isHidden = true
     }
-}
 
-extension MapRouteSelectionView: UITableViewDelegate, UITableViewDataSource {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return locations.count
-    }
-    
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "dropdownCell", for: indexPath)
-        cell.textLabel?.text = locations[indexPath.row]
-        cell.textLabel?.textColor = .white
-        cell.textLabel?.font = .systemFont(ofSize: 14)
-        cell.backgroundColor = .clear
-        cell.selectionStyle = .none
-        return cell
-    }
-    
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        updateLocation(start: locations[indexPath.row])
+    private func addCards() {
+        let card1 = PathRecommendationCard(title: "추천", time: "8분", info: "339m | 25kcal")
+        let card2 = PathRecommendationCard(title: "큰길 우선", time: "10분", info: "450m | 30kcal")
+        [card1, card2].forEach { recommendationStackView.addArrangedSubview($0) }
     }
 }
