@@ -83,7 +83,7 @@ public final class SignUpViewController: BaseViewController {
         nameTextField.addTarget(self, action: #selector(nameEditingChanged(_:)), for: .editingChanged)
         emailTextField.addTarget(self, action: #selector(emailEditingChanged(_:)), for: .editingChanged)
 
-        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
+        authCodeButton.isEnabled = true
     }
 
     @objc private func genderButtonTapped() {
@@ -95,14 +95,16 @@ public final class SignUpViewController: BaseViewController {
             self.genderTextField.setTitle("남성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupGender(gender: Gender.man.rawValue)
-            self.authCodeButton.isEnabled = self.shouldEnableAuthCodeButton()
+            self.genderTextField.layer.borderWidth = 0
+            self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
 
         let womanAction = UIAlertAction(title: "여성", style: .default) { _ in
             self.genderTextField.setTitle("여성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupGender(gender: Gender.man.rawValue)
-            self.authCodeButton.isEnabled = self.shouldEnableAuthCodeButton()
+            self.genderTextField.layer.borderWidth = 0
+            self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
 
         [menAction, womanAction].forEach { alert.addAction($0) }
@@ -118,21 +120,24 @@ public final class SignUpViewController: BaseViewController {
             self.majorTextField.setTitle("SW개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: Major.sw.rawValue)
-            self.authCodeButton.isEnabled = self.shouldEnableAuthCodeButton()
+            self.majorTextField.layer.borderWidth = 0
+            self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
 
         let iotAction = UIAlertAction(title: "스마트IoT과", style: .default) { _ in
             self.majorTextField.setTitle("스마트IoT과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: Major.iot.rawValue)
-            self.authCodeButton.isEnabled = self.shouldEnableAuthCodeButton()
+            self.majorTextField.layer.borderWidth = 0
+            self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
 
         let aiAction = UIAlertAction(title: "AI개발과", style: .default) { _ in
             self.majorTextField.setTitle("AI개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: Major.ai.rawValue)
-            self.authCodeButton.isEnabled = self.shouldEnableAuthCodeButton()
+            self.majorTextField.layer.borderWidth = 0
+            self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
 
         [swAction, iotAction, aiAction].forEach { alert.addAction($0) }
@@ -153,6 +158,34 @@ public final class SignUpViewController: BaseViewController {
             nameErrorLabel.isHidden = false
             nameErrorLabel.text = "이름을 입력해주세요."
             nameErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+
+            nameTextField.layer.borderWidth = 1
+            nameTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
+            nameTextField.attributedPlaceholder = NSAttributedString(
+                string: "이름을 입력해주세요",
+                attributes: [
+                    .foregroundColor: UIColor.color.gomsNegative.color
+                ]
+            )
+
+            view.layoutIfNeeded()
+            return
+        }
+
+        if email.isEmpty {
+            emailErrorLabel.isHidden = false
+            emailErrorLabel.text = "이메일을 입력해주세요."
+            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+
+            emailTextField.layer.borderWidth = 1
+            emailTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
+            emailTextField.attributedPlaceholder = NSAttributedString(
+                string: "이메일을 입력해주세요",
+                attributes: [
+                    .foregroundColor: UIColor.color.gomsNegative.color
+                ]
+            )
+
             view.layoutIfNeeded()
             return
         }
@@ -165,6 +198,22 @@ public final class SignUpViewController: BaseViewController {
             emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
             emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
             view.layoutIfNeeded()
+            return
+        }
+
+        
+        let gender = genderTextField.title(for: .normal) ?? ""
+        let major = majorTextField.title(for: .normal) ?? ""
+
+        if gender == "성별" {
+            genderTextField.layer.borderWidth = 1
+            genderTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
+            return
+        }
+
+        if major == "과" {
+            majorTextField.layer.borderWidth = 1
+            majorTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
             return
         }
 
@@ -254,19 +303,17 @@ public final class SignUpViewController: BaseViewController {
         }
     }
 
-    private func shouldEnableAuthCodeButton() -> Bool {
-        let nameValid = !(nameTextField.text ?? "").isEmpty
-        let emailValid = (emailTextField.text ?? "").count == 6
-        let majorValid = ["SW개발과", "스마트IoT과", "AI개발과"]
-            .contains(majorTextField.title(for: .normal) ?? "")
-        let genderValid = ["남성", "여성"]
-            .contains(genderTextField.title(for: .normal) ?? "")
-
-        return nameValid && emailValid && majorValid && genderValid
-    }
-
     @objc private func nameEditingChanged(_ textField: UITextField) {
         let name = textField.text ?? ""
+
+        nameTextField.layer.borderWidth = 0
+        nameTextField.layer.borderColor = UIColor.clear.cgColor
+        nameTextField.attributedPlaceholder = NSAttributedString(
+            string: "이름을 입력해주세요",
+            attributes: [
+                .foregroundColor: UIColor.color.sub2.color
+            ]
+        )
 
         if name.isEmpty {
             nameErrorLabel.isHidden = true
@@ -277,11 +324,20 @@ public final class SignUpViewController: BaseViewController {
         }
 
         viewModel.setupName(name: name)
-        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
+        view.layoutIfNeeded()
     }
 
     @objc private func emailEditingChanged(_ textField: UITextField) {
         let email = textField.text ?? ""
+
+        emailTextField.layer.borderWidth = 0
+        emailTextField.layer.borderColor = UIColor.clear.cgColor
+        emailTextField.attributedPlaceholder = NSAttributedString(
+            string: "이메일을 입력해주세요",
+            attributes: [
+                .foregroundColor: UIColor.color.sub2.color
+            ]
+        )
 
         let emailRegex = "^s[0-9]{5}$"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
@@ -299,7 +355,7 @@ public final class SignUpViewController: BaseViewController {
         }
 
         viewModel.setupEmail(email: email)
-        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
+        view.layoutIfNeeded()
     }
 
     @objc private func dismissKeyboard() {
@@ -349,8 +405,6 @@ extension SignUpViewController: UITextFieldDelegate {
         } else if textField == emailTextField {
             viewModel.setupEmail(email: emailTextField.text ?? "")
         }
-
-        authCodeButton.isEnabled = shouldEnableAuthCodeButton()
     }
 
     public func textField(_ textField: UITextField,
