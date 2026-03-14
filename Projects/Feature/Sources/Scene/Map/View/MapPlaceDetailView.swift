@@ -5,16 +5,6 @@
 //  Created by 김민선 on 2/20/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
-// 하트 눌렀을때 GOMS_Primary색 다시 누르면 원래대로
-// 학생후기 4건 글씨에서 학생후기는 크기 22 SUIT-SemiBold 4랑 건은 크기 19 SUIT-Medium 4는 GOMS_Primary색
-// 후기남기기는 SUIT-Medium 크기 20
-// 리뷰 구분하는 얇은 회색선 끝까지 안가게 그리고 더 앏게
-// 그리고 후기 남기기 위치 왼쪽 벽 끝에서 가로 간격 24 학생후기4건 글씨와 같은줄
-// 그리고 지금은 다 임시로 글자 넣은거니까 나중에 서버통신할때 한 파일만 지우면 되게 따로 파일 만들어서 데이터 넣고 싶어서 내용 비워주고
-// 데이터 넣고 싶어서 내용 비워주고 따로 파일 만들어서 확인할 수 있게 해줘
-// 다른 구조는건들이지 말고 쓸데없는 주석 다 빼고 하드코딩 절대 하지 않게
-// 그리고 후기 없을때 Cup 아이콘 색 sub2 넣고 글 SUIT-Medium 글자 크기 34 색 sub2
-
 
 import UIKit
 import SnapKit
