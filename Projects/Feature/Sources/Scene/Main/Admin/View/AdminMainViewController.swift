@@ -159,6 +159,13 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
     }
 
     @objc func handleRefreshControl() {
+      
+        let adminVC = AdminMainViewController()
+        if !(self.navigationController?.topViewController is AdminMainViewController) {
+            self.navigationController?.setViewControllers([adminVC], animated: false)
+        }
+        self.refreshControl.endRefreshing()
+        return
         fetchData()
 
         guard let isLocalEmail = UserDefaults.standard.string(forKey: "localEmail"),

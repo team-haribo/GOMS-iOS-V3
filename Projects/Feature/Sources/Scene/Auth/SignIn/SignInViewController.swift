@@ -37,7 +37,7 @@ public final class SignInViewController: BaseViewController {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
+    }a
     
     private lazy var textFieldStackView = UIStackView().then {
         $0.spacing = 24
@@ -156,8 +156,9 @@ public final class SignInViewController: BaseViewController {
         UserDefaults.standard.set(email, forKey: "localEmail")
         UserDefaults.standard.set(password, forKey: "localPass")
 
-        let mainVC = MainViewController()
-        self.navigationController?.setViewControllers([mainVC], animated: true)
+       
+        let adminVC = AdminMainViewController()
+        self.navigationController?.setViewControllers([adminVC], animated: true)
         return
     }
 
