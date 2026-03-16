@@ -76,7 +76,6 @@ public final class MapRouteSelectionView: UIView {
         var config = UIButton.Configuration.filled()
         config.baseBackgroundColor = .color.button.color
         
-        // 초기 텍스트: "출발 위치를 선택해주세요", 색상: sub2
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .suit(size: 17, weight: .medium)
         titleAttr.foregroundColor = .color.sub2.color
@@ -133,8 +132,8 @@ public final class MapRouteSelectionView: UIView {
     }
 
     public lazy var endLocationLabel = UILabel().then {
-        $0.text = "   \(destinationName)"
-        $0.textColor = .color.mainText.color // 도착지도 mainText로 변경
+        $0.text = "    \(destinationName)"
+        $0.textColor = .color.mainText.color
         $0.font = .suit(size: 17, weight: .medium)
         $0.backgroundColor = .color.button.color
         $0.layer.cornerRadius = 8
@@ -174,19 +173,19 @@ public final class MapRouteSelectionView: UIView {
             $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24)
         }
         
-        startTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(safeAreaLayoutGuide).offset(-30)
-            $0.leading.equalToSuperview().offset(52)
-        }
-        
         backButton.snp.makeConstraints {
-            $0.centerY.equalTo(startTitleLabel)
-            $0.trailing.equalTo(startTitleLabel.snp.leading).offset(-4)
-            $0.size.equalTo(22)
+            $0.top.equalTo(safeAreaLayoutGuide).offset(12)
+            $0.leading.equalToSuperview().offset(24)
+            $0.size.equalTo(24)
+        }
+
+        startTitleLabel.snp.makeConstraints {
+            $0.centerY.equalTo(backButton)
+            $0.leading.equalTo(backButton.snp.trailing).offset(4)
         }
 
         startDropdownButton.snp.makeConstraints {
-            $0.top.equalTo(startTitleLabel.snp.bottom).offset(6)
+            $0.top.equalTo(startTitleLabel.snp.bottom).offset(14)
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
@@ -215,17 +214,17 @@ public final class MapRouteSelectionView: UIView {
         
         reverseButton.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(20)
-            $0.centerY.equalTo(startDropdownButton.snp.bottom).offset(6)
+            $0.centerY.equalTo(startDropdownButton.snp.bottom).offset(8)
             $0.size.equalTo(24)
         }
 
         endTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(startDropdownButton.snp.bottom).offset(10)
+            $0.top.equalTo(startDropdownButton.snp.bottom).offset(16)
             $0.leading.equalTo(startTitleLabel)
         }
         
         endLocationLabel.snp.makeConstraints {
-            $0.top.equalTo(endTitleLabel.snp.bottom).offset(6)
+            $0.top.equalTo(endTitleLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
@@ -257,7 +256,7 @@ public final class MapRouteSelectionView: UIView {
         var config = startDropdownButton.configuration
         var titleAttr = AttributedString(plainTitle)
         titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color // 선택 시 색상 변경
+        titleAttr.foregroundColor = .color.mainText.color
         config?.attributedTitle = titleAttr
         startDropdownButton.configuration = config
         
