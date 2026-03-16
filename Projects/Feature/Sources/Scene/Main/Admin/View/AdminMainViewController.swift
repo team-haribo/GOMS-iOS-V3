@@ -90,6 +90,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.backgroundColor = .clear
     }
 
+    private let tabBar = TabBar()
+    
     private lazy var qrButton = AdminQRButton(frame: CGRect(x: 0, y: 0, width: 64, height: 64), backgroundColor: .color.admin.color).then {
         $0.addTarget(self, action: #selector(qrButtonTapped), for: .touchUpInside)
     }
@@ -106,11 +108,18 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        navigationController?.setNavigationBarHidden(true, animated: false)
-
         isVisible = true
+
+        viewModel.getLateList { [weak self] in
+            self?.viewModel.getOutingList { [weak self] in
+                self?.setup()
+            }
+        }
+
         fetchData()
-        setupNavigationBar()
+        self.navigationController?.navigationBar.prefersLargeTitles = false
+        self.navigationItem.hidesBackButton = true
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -126,14 +135,17 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
         navigationItem.setHidesBackButton(true, animated: false)
         navigationController?.navigationBar.topItem?.hidesBackButton = true
+        navigationController?.setNavigationBarHidden(true, animated: false)
+
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
         configureRefreshControl()
         refreshControl.beginRefreshing()
         fetchData()
-        setupNavigationBar()
+        bindTabBar()
     }
 
 
@@ -256,7 +268,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         if self.viewModel.lateListDatas.isEmpty {
             lateNilView.isHidden = true
         } else {
-            lateNilView.isHidden = false 
+            lateNilView.isHidden = false
         }
 
         self.setCollectionView()
@@ -319,6 +331,33 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         }
     }
 
+
+    private func bindTabBar() {
+        tabBar.onTabSelected = { [weak self] tab in
+            guard let self = self else { return }
+
+            switch tab {
+            case .home:
+                // Ensure Home always shows the Admin main screen
+                let adminVC = AdminMainViewController()
+                self.navigationController?.setViewControllers([adminVC], animated: false)
+            case .map:
+                let mapVC = MapViewController()
+
+                // Custom transition so Map appears from the left side
+                let transition = CATransition()
+                transition.duration = 0.25
+                transition.type = .push
+                transition.subtype = .fromLeft
+                navigationController?.view.layer.add(transition, forKey: kCATransition)
+
+                self.navigationController?.pushViewController(mapVC, animated: false)
+            case .profile:
+                let profileVC = AdminProfileViewController()
+                self.navigationController?.setViewControllers([profileVC], animated: false)
+            }
+        }
+    }
     // MARK: - Selector
     @objc func moreOutingStatusButtonTapped() {
         let outingVC = AdminOutingViewController()
@@ -366,6 +405,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, adminMenuButton, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
         view.addSubview(qrButton)
+        view.addSubview(tabBar)
     }
 
     // MARK: - Layout
@@ -373,7 +413,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
+            make.bottom.equalTo(tabBar.snp.top)
         }
 
         contentView.snp.makeConstraints { make in
@@ -386,6 +426,12 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.trailing.equalToSuperview().inset(20)
             $0.bottom.equalToSuperview().inset(120)
             $0.height.width.equalTo(64)
+        }
+
+        tabBar.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
+            $0.height.equalTo(100)
         }
 
         logo.snp.makeConstraints {

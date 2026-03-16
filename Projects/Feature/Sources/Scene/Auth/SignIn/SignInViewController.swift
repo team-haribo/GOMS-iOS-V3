@@ -158,7 +158,7 @@ public final class SignInViewController: BaseViewController {
 
        
         let adminVC = AdminMainViewController()
-        self.navigationController?.setViewControllers([adminVC], animated: true)
+        self.navigationController?.setViewControllers([adminVC], animated: false)
         return
     }
 
