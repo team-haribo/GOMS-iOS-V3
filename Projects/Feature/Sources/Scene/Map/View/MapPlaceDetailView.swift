@@ -21,7 +21,7 @@ public final class MapPlaceDetailView: UIView {
     
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
-        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0) // [수정] 탭바 높이만큼 여백 추가
+        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
     }
     
     private let contentView = UIView()
@@ -100,7 +100,8 @@ public final class MapPlaceDetailView: UIView {
         $0.attributedText = attributedString
     }
 
-    public let writeReviewButton = UIButton(type: .system).then {
+    // [수정] MapViewController에서 찾는 이름인 reviewWriteButton으로 변경
+    public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
         config.title = "후기 남기기"
         config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
@@ -136,7 +137,7 @@ public final class MapPlaceDetailView: UIView {
         
         [titleLabel, categoryLabel, heartButton, closeButton,
          addressLabel, infoLabel, reviewCountLabel, arriveButton, startRouteButton,
-         reviewHeaderLabel, writeReviewButton, tableView].forEach { contentView.addSubview($0) }
+         reviewHeaderLabel, reviewWriteButton, tableView].forEach { contentView.addSubview($0) }
     }
     
     private func setLayout() {
@@ -210,7 +211,7 @@ public final class MapPlaceDetailView: UIView {
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
         }
         
-        writeReviewButton.snp.makeConstraints {
+        reviewWriteButton.snp.makeConstraints {
         $0.centerY.equalTo(reviewHeaderLabel)
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }

@@ -46,6 +46,7 @@ public final class MapViewController: UIViewController {
         setupDelegate()
         setupGesture()
         setupActions()
+        setupReviewWriteAction()
     }
 
     private func setupView() {
@@ -116,6 +117,17 @@ public final class MapViewController: UIViewController {
                 card.isUserInteractionEnabled = true
             }
         }
+    }
+
+    // MARK: - Review Actions
+    
+    private func setupReviewWriteAction() {
+        placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
+    }
+    
+    @objc private func didTapReviewWrite() {
+        let reviewWriteVC = MapReviewWriteViewController()
+        self.navigationController?.pushViewController(reviewWriteVC, animated: true)
     }
 
     @objc private func didTapRouteCard() {
@@ -220,12 +232,16 @@ public final class MapViewController: UIViewController {
         view.bringSubviewToFront(tabBar)
     }
 
+    // [수정 완료] 경로 선택 화면에서 뒤로갈 때 장소 상세로 돌아가기
     @objc private func backFromRouteSelection() {
         routeSelectionView.isHidden = true
-        searchBar.isHidden = false
-        searchBar.updateState(.home)
-        bottomSheetView.isHidden = false
+        placeDetailView.isHidden = false
         view.bringSubviewToFront(tabBar)
+        
+        detailSheetHeight?.update(offset: detailMinHeight)
+        UIView.animate(withDuration: 0.3) {
+            self.view.layoutIfNeeded()
+        }
     }
 }
 
@@ -263,3 +279,4 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
 }
+ 
