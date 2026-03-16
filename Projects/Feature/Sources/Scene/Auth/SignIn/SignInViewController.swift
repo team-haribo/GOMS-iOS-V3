@@ -37,7 +37,7 @@ public final class SignInViewController: BaseViewController {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }a
+    }
     
     private lazy var textFieldStackView = UIStackView().then {
         $0.spacing = 24
