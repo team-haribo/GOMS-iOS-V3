@@ -54,12 +54,38 @@ final class ProfileCardView: UIView {
     func configure(name: String,
                    studentInfo: String,
                    lateCount: Int,
-                   outingStatus: String) {
+                   outingStatus: String,
+                   isAdmin: Bool) {
         
         nameLabel.text = name
         studentInformationLabel.text = studentInfo
-        lateCountLabel.text = "지각 횟수: \(lateCount)회"
-        myOutingStatusLabel.text = outingStatus 
+        
+        if isAdmin {
+          
+            lateCountLabel.isHidden = true
+            
+            myOutingStatusLabel.text = "관리자"
+            myOutingStatusLabel.textColor = .color.admin.color
+        
+            myOutingStatusLabel.snp.remakeConstraints {
+                $0.leading.equalTo(profileImageView.snp.trailing).offset(20)
+                $0.top.equalTo(studentInformationLabel.snp.bottom).offset(6)
+            }
+            
+        } else {
+         
+            lateCountLabel.isHidden = false
+            lateCountLabel.text = "지각 횟수: \(lateCount)회"
+            
+            myOutingStatusLabel.text = outingStatus
+            myOutingStatusLabel.textColor = .color.sub1.color
+            
+       
+            myOutingStatusLabel.snp.remakeConstraints {
+                $0.centerY.equalToSuperview()
+                $0.trailing.equalToSuperview().inset(16)
+            }
+        }
     }
     
     private func configureUI() {
@@ -99,8 +125,8 @@ final class ProfileCardView: UIView {
         }
         
         studentInformationLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
-            $0.centerY.equalTo(nameLabel)
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
         }
         
         lateCountLabel.snp.makeConstraints {
@@ -113,5 +139,6 @@ final class ProfileCardView: UIView {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview().inset(16)
         }
+ 
     }
 }
