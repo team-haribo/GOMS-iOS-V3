@@ -48,6 +48,7 @@ public final class MapViewController: UIViewController {
         setupDelegate()
         setupGesture()
         setupActions()
+        bindTabBar()
     }
     
     private func setupView() {
@@ -114,6 +115,29 @@ public final class MapViewController: UIViewController {
         
         bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
+    }
+
+    private func bindTabBar() {
+        tabBar.onTabSelected = { [weak self] tab in
+            guard let self = self else { return }
+
+            switch tab {
+            case .home:
+                let transition = CATransition()
+                transition.duration = 0.25
+                transition.type = .push
+                transition.subtype = .fromRight
+                self.navigationController?.view.layer.add(transition, forKey: kCATransition)
+                self.navigationController?.popViewController(animated: false)
+
+            case .map:
+                break
+
+            case .profile:
+                let profileVC = UserProfileViewController()
+                self.navigationController?.pushViewController(profileVC, animated: true)
+            }
+        }
     }
 
     private func showDeleteAlert(at index: Int) {
