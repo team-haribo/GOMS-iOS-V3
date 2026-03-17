@@ -21,6 +21,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     let scrollView = UIScrollView().then {
         $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.showsVerticalScrollIndicator = true
+        $0.showsHorizontalScrollIndicator = false
     }
 
     let contentView = UIView().then {
@@ -86,7 +88,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.isScrollEnabled = true
         $0.showsHorizontalScrollIndicator = false
         $0.showsVerticalScrollIndicator = true
-        $0.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         $0.backgroundColor = .clear
     }
 
@@ -311,6 +312,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         profileView.nameLabel.text = viewModel.profileData?.name
         basicsProfileView.nameLabel.text = viewModel.profileData?.name
+        basicsProfileView.lateCountLabel.text = "지각 횟수: \(viewModel.lateListDatas.count)회"
 
         if viewModel.profileData?.major == Major.sw.rawValue {
             profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
@@ -327,7 +329,11 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             if authority == "ROLE_STUDENT_COUNCIL" {
                 profileView.profileStatus.text = "학생회"
                 basicsProfileView.myOutingStatusLabel.text = "학생회"
+            } else {
+                basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
             }
+        } else {
+            basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
         }
     }
 
@@ -403,7 +409,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         scrollView.addSubview(contentView)
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
-        [logo, adminMenuButton, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
+        [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
         view.addSubview(qrButton)
         view.addSubview(tabBar)
     }
@@ -436,16 +442,11 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         logo.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(20)
+            $0.top.equalTo(contentView.snp.top).offset(20)
             $0.height.equalTo(24)
             $0.width.equalTo(87)
         }
 
-        adminMenuButton.snp.makeConstraints {
-            $0.centerY.equalTo(logo.snp.centerY)
-            $0.trailing.equalToSuperview().inset(20)
-            $0.width.height.equalTo(24)
-        }
 
         updateLayout()
 
@@ -456,7 +457,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         }
 
         latecomerCollectionView.snp.makeConstraints {
-            $0.top.equalTo(lateNilView.snp.bottom).offset(12)
+            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(136)
         }
@@ -527,7 +528,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         if collectionView == latecomerCollectionView {
             return viewModel.lateListDatas.isEmpty ? 3 : viewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
-            return viewModel.outingListDatas.count
+            return viewModel.outingListDatas.isEmpty ? 5 : viewModel.outingListDatas.count
         }
         return 0
     }
@@ -546,8 +547,14 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
-            let data = viewModel.outingListDatas[indexPath.row]
-            cell.configure(with: data)
+
+            if viewModel.outingListDatas.isEmpty {
+                cell.configureDummy()
+            } else {
+                let data = viewModel.outingListDatas[indexPath.row]
+                cell.configure(with: data)
+            }
+
             return cell
         }
         return UICollectionViewCell()
