@@ -21,7 +21,8 @@ public final class MapPlaceDetailView: UIView {
     
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
-        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
+        // 하단 탭바에 가려지지 않게 여유 공간 확보
+        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 100, right: 0)
     }
     
     private let contentView = UIView()
@@ -34,13 +35,13 @@ public final class MapPlaceDetailView: UIView {
     public let titleLabel = UILabel().then {
         $0.text = "짬뽕관 광주송정선운점"
         $0.textColor = .color.sub1.color
-        $0.font = UIFont(name: "SUIT-SemiBold", size: 22) ?? .systemFont(ofSize: 22, weight: .bold)
+        $0.font = .suit(size: 22, weight: .bold)
     }
     
     public let categoryLabel = UILabel().then {
         $0.text = "중식당"
         $0.textColor = .color.sub2.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     public let heartButton = UIButton().then {
@@ -56,26 +57,26 @@ public final class MapPlaceDetailView: UIView {
     public let addressLabel = UILabel().then {
         $0.text = "광주 광산구 상무대로 277-11층"
         $0.textColor = .color.sub2.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let infoLabel = UILabel().then {
         $0.text = "149m | 4분"
         $0.textColor = .color.sub2.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let reviewCountLabel = UILabel().then {
         $0.text = "학생 후기 4 | 추천 17"
         $0.textColor = .color.sub2.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     public let arriveButton = UIButton().then {
         $0.setTitle("도착", for: .normal)
         $0.backgroundColor = .color.gomsPrimary.color
         $0.setTitleColor(.white, for: .normal)
-        $0.titleLabel?.font = UIFont(name: "SUIT-SemiBold", size: 15) ?? .systemFont(ofSize: 15, weight: .bold)
+        $0.titleLabel?.font = .suit(size: 15, weight: .bold)
         $0.layer.cornerRadius = 8
     }
     
@@ -83,14 +84,14 @@ public final class MapPlaceDetailView: UIView {
         $0.setTitle("출발", for: .normal)
         $0.backgroundColor = .color.button.color
         $0.setTitleColor(.color.sub1.color, for: .normal)
-        $0.titleLabel?.font = UIFont(name: "SUIT-SemiBold", size: 15) ?? .systemFont(ofSize: 15, weight: .bold)
+        $0.titleLabel?.font = .suit(size: 15, weight: .bold)
         $0.layer.cornerRadius = 8
     }
     
     private let reviewHeaderLabel = UILabel().then {
         let fullText = "학생 후기 4건"
         let attributedString = NSMutableAttributedString(string: fullText)
-        let font = UIFont(name: "SUIT-SemiBold", size: 22) ?? .systemFont(ofSize: 22, weight: .bold)
+        let font = UIFont.suit(size: 22, weight: .bold)
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "학생 후기"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub1.color, range: (fullText as NSString).range(of: "학생 후기"))
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "4"))
@@ -100,7 +101,6 @@ public final class MapPlaceDetailView: UIView {
         $0.attributedText = attributedString
     }
 
-    // [수정] MapViewController에서 찾는 이름인 reviewWriteButton으로 변경
     public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
         config.title = "후기 남기기"
@@ -112,9 +112,9 @@ public final class MapPlaceDetailView: UIView {
 
     public let tableView = UITableView().then {
         $0.backgroundColor = .clear
-        $0.isScrollEnabled = false
+        $0.isScrollEnabled = false // 상세 뷰 내에서 스크롤은 스크롤뷰가 담당
         $0.separatorStyle = .singleLine
-        $0.separatorColor = .color.sub2.color
+        $0.separatorColor = .color.sub2.color.withAlphaComponent(0.2)
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
     }
 
@@ -212,15 +212,16 @@ public final class MapPlaceDetailView: UIView {
         }
         
         reviewWriteButton.snp.makeConstraints {
-        $0.centerY.equalTo(reviewHeaderLabel)
+            $0.centerY.equalTo(reviewHeaderLabel)
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
         tableView.snp.makeConstraints {
             $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(500)
-            $0.bottom.equalToSuperview().inset(20)
+            // [조심] 고정 높이 대신 데이터에 맞게 조절되도록 priority 설정 후 bottom 잡기
+            $0.height.equalTo(400).priority(.high)
+            $0.bottom.equalToSuperview().offset(-20)
         }
     }
 }

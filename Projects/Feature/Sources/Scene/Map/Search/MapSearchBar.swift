@@ -67,9 +67,9 @@ public final class MapSearchBar: UIView {
     }
     
     private func setLayout() {
+        // containerView가 부모(MapSearchBar)의 전체를 꽉 채우도록 고정
         containerView.snp.makeConstraints {
             $0.edges.equalToSuperview()
-            $0.height.equalTo(52)
         }
         
         leftIcon.snp.makeConstraints {
