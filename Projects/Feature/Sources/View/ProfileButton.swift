@@ -13,17 +13,19 @@ import Then
 
 public class ProfileButton: UIButton {
     
-    let iconImage = UIImageView()
+    let iconImage = UIImageView().then {
+        $0.contentMode = .scaleAspectFit
+    }
     
     public let buttonTitle = UILabel().then {
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 16, weight: .semibold)
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     let arrowIcon = UIImageView().then {
-        $0.image = .image.right.image
+        $0.image = .image.rightArrowGray.image
     }
-
+    
     init(icon: UIImage, title: String) {
         super.init(frame: .zero)
         setButton(title: title, icon: icon)
@@ -39,23 +41,39 @@ public class ProfileButton: UIButton {
         
         iconImage.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.height.equalTo(24)
-            $0.leading.equalToSuperview().inset(8)
+            $0.width.height.equalTo(24)
+            $0.leading.equalToSuperview().inset(16)
         }
         
         buttonTitle.snp.makeConstraints {
-            $0.leading.equalTo(iconImage.snp.trailing).offset(8)
+            $0.leading.equalTo(iconImage.snp.trailing).offset(12)
             $0.centerY.equalToSuperview()
         }
         
         arrowIcon.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.trailing.equalToSuperview().inset(8)
+            $0.trailing.equalToSuperview().inset(16)
         }
     }
     
     private func setButton(title: String, icon: UIImage) {
         buttonTitle.text = title
         iconImage.image = icon
+        
+        
+        if title == "회원탈퇴" {
+            iconImage.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+            iconImage.tintColor = .color.gomsNegative.color
+            buttonTitle.textColor = .color.gomsNegative.color
+        }
+        else if title == "로그아웃" {
+            iconImage.tintColor = .color.gomsNegative.color
+            buttonTitle.textColor = .color.gomsNegative.color
+        }
+        else {
+            iconImage.transform = .identity
+            iconImage.tintColor = .color.mainText.color
+            buttonTitle.textColor = .color.mainText.color
+        }
     }
 }

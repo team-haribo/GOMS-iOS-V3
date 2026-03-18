@@ -116,20 +116,14 @@ public final class IntroViewController: BaseViewController {
 
     // MARK: - Life Cycle
 
-    public override func viewDidLoad() {
-        super.viewDidLoad()
+public override func viewDidLoad() {
+    super.viewDidLoad()
 
-       
-        navigationItem.backButtonDisplayMode = .default
-        navigationItem.backBarButtonItem = UIBarButtonItem(
-            title: "돌아가기",
-            style: .plain,
-            target: nil,
-            action: nil
-        )
+    // Ensure pushed view controllers do not show "돌아가기" back title
+    navigationItem.backButtonDisplayMode = .minimal
 
-        configureDividerViews()
-    }
+    configureDividerViews()
+}
 
     // MARK: - Selectors
 

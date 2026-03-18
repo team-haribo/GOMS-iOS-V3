@@ -20,13 +20,13 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
     let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 28, height: 28))
 
     let nameLabel = UILabel().then {
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub1.color
         $0.font = UIFont.suit(size: 16, weight: .semibold)
     }
 
     let studentInfoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
+        $0.font = UIFont.suit(size: 13, weight: .medium)
     }
 
     // MARK: - Initializer
@@ -44,6 +44,13 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
     // MARK: - Configure
     func configure(with data: OutingListData) {
         setupData(with: data)
+    }
+
+    // MARK: - Dummy UI
+    func configureDummy() {
+        profileImageView.image = .image.profile.image
+        nameLabel.text = "김민솔"
+        studentInfoLabel.text = "8기 | AI"
     }
 
     public func setupData(with outingData: OutingListData) {
@@ -76,22 +83,19 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
     // MARK: - Layout
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.height.width.equalTo(28)
-            $0.leading.equalToSuperview().inset(16)
-            $0.top.bottom.equalToSuperview().inset(11)
+            $0.size.equalTo(28)
+            $0.leading.equalToSuperview().inset(2)
+            $0.centerY.equalToSuperview()
         }
 
         nameLabel.snp.makeConstraints {
-            $0.height.equalTo(28)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
             $0.centerY.equalToSuperview()
         }
 
         studentInfoLabel.snp.makeConstraints {
-            $0.height.equalTo(20)
             $0.centerY.equalToSuperview()
-            $0.trailing.equalToSuperview().inset(16)
-            $0.top.bottom.equalToSuperview().inset(15)
+            $0.trailing.equalToSuperview().inset(2)
         }
     }
 }

@@ -156,8 +156,9 @@ public final class SignInViewController: BaseViewController {
         UserDefaults.standard.set(email, forKey: "localEmail")
         UserDefaults.standard.set(password, forKey: "localPass")
 
-        let mainVC = MainViewController()
-        self.navigationController?.setViewControllers([mainVC], animated: true)
+       
+        let adminVC = AdminMainViewController()
+        self.navigationController?.setViewControllers([adminVC], animated: false)
         return
     }
 

@@ -19,13 +19,13 @@ final class LateCell: UICollectionViewCell {
     let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 56, height: 56))
 
     let nameLabel = UILabel().then {
-        $0.font = .suit(size: 16, weight: .semibold)
+        $0.font = .suit(size: 16, weight: .bold)
         $0.textAlignment = .center
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub1.color
     }
 
     let studentInfoLabel = UILabel().then {
-        $0.font = .suit(size: 12, weight: .regular)
+        $0.font = .suit(size: 14, weight: .medium)
         $0.textAlignment = .center
         $0.textColor = .color.sub2.color
     }
@@ -33,7 +33,7 @@ final class LateCell: UICollectionViewCell {
     // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.backgroundColor = .color.gomsCardBackgroundColor.color
+        self.backgroundColor = .color.surface.color
 
         addView()
         configureUI()
@@ -47,6 +47,12 @@ final class LateCell: UICollectionViewCell {
     // MARK: - Configure
     func configure(with data: LatecomerData) {
         setupData(with: data)
+    }
+
+    func configureDummy() {
+        profileImageView.image = .image.profile.image
+        nameLabel.text = "김민솔"
+        studentInfoLabel.text = "8기 | AI"
     }
 
     public func setupData(with lateData: LatecomerData) {

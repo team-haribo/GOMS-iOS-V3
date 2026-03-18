@@ -36,7 +36,14 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     let content = UIView()
 
-    private let logo = UIImageView(image: UIImage(named: "gomsLightGrayLogo"))
+    
+    private let logo = UIImageView().then {
+        $0.image = UIImage(
+            named: "graylogo",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+    }
 
     private lazy var settingButton = ExpandableButton().then {
         $0.setBackgroundImage(UIImage(named: "gomsSetting"), for: .normal)
@@ -86,7 +93,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         $0.isScrollEnabled = true
         $0.showsHorizontalScrollIndicator = false
         $0.showsVerticalScrollIndicator = true
-        $0.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: -0)
+       
         $0.backgroundColor = .clear
     }
 
@@ -113,17 +120,15 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     private var isVisible: Bool = false
+    private var profileVC: UserProfileViewController?
 
     // MARK: - Selectors
     @objc func settingButtonTapped() {
         settingButton.isUserInteractionEnabled = false
-        
-        let profileVC = UserProfileViewController()
-        navigationController?.pushViewController(profileVC, animated: true)
-        
+        showProfileOverlay()
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.settingButton.isUserInteractionEnabled = true
+            self?.settingButton.isUserInteractionEnabled = true
         }
     }
 
@@ -144,11 +149,41 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
     }
 
+    private func showProfileOverlay() {
+        if profileVC != nil { return }
+
+        let vc = UserProfileViewController()
+        profileVC = vc
+
+        addChild(vc)
+        view.addSubview(vc.view)
+
+        vc.view.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+        }
+
+        vc.didMove(toParent: self)
+        qrButton.isHidden = true
+        view.bringSubviewToFront(tabBar)
+    }
+
+    private func hideProfileOverlay() {
+        guard let profile = profileVC else { return }
+
+        profile.willMove(toParent: nil)
+        profile.view.removeFromSuperview()
+        profile.removeFromParent()
+        profileVC = nil
+    }
+
     func selectHomeTab() {
+        hideProfileOverlay()
         selectedTab = .home
     }
 
     func selectMapTab() {
+        hideProfileOverlay()
         selectedTab = .map
     }
 
@@ -158,9 +193,16 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         scrollView.isHidden = !isHome
         mapContainerView.isHidden = isHome
         qrButton.isHidden = !isHome
+        if profileVC != nil {
+            qrButton.isHidden = true
+        }
 
         view.bringSubviewToFront(tabBar)
         view.bringSubviewToFront(qrButton)
+        if let profileView = profileVC?.view {
+            view.bringSubviewToFront(profileView)
+            view.bringSubviewToFront(tabBar)
+        }
     }
 
     private func bindTabBar() {
@@ -175,8 +217,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 self.tabBar.selectedTab = .map
                 self.selectMapTab()
             case .profile:
-                let profileVC = UserProfileViewController()
-                self.navigationController?.pushViewController(profileVC, animated: true)
+                self.tabBar.selectedTab = .profile
+                self.showProfileOverlay()
             }
         }
     }
@@ -389,7 +431,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     // MARK: - Setting
     func setup() {
-        if self.mainViewModel.lateListDatas.count >= 1 {
+       
+        if self.mainViewModel.lateListDatas.isEmpty {
             lateNilView.isHidden = true
         } else {
             lateNilView.isHidden = false
@@ -452,11 +495,15 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     func setupCountLable() {
-        let attributedString = NSMutableAttributedString(string: "\(self.mainViewModel.outingListDatas.count)명이 외출 중")
-        let range = (attributedString.string as NSString).range(of: "\(self.mainViewModel.outingListDatas.count)")
+        let count = mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
+
+        let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
+        let range = (attributedString.string as NSString).range(of: "\(count)")
+
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: range)
         attributedString.addAttribute(.font, value: UIFont.suit(size: 14, weight: .medium), range: range)
-        self.outingCountLabel.attributedText = attributedString
+
+        outingCountLabel.attributedText = attributedString
     }
 
     // MARK: - Configure UI
@@ -484,7 +531,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - Layout
     public override func setLayout() {
         scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(tabBar.snp.top)
         }
 
         contentView.snp.makeConstraints { make in
@@ -512,9 +561,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         logo.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalToSuperview().inset(20)
-            $0.height.equalTo(24)
-            $0.width.equalTo(87)
+            $0.top.equalTo(contentView.snp.top)
+            $0.height.equalTo(56)
+            $0.width.equalTo(135)
         }
 
         settingButton.snp.makeConstraints {
@@ -528,18 +577,18 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         lateNilView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(20)
-            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
+            $0.top.equalTo(latecomerLabel.snp.bottom)
         }
 
         latecomerCollectionView.snp.makeConstraints {
-            $0.top.equalTo(lateNilView.snp.bottom).offset(0)
+            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(136)
         }
 
         outingView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
-            $0.top.equalTo(lateNilView.snp.bottom).offset(24)
+            $0.top.equalTo(latecomerCollectionView.snp.bottom).offset(24)
             $0.bottom.equalTo(contentView.snp.bottom).offset(-100)
         }
 
@@ -563,8 +612,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         outingStatusCollectionView.snp.makeConstraints {
-            $0.top.equalTo(outingStatusLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.top.equalTo(outingStatusLabel.snp.bottom).offset(17)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
     }
@@ -603,9 +652,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - UICollectionViewDataSource
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView == latecomerCollectionView {
-            return mainViewModel.lateListDatas.count
+            return mainViewModel.lateListDatas.isEmpty ? 3 : mainViewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
-            return mainViewModel.outingListDatas.count
+            return mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
         }
         return 0
     }
@@ -613,13 +662,24 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if collectionView == latecomerCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LateCell.identifier, for: indexPath) as? LateCell else { return UICollectionViewCell() }
-            let data = mainViewModel.lateListDatas[indexPath.row]
-            cell.configure(with: data)
+            if mainViewModel.lateListDatas.isEmpty {
+                cell.configureDummy()
+            } else {
+                let data = mainViewModel.lateListDatas[indexPath.row]
+                cell.configure(with: data)
+            }
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
-            let data = mainViewModel.outingListDatas[indexPath.row]
-            cell.configure(with: data)
+
+            if mainViewModel.outingListDatas.isEmpty {
+                // dummy UI
+                cell.configureDummy()
+            } else {
+                let data = mainViewModel.outingListDatas[indexPath.row]
+                cell.configure(with: data)
+            }
+
             return cell
         }
         return UICollectionViewCell()
@@ -634,8 +694,8 @@ extension MainViewController {
             let height: CGFloat = 136
             return CGSize(width: width, height: height)
         } else if collectionView == outingStatusCollectionView {
-            let width = bounds.width * 0.9
-            let height: CGFloat = 50
+            let width = collectionView.bounds.width
+            let height: CGFloat = 44
             return CGSize(width: width, height: height)
         }
         return CGSize(width: 0, height: 0)
@@ -648,5 +708,28 @@ extension MainViewController {
             return 0
         }
         return 0
+    }
+
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        if collectionView == outingStatusCollectionView {
+            return 4
+        }
+        return 10
+    }
+
+    public func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        insetForSectionAt section: Int
+    ) -> UIEdgeInsets {
+        if collectionView == outingStatusCollectionView {
+            // match design spacing (same as outer layout)
+            return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
+        }
+        return .zero
     }
 }

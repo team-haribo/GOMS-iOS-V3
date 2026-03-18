@@ -14,23 +14,37 @@ import Kingfisher
 
 final class OutingListCollectionViewCell: UICollectionViewCell {
     
+    func configureDummy() {
+        nameLabel.text = "김민솔"
+        studentInfoLabel.text = "8기 | AI"
+        outingTime.text = "10:31에 외출"
+
+        profileImageView.image = .image.profile.image
+        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.clipsToBounds = true
+
+        // ensure circular image even before layout pass
+        layoutIfNeeded()
+        profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
+    }
+    
     // MARK: - Properties
     static let identifier = "OutingListCell"
     
     let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 48, height: 48))
     
     let nameLabel = UILabel().then {
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub1.color
         $0.font = UIFont.suit(size: 16, weight: .semibold)
     }
     
     let studentInfoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
+        $0.font = UIFont.suit(size: 13, weight: .regular)
     }
     
     private let divLine = UIView().then {
-        $0.backgroundColor = .white.withAlphaComponent(0.15)
+        $0.backgroundColor = .color.sub2.color
     }
     
     let outingTime = UILabel().then {
