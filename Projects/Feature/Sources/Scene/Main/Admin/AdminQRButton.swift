@@ -13,9 +13,15 @@ class AdminQRButton: UIButton {
     
     private let QRIcon = UIImageView()
     
-    init(frame: CGRect, backgroundColor: UIColor) {
+    init(frame: CGRect, backgroundColor: UIColor, icon: UIImage) {
         super.init(frame: frame)
-        setupButton(backgroundColor: backgroundColor)
+        self.addSubview(QRIcon)
+        
+        QRIcon.snp.makeConstraints {
+            $0.height.width.equalTo(24)
+            $0.centerX.centerY.equalToSuperview()
+        }
+        setupButton(backgroundColor: backgroundColor, icon: icon)
     }
     
     required init?(coder: NSCoder) {
@@ -24,16 +30,11 @@ class AdminQRButton: UIButton {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        self.addSubview(QRIcon)
-        
-        QRIcon.snp.makeConstraints {
-            $0.height.width.equalTo(24)
-            $0.centerX.centerY.equalToSuperview()
-        }
     }
     
-    private func setupButton(backgroundColor: UIColor) {
+    private func setupButton(backgroundColor: UIColor, icon: UIImage) {
         self.backgroundColor = backgroundColor
-        QRIcon.image = .image.adminQRButton.image
+        QRIcon.image = icon.withRenderingMode(.alwaysTemplate)
+        QRIcon.tintColor = .white
     }
 }

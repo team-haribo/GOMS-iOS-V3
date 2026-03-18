@@ -359,7 +359,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             DispatchQueue.main.async {
                 self?.userName.text = profileInfo.name
                 self?.perceptionNum.text = String(describing: profileInfo.lateCount)
-                
+
                 let majorText: String
                 switch profileInfo.major {
                 case Major.sw.rawValue:
@@ -371,14 +371,14 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
                 }
                 let finalText = "\(profileInfo.grade)기ㅣ\(majorText)"
                 let profileUrlString = profileInfo.profileUrl ?? ""
-                
+
                 if let profileUrl = URL(string: profileUrlString) {
                     URLSession.shared.dataTask(with: profileUrl) { data, response, error in
                         if let error = error {
                             print("이미지 데이터를 가져오는 중 에러 발생: \(error)")
                             return
                         }
-                        
+
                         if let imageData = data, let profileImage = UIImage(data: imageData) {
                             DispatchQueue.main.async {
                                 self?.userProfile.image = profileImage
@@ -387,9 +387,11 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
                     }
                     .resume()
                 }
-                
+
                 let uploadimage = profileInfo.profileUrl
                 self?.userGradeDepartment.text = finalText
+
+            
             }
         }
         .store(in: &cancellables)
@@ -454,7 +456,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-        // iPad 대응: popover anchor 지정
+        
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
@@ -508,9 +510,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             userProfile,
             userName,
             userGradeDepartment,
-            perceptionCount,
-            perceptionNum,
-            perceptionText,
             userProfilePencil,
             clockText,
             clockDescription,
@@ -529,7 +528,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             logoutButton,
             withdrawalButton,
             passwordResetButton
-
         ].forEach {
             self.scrollView.addSubview($0)
         }
@@ -544,7 +542,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             $0.width.equalTo(64)
             $0.height.equalTo(64)
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalToSuperview().inset(16)
+            $0.top.equalToSuperview().inset(40)
         }
 
         userProfilePencil.snp.makeConstraints {
@@ -563,26 +561,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             $0.height.equalTo(28)
             $0.leading.equalTo(userName.snp.leading)
             $0.top.equalTo(userName.snp.bottom).offset(4)
-        }
-
-        perceptionCount.snp.makeConstraints {
-            $0.width.equalTo(60)
-            $0.height.equalTo(28)
-            $0.trailing.equalToSuperview().inset(20)
-            $0.top.equalTo(userName.snp.top).inset(0)
-        }
-
-        perceptionNum.snp.makeConstraints {
-            $0.height.equalTo(32)
-            $0.trailing.equalTo(perceptionText.snp.leading).inset(-1)
-            $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
-        }
-
-        perceptionText.snp.makeConstraints {
-            $0.width.equalTo(17)
-            $0.height.equalTo(32)
-            $0.trailing.equalToSuperview().inset(20)
-            $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
 
         themeTopLine.snp.makeConstraints {

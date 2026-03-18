@@ -93,8 +93,20 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     private let tabBar = TabBar()
     
-    private lazy var qrButton = AdminQRButton(frame: CGRect(x: 0, y: 0, width: 64, height: 64), backgroundColor: .color.admin.color).then {
+    private lazy var qrButton = AdminQRButton(
+        frame: CGRect(x: 0, y: 0, width: 64, height: 64),
+        backgroundColor: .color.admin.color,
+        icon: .image.adminprofile.image
+    ).then {
         $0.addTarget(self, action: #selector(qrButtonTapped), for: .touchUpInside)
+    }
+
+    private lazy var codeButton = AdminQRButton(
+        frame: CGRect(x: 0, y: 0, width: 64, height: 64),
+        backgroundColor: .color.admin.color,
+        icon: .image.qrIcon.image
+    ).then {
+        $0.addTarget(self, action: #selector(codeButtonTapped), for: .touchUpInside)
     }
 
     private func setupNavigationBar() {
@@ -312,7 +324,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         profileView.nameLabel.text = viewModel.profileData?.name
         basicsProfileView.nameLabel.text = viewModel.profileData?.name
-        basicsProfileView.lateCountLabel.text = "지각 횟수: \(viewModel.lateListDatas.count)회"
+        basicsProfileView.lateCountLabel.isHidden = true
 
         if viewModel.profileData?.major == Major.sw.rawValue {
             profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
@@ -325,16 +337,9 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
         }
 
-        if let authority = viewModel.profileData?.authority {
-            if authority == "ROLE_STUDENT_COUNCIL" {
-                profileView.profileStatus.text = "학생회"
-                basicsProfileView.myOutingStatusLabel.text = "학생회"
-            } else {
-                basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
-            }
-        } else {
-            basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
-        }
+        basicsProfileView.myOutingStatusLabel.text = "관리자"
+        basicsProfileView.myOutingStatusLabel.textColor = .color.admin.color
+        profileView.profileStatus.text = "관리자"
     }
 
 
@@ -344,13 +349,13 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
             switch tab {
             case .home:
-                // Ensure Home always shows the Admin main screen
+               
                 let adminVC = AdminMainViewController()
                 self.navigationController?.setViewControllers([adminVC], animated: false)
             case .map:
                 let mapVC = MapViewController()
 
-                // Custom transition so Map appears from the left side
+                
                 let transition = CATransition()
                 transition.duration = 0.25
                 transition.type = .push
@@ -381,6 +386,17 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         }
     }
 
+    @objc public func codeButtonTapped() {
+        codeButton.isUserInteractionEnabled = false
+
+        let adminQRVC = AdminQRViewController()
+        navigationController?.pushViewController(adminQRVC, animated: true)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.codeButton.isUserInteractionEnabled = true
+        }
+    }
+
     @objc func adminMenuButtonTapped() {
         adminMenuButton.isUserInteractionEnabled = false
         let adminMenuVC = AdminMenuViewController()
@@ -401,7 +417,16 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         qrButton.layer.shadowColor = UIColor.color.admin.color.cgColor
         qrButton.layer.shadowOpacity = 0.8
         qrButton.layer.shadowRadius = 13
-        qrButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)    }
+        qrButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
+
+        codeButton.layer.cornerRadius = codeButton.frame.size.width / 2
+        codeButton.clipsToBounds = false
+
+        codeButton.layer.shadowColor = UIColor.color.admin.color.cgColor
+        codeButton.layer.shadowOpacity = 0.8
+        codeButton.layer.shadowRadius = 13
+        codeButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
+    }
 
     // MARK: - Add View
     public override func addView() {
@@ -410,8 +435,9 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
-        view.addSubview(qrButton)
         view.addSubview(tabBar)
+        view.addSubview(qrButton)
+        view.addSubview(codeButton)
     }
 
     // MARK: - Layout
@@ -428,10 +454,16 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             make.height.greaterThanOrEqualTo(view.snp.height).priority(.low)
         }
 
-        qrButton.snp.makeConstraints {
+        codeButton.snp.remakeConstraints {
             $0.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalToSuperview().inset(120)
-            $0.height.width.equalTo(64)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(100)
+            $0.size.equalTo(64)
+        }
+
+        qrButton.snp.remakeConstraints {
+            $0.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalTo(codeButton.snp.top).offset(-12)
+            $0.size.equalTo(64)
         }
 
         tabBar.snp.makeConstraints {
