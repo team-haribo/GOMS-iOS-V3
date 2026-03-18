@@ -9,21 +9,15 @@ import UIKit
 import SnapKit
 import Then
 
-struct ReviewModel {
-    let name: String
-    let info: String
-    let content: String
-    let date: String
-}
-
 public final class MapViewController: UIViewController {
     
     private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
-    private var dummyReviews: [ReviewModel] = [
-        ReviewModel(name: "김민솔", info: "8기 | AI", content: "굳굳", date: "26.02.12"),
-        ReviewModel(name: "권재현", info: "8기 | AI", content: "매워요", date: "26.02.12"),
-        ReviewModel(name: "김태은", info: "8기 | AI", content: "맛있어요", date: "26.02.12"),
-        ReviewModel(name: "이주언", info: "8기 | AI", content: "가성비 좋음", date: "26.02.12")
+    
+    private var dummyReviews: [MapReview] = [
+        MapReview(name: "김민솔", info: "8기 | AI", content: "굳굳", date: "26.02.12"),
+        MapReview(name: "권재현", info: "8기 | AI", content: "매워요", date: "26.02.12"),
+        MapReview(name: "김태은", info: "8기 | AI", content: "맛있어요", date: "26.02.12"),
+        MapReview(name: "이주언", info: "8기 | AI", content: "가성비 좋음", date: "26.02.12")
     ]
     
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
@@ -35,7 +29,6 @@ public final class MapViewController: UIViewController {
     
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
-    
     private let defaultHeight: CGFloat = 330
     private let detailMinHeight: CGFloat = 330
 
@@ -51,31 +44,41 @@ public final class MapViewController: UIViewController {
 
     private func setupView() {
         view.backgroundColor = .color.background.color
-        [bottomSheetView, recentSearchView, searchBar, routeSelectionView, placeDetailView, tabBar].forEach {
+        // 순서 중요: 아래에 깔릴 애들부터 추가
+        [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar, tabBar].forEach {
             view.addSubview($0)
         }
         view.bringSubviewToFront(tabBar)
     }
     
     private func setupLayout() {
-        routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tabBar.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(90)
+        }
+
+        routeSelectionView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
+        // 추천 카드 위치 수정 (탭바 바로 위)
+        routeSelectionView.recommendationStackView.snp.remakeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalTo(tabBar.snp.top).offset(-20)
+            $0.height.equalTo(106)
+        }
         
         searchBar.snp.makeConstraints {
-            $0.top.equalTo(view.snp.top).offset(70)
+            $0.top.equalToSuperview().offset(60)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
         
         recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
         recentSearchView.tableView.snp.remakeConstraints {
-            $0.top.equalTo(searchBar.snp.bottom).offset(50)
+            $0.top.equalTo(searchBar.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabAreaTop)
-        }
-        
-        tabBar.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(90)
+            $0.bottom.equalTo(tabBar.snp.top)
         }
         
         bottomSheetView.snp.makeConstraints {
@@ -83,16 +86,13 @@ public final class MapViewController: UIViewController {
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
         
+        // [수정] placeDetailView의 좌우 제약을 명확히 하여 글자 튀어나옴 방지
         placeDetailView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview() // leading, trailing을 명시적으로 잡아야 함
             self.detailSheetHeight = $0.height.equalTo(0).constraint
         }
     }
 
-    private var tabAreaTop: ConstraintItem {
-        return tabBar.snp.top
-    }
-    
     private func setupDelegate() {
         [recentSearchView.tableView, placeDetailView.tableView].forEach {
             $0.delegate = self
@@ -110,6 +110,7 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
+        // 추천 카드 클릭 액션 연결
         routeSelectionView.recommendationStackView.arrangedSubviews.forEach { subview in
             if let card = subview as? PathRecommendationCard {
                 let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapRouteCard))
@@ -118,8 +119,6 @@ public final class MapViewController: UIViewController {
             }
         }
     }
-
-    // MARK: - Review Actions
     
     private func setupReviewWriteAction() {
         placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
@@ -133,33 +132,13 @@ public final class MapViewController: UIViewController {
     @objc private func didTapRouteCard() {
         let detailVC = MapRouteDetailViewController()
         detailVC.modalPresentationStyle = .overFullScreen
-        detailVC.minSheetHeight = defaultHeight
         
-        detailVC.onResetToHome = { [weak self] in
-            guard let self = self else { return }
-            self.resetToInitialState()
+        detailVC.onDismiss = { [weak self] in
+            self?.routeSelectionView.isHidden = false
         }
         
         self.routeSelectionView.isHidden = true
         self.present(detailVC, animated: true)
-    }
-
-    private func resetToInitialState() {
-        routeSelectionView.isHidden = true
-        recentSearchView.isHidden = true
-        placeDetailView.isHidden = true
-        searchBar.isHidden = false
-        searchBar.updateState(.home)
-        bottomSheetView.isHidden = false
-        bottomSheetHeight?.update(offset: defaultHeight)
-        view.bringSubviewToFront(tabBar)
-    }
-
-    private func setupGesture() {
-        let bottomSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-        bottomSheetView.addGestureRecognizer(bottomSheetPan)
-        let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-        placeDetailView.addGestureRecognizer(detailSheetPan)
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -190,6 +169,7 @@ public final class MapViewController: UIViewController {
     private func showDetailView() {
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
+        searchBar.isHidden = false
         view.bringSubviewToFront(tabBar)
         detailSheetHeight?.update(offset: detailMinHeight)
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
@@ -202,6 +182,7 @@ public final class MapViewController: UIViewController {
         } completion: { _ in
             self.placeDetailView.isHidden = true
             self.bottomSheetView.isHidden = false
+            self.searchBar.isHidden = false
             self.view.bringSubviewToFront(self.tabBar)
         }
     }
@@ -210,6 +191,7 @@ public final class MapViewController: UIViewController {
         hideDetailView()
         recentSearchView.isHidden = true
         searchBar.updateState(.home)
+        searchBar.isHidden = false
         view.endEditing(true)
     }
 
@@ -222,26 +204,29 @@ public final class MapViewController: UIViewController {
 
     @objc private func didTapArriveRoute() {
         routeSelectionView.isHidden = false
-        [searchBar, bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
+        searchBar.isHidden = true
+        [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
         view.bringSubviewToFront(tabBar)
     }
 
     @objc private func didTapStartRoute() {
-        routeSelectionView.isHidden = false
-        [searchBar, bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
-        view.bringSubviewToFront(tabBar)
+        didTapArriveRoute()
     }
 
-    // [수정 완료] 경로 선택 화면에서 뒤로갈 때 장소 상세로 돌아가기
     @objc private func backFromRouteSelection() {
         routeSelectionView.isHidden = true
         placeDetailView.isHidden = false
+        searchBar.isHidden = false
         view.bringSubviewToFront(tabBar)
-        
         detailSheetHeight?.update(offset: detailMinHeight)
-        UIView.animate(withDuration: 0.3) {
-            self.view.layoutIfNeeded()
-        }
+        UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
+    }
+    
+    private func setupGesture() {
+        let bottomSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        bottomSheetView.addGestureRecognizer(bottomSheetPan)
+        let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        placeDetailView.addGestureRecognizer(detailSheetPan)
     }
 }
 
@@ -262,21 +247,19 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             
             cell.onDeleteTap = { [weak self] in
                 guard let self = self else { return }
-                ReviewAlert.show(in: self, title: "후기 삭제", message: "정말 후기를 삭제하시겠습니까?") {
+                ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
                     self.dummyReviews.remove(at: indexPath.row)
-                    self.placeDetailView.tableView.reloadData()
-                    ReviewAlert.show(in: self, title: "후기 삭제 완료", message: "후기가 정상적으로 삭제되었습니다.")
+                    tableView.reloadData()
                 }
             }
             
             cell.onReportTap = { [weak self] in
                 guard let self = self else { return }
                 ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") {
-                    ReviewAlert.show(in: self, title: "후기 신고 완료", message: "신고가 접수되었습니다.")
+                    print("신고 처리 완료")
                 }
             }
             return cell
         }
     }
 }
- 
