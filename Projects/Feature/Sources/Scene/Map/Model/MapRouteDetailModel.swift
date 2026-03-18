@@ -26,7 +26,6 @@ public enum RouteTurnType {
     }
 }
 
-// 빌드 에러 수정을 위한 모델 정의
 struct RouteStepModel {
     let turnType: RouteTurnType
     let title: String
@@ -34,5 +33,8 @@ struct RouteStepModel {
     
     var iconName: String {
         return turnType.iconName
+    }
+    var isPin: Bool {
+        return turnType == .start || turnType == .end
     }
 }
