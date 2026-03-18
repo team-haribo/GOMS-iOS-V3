@@ -20,13 +20,14 @@ public final class PathRecommendationCard: UIView {
         $0.tintColor = .color.sub1.color
     }
     private let timeLabel = UILabel().then {
-        $0.textColor = .color.sub1.color
+        $0.textColor = .color.mainText.color
         $0.font = .suit(size: 20, weight: .bold)
     }
     private let infoLabel = UILabel().then {
-        $0.textColor = .color.sub2.color
+        $0.textColor = .color.mainText.color
         $0.font = .suit(size: 14, weight: .regular)
     }
+    
     public init(title: String, time: String, info: String) {
         super.init(frame: .zero)
         self.backgroundColor = .color.surface.color
@@ -35,7 +36,10 @@ public final class PathRecommendationCard: UIView {
         timeLabel.text = time
         infoLabel.text = info
         [titleLabel, arrowIcon, timeLabel, infoLabel].forEach { addSubview($0) }
-        titleLabel.snp.makeConstraints { $0.top.leading.equalToSuperview().offset(16) }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().offset(16)
+        }
         arrowIcon.snp.makeConstraints {
             $0.centerY.equalTo(titleLabel)
             $0.leading.equalTo(titleLabel.snp.trailing).offset(2)
@@ -45,13 +49,16 @@ public final class PathRecommendationCard: UIView {
             $0.top.equalTo(titleLabel.snp.bottom).offset(8)
             $0.leading.equalTo(titleLabel)
         }
-        infoLabel.snp.makeConstraints { $0.bottom.leading.equalToSuperview().inset(16) }
+        infoLabel.snp.makeConstraints {
+            $0.top.equalTo(timeLabel.snp.bottom).offset(4)
+            $0.leading.equalTo(timeLabel)
+            $0.bottom.equalToSuperview().inset(16)
+        }
     }
     required init?(coder: NSCoder) { fatalError() }
 }
 
 public final class MapRouteSelectionView: UIView {
-    
     private let locations = ["내 위치", "학교"]
     private var destinationName: String = "짬뽕관 광주송정선운점"
     
@@ -75,19 +82,15 @@ public final class MapRouteSelectionView: UIView {
     public let startDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
         config.baseBackgroundColor = .color.button.color
-        
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .suit(size: 17, weight: .medium)
         titleAttr.foregroundColor = .color.sub2.color
         config.attributedTitle = titleAttr
-        
         config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
         config.imagePlacement = .trailing
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
-        
         config.cornerStyle = .fixed
         config.background.cornerRadius = 8
-        
         $0.configuration = config
         $0.contentHorizontalAlignment = .fill
     }
@@ -121,10 +124,7 @@ public final class MapRouteSelectionView: UIView {
         $0.contentHorizontalAlignment = .leading
     }
 
-    private let line = UIView().then {
-        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3)
-    }
-
+    private let line = UIView().then { $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3) }
     private let endTitleLabel = UILabel().then {
         $0.text = "도착"
         $0.textColor = .color.sub1.color
@@ -174,7 +174,7 @@ public final class MapRouteSelectionView: UIView {
         }
         
         backButton.snp.makeConstraints {
-            $0.top.equalTo(safeAreaLayoutGuide).offset(12)
+            $0.top.equalToSuperview().offset(60)
             $0.leading.equalToSuperview().offset(24)
             $0.size.equalTo(24)
         }
@@ -230,8 +230,9 @@ public final class MapRouteSelectionView: UIView {
             $0.height.equalTo(52)
         }
 
+        // [수정 핵심] 추천 카드 박스를 화면 아래로 배치 (탭바 높이 약 90~100 고려)
         recommendationStackView.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(110)
+            $0.bottom.equalToSuperview().inset(110) // 아래에서 110만큼 띄움
             $0.leading.equalToSuperview().offset(20)
             $0.height.equalTo(106)
             $0.width.equalTo(192 * 2 + 12)
@@ -252,18 +253,17 @@ public final class MapRouteSelectionView: UIView {
     @objc private func didSelectOption(_ sender: UIButton) {
         guard let title = sender.configuration?.attributedTitle else { return }
         let plainTitle = String(title.characters)
-        
         var config = startDropdownButton.configuration
         var titleAttr = AttributedString(plainTitle)
         titleAttr.font = .suit(size: 17, weight: .medium)
         titleAttr.foregroundColor = .color.mainText.color
         config?.attributedTitle = titleAttr
         startDropdownButton.configuration = config
-        
         selectionBox.isHidden = true
     }
 
     private func addCards() {
+        recommendationStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let card1 = PathRecommendationCard(title: "추천", time: "8분", info: "339m | 25kcal")
         let card2 = PathRecommendationCard(title: "큰길 우선", time: "10분", info: "450m | 30kcal")
         [card1, card2].forEach { recommendationStackView.addArrangedSubview($0) }

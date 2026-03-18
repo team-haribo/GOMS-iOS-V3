@@ -117,8 +117,15 @@ public final class MapReviewCell: UITableViewCell {
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
     }
     
-    @objc private func reportTapped() { onReportTap?() }
-    @objc private func deleteTapped() { onDeleteTap?() }
+    @objc private func reportTapped() {
+        print("신고 버튼 클릭됨")
+        onReportTap?()
+    }
+    
+    @objc private func deleteTapped() {
+        print("삭제 버튼 클릭됨")
+        onDeleteTap?()
+    }
     
     public func configure(name: String, info: String, content: String, date: String) {
         nameLabel.text = name
@@ -126,7 +133,7 @@ public final class MapReviewCell: UITableViewCell {
         contentLabel.text = content
         dateLabel.text = date
         
-        // 일단 이름으로 구분 (나중에 API 연결 시 member_id로 교체 예정)
+        // 김민솔인 경우만 삭제 버튼 표시
         let isMyReview = (name == "김민솔")
         deleteButton.isHidden = !isMyReview
         reportButton.isHidden = isMyReview
