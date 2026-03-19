@@ -148,6 +148,11 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     func setupSearchBar() {
         searchTextField.font = .suit(size: 16, weight: .medium)
         searchTextField.textColor = .color.mainText.color
+        searchTextField.backgroundColor = .color.inputBackground.color
+        searchTextField.layer.borderWidth = 1
+        searchTextField.layer.borderColor = UIColor.color.inputBackground.color.cgColor
+        searchTextField.layer.cornerRadius = 12
+        searchTextField.clipsToBounds = true
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 48))
         searchTextField.leftView = paddingView
         searchTextField.leftViewMode = .always
@@ -273,3 +278,4 @@ extension AdminOutingViewController: UICollectionViewDelegateFlowLayout {
         return 0
     }
 }
+

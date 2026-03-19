@@ -89,11 +89,11 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
 
     func configureDummy() {
         profileImageView.image = .image.profile.image
-        nameLabel.text = "김경수"
+        nameLabel.text = "김준표"
         nameLabel.textColor = .color.mainText.color
-        studentInfoLabel.text = "2기 | IoT"
+        studentInfoLabel.text = "9기 | iOS"
         studentInfoLabel.textColor = .color.sub2.color
-        outingTime.text = "12:34에 외출"
+        outingTime.text = "5:21에 외출"
         outingTime.textColor = .color.sub2.color
         deleteButton.isHidden = false
     }
