@@ -137,10 +137,13 @@ public final class SignInViewController: BaseViewController {
         let emailRegex = "^s[0-9]{5}$"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
 
-        if !emailPredicate.evaluate(with: email) {
-            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
-            showEmailError()
-            return
+        // 더미 계정(admin/user)은 이메일 형식 검증 예외 처리
+        if email != "admin" && email != "user" {
+            if !emailPredicate.evaluate(with: email) {
+                emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+                showEmailError()
+                return
+            }
         }
 
         //  비밀번호 일치 여부 체크
@@ -156,9 +159,17 @@ public final class SignInViewController: BaseViewController {
         UserDefaults.standard.set(email, forKey: "localEmail")
         UserDefaults.standard.set(password, forKey: "localPass")
 
-       
-        let adminVC = AdminMainViewController()
-        self.navigationController?.setViewControllers([adminVC], animated: false)
+        // 더미 계정 분기 처리
+        if email == "admin" && password == "1234" {
+            let adminVC = AdminMainViewController()
+            self.navigationController?.setViewControllers([adminVC], animated: false)
+        } else if email == "user" && password == "1234" {
+            let userVC = MainViewController()
+            self.navigationController?.setViewControllers([userVC], animated: false)
+        } else {
+            passwordErrorLabel.text = "계정을 확인해주세요."
+            showPasswordError()
+        }
         return
     }
 
@@ -364,7 +375,10 @@ extension SignInViewController: UITextFieldDelegate {
                     $0.height.equalTo(0)
                 }
                 view.layoutIfNeeded()
-            }else if !emailPredicate.evaluate(with: email) {
+            } else if email == "admin" || email == "user" {
+                // 더미 계정은 형식 검사 통과
+                showDefaultState()
+            } else if !emailPredicate.evaluate(with: email) {
                 emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
                 showEmailError()
             } else {
