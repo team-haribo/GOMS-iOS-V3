@@ -11,19 +11,23 @@ import SnapKit
 import Then
 
 public final class MapRecentSearchView: UIView {
-    private let titleStack = UIStackView().then {
+    // [수정] 외부(ViewController)에서 제약 조건을 잡을 수 있도록 public으로 변경
+    public let titleStack = UIStackView().then {
         $0.axis = .horizontal
-        $0.spacing = 4
+        $0.spacing = 6
         $0.alignment = .center
     }
+    
     private let titleLabel = UILabel().then {
         $0.text = "최근 검색"
-        $0.textColor = UIColor(red: 158/255, green: 158/255, blue: 158/255, alpha: 1)
-        $0.font = .systemFont(ofSize: 14, weight: .semibold)
+        $0.textColor = UIColor.color.sub2.color
+        // [수정] 최근 검색 글자 크기 16
+        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
     }
     
     private let clockIcon = UIImageView().then {
-        $0.image = UIImage(named: "Time", in: Bundle.module, compatibleWith: nil)
+        $0.image = UIImage(named: "Time", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.tintColor = UIColor.color.sub2.color
     }
     
     public let tableView = UITableView().then {
@@ -37,26 +41,27 @@ public final class MapRecentSearchView: UIView {
         super.init(frame: frame)
         setupView()
     }
+    
     required init?(coder: NSCoder) { fatalError() }
     
     private func setupView() {
-        // 기록 리스트 배경을 탑바(31,31,31)보다 어둡게 설정
-        self.backgroundColor = UIColor(red: 22/255, green: 22/255, blue: 22/255, alpha: 1)
-        
+        self.backgroundColor = UIColor.color.surface.color
         [titleStack, tableView].forEach { addSubview($0) }
         [titleLabel, clockIcon].forEach { titleStack.addArrangedSubview($0) }
         
-        clockIcon.snp.makeConstraints { $0.size.equalTo(16) }
+        // [수정] 시계 아이콘 크기 18
+        clockIcon.snp.makeConstraints { $0.size.equalTo(18) }
         
         titleStack.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(20) // 서치바 아래 적당한 간격
+            $0.top.equalToSuperview().offset(134)
             $0.leading.equalToSuperview().offset(24)
-            $0.height.equalTo(20) // 최근검색 글자 높이 20
+            $0.height.equalTo(20)
         }
         
         tableView.snp.makeConstraints {
-            $0.top.equalTo(titleStack.snp.bottom).offset(16) // 회색선(간격) 16
-            $0.leading.trailing.bottom.equalToSuperview() // 여기서 좌우를 0으로 밀어야 꽉 참
+            // [중요] 내부 제약 조건도 titleStack의 bottom을 기준으로 30만큼 띄움
+            $0.top.equalTo(titleStack.snp.bottom).offset(10)
+            $0.leading.trailing.bottom.equalToSuperview()
         }
     }
 }
