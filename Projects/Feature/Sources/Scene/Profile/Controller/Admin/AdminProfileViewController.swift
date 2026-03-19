@@ -11,20 +11,17 @@ import Combine
 import Moya
 import Service
 
+
 public class AdminProfileViewController: BaseViewController,UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     let imagePickerController = UIImagePickerController()
     let profileViewModel = ProfileViewModel()
     var cancellables = Set<AnyCancellable>()
-    let refreshControl = UIRefreshControl()
-    
-    let scrollView = UIScrollView().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
-    }
+private let tabBarView = TabBar()
 
-    let contentView = UIView().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
-    }
+private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아웃").then {
+    $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
+}
 
     let userProfile = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
@@ -70,11 +67,11 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     }
     
     let themeTopLine = UIView().then {
-        $0.backgroundColor = .color.gomsDivider.color
+        $0.backgroundColor = .color.button.color
     }
     
     let themeBottomLine = UIView().then {
-        $0.backgroundColor = .color.gomsDivider.color
+        $0.backgroundColor = .color.button.color
     }
     
     let themeChangText = UILabel().then {
@@ -84,21 +81,21 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     }
     
     let themeChangRec = UIButton().then {
-        $0.backgroundColor = .color.gomsTheme.color
-        $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
+        $0.backgroundColor = UIColor(red: 28/255, green: 28/255, blue: 30/255, alpha: 1)
         $0.layer.cornerRadius = 12
-        $0.layer.borderColor = UIColor.color.gomsCoverDivider.color.cgColor
-        $0.layer.borderWidth = 1.0
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.color.button.color.cgColor
+        $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
     }
     
     let themeSettingText = UILabel().then {
         $0.text = ""
-        $0.textColor = .color.gomsSecondary.color
+        $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .regular)
     }
     
     let themeSettingImg = UIImageView().then {
-        $0.image = .image.gomsBottomButton.image
+        $0.image = .image.under.image
     }
     
     let clockText = UILabel().then {
@@ -109,13 +106,13 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     
     let clockDescription = UILabel().then {
         $0.text = "프로필 카드에 초 단위의 시간을 나타내요"
-        $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
+        $0.textColor = UIColor.lightGray
+        $0.font = .suit(size: 14, weight: .regular)
     }
     
     let clockToggleButton: UISwitch = UISwitch().then {
         $0.translatesAutoresizingMaskIntoConstraints = false
-        $0.onTintColor = .color.mainText.color
+        $0.onTintColor = .color.admin.color
         $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchClockOn(_:)), for: .valueChanged)
         $0.isOn = false
@@ -129,30 +126,18 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     
     let qrMakeOnDescription = UILabel().then {
         $0.text = "앱을 실행하면 즉시 QR코드를 생성해요"
-        $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
-        
+        $0.textColor = UIColor.lightGray
+        $0.font = UIFont.suit(size: 14, weight: .regular)
     }
     
     let qrMakeOntoggleButton: UISwitch = UISwitch().then {
         $0.translatesAutoresizingMaskIntoConstraints = false
-        $0.onTintColor = .color.mainText.color
+        $0.onTintColor = .color.admin.color
         $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchQRMake(_:)), for: .valueChanged)
         $0.isOn = false
     }
     
-    lazy var passwordResetButton = ProfileButton(icon: .image.passwordReset.image, title: "비밀번호 재설정").then {
-        $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
-    }
-    
-    lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
-        $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
-    }
-    
-    lazy var withdrawalButton = ProfileButton(icon: .image.withdrawal.image, title: "회원탈퇴").then {
-        $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
-    }
     
     let borderView = UIView().then() {
         $0.backgroundColor = .color.gomsDivider.color
@@ -315,29 +300,33 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         setNeedsStatusBarAppearanceUpdate()
     }
 
-    func setupScrollView() {
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
 
-        scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+    private func bindTabBar() {
+        tabBarView.onTabSelected = { [weak self] tab in
+            guard let self = self else { return }
+
+            switch tab {
+            case .home:
+                let adminVC = AdminMainViewController()
+                self.navigationController?.setViewControllers([adminVC], animated: false)
+            case .map:
+                let mapVC = MapViewController()
+
+                let transition = CATransition()
+                transition.duration = 0.25
+                transition.type = .push
+                transition.subtype = .fromLeft
+                self.navigationController?.view.layer.add(transition, forKey: kCATransition)
+
+                self.navigationController?.pushViewController(mapVC, animated: false)
+            case .profile:
+                break
+            }
         }
-
-        contentView.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView.contentLayoutGuide)
-            make.width.equalTo(scrollView.frameLayoutGuide)
-        }
-
-        contentView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(view.snp.height).priority(.low)
-        }
-
-        addView()
     }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
         applySavedTheme()
         self.navigationController?.navigationBar.prefersLargeTitles = false
         profileViewModel.loadProfileInfo { success, authority in
@@ -397,13 +386,18 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         .store(in: &cancellables)
         
         view.backgroundColor = .color.background.color
+
+        tabBarView.selectedTab = .profile
+        bindTabBar()
         
         let backBarButtonItem = UIBarButtonItem(title: "돌아가기", style: .plain, target: self, action: nil)
         self.navigationItem.backBarButtonItem = backBarButtonItem
         
         imagePickerController.delegate = self
+        logoutMainButton.backgroundColor = .color.gomsNegative.color
+        logoutMainButton.setTitleColor(.white, for: .normal)
+        logoutMainButton.layer.borderWidth = 0
         
-        configureRefreshControl()
     }
     
     // MARK: - Configure Navigation
@@ -411,11 +405,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         self.navigationController?.navigationBar.tintColor = .color.admin.color
     }
     
-    func configureRefreshControl () {
-        scrollView.refreshControl = refreshControl
-        refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
-        refreshControl.tintColor = .color.admin.color
-    }
     
     @objc func handleRefreshControl() {
         profileViewModel.loadProfileInfo { success, authority in
@@ -430,7 +419,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         self.view.frame.origin.y += offset.y
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.refreshControl.endRefreshing()
             self.view.frame.origin.y = 0
         }
     }
@@ -504,45 +492,41 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     }
     
     public override func addView() {
-        view.addSubview(scrollView)
-
         [
             userProfile,
             userName,
             userGradeDepartment,
             userProfilePencil,
-            clockText,
-            clockDescription,
-            clockToggleButton,
-            qrMakeOnText,
-            qrMakeOnDescription,
-            qrMakeOntoggleButton,
+
             themeTopLine,
             themeBottomLine,
-            logoutButton,
+
             themeChangText,
             themeChangRec,
             themeSettingText,
             themeSettingImg,
-            borderView,
-            logoutButton,
-            withdrawalButton,
-            passwordResetButton
+
+            clockText,
+            clockDescription,
+            clockToggleButton,
+
+            qrMakeOnText,
+            qrMakeOnDescription,
+            qrMakeOntoggleButton,
+
+            logoutMainButton,
+            tabBarView
         ].forEach {
-            self.scrollView.addSubview($0)
+            view.addSubview($0)
         }
     }
 
     public override func setLayout() {
-        scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
         userProfile.snp.makeConstraints {
             $0.width.equalTo(64)
             $0.height.equalTo(64)
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalToSuperview().inset(40)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(16)
         }
 
         userProfilePencil.snp.makeConstraints {
@@ -551,21 +535,18 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         userName.snp.makeConstraints {
-            $0.width.equalTo(100)
-            $0.height.equalTo(32)
-            $0.leading.equalTo(userProfile.snp.trailing).offset(16)
-            $0.top.equalTo(userProfile.snp.top)
+            $0.leading.equalTo(userProfile.snp.trailing).offset(12)
+            $0.top.equalTo(userProfile.snp.top).offset(12)
         }
 
         userGradeDepartment.snp.makeConstraints {
-            $0.height.equalTo(28)
             $0.leading.equalTo(userName.snp.leading)
             $0.top.equalTo(userName.snp.bottom).offset(4)
         }
 
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
-            $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
+            $0.bottom.equalTo(userProfile.snp.bottom).offset(24)
             $0.leading.equalToSuperview().offset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
@@ -584,79 +565,65 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         themeChangRec.snp.makeConstraints {
-            $0.height.equalTo(64)
+            $0.height.equalTo(56)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
 
         themeSettingText.snp.makeConstraints {
-            $0.width.equalTo(106)
-            $0.height.equalTo(28)
-            $0.top.equalTo(themeChangRec.snp.top).offset(18)
-            $0.leading.equalTo(themeChangRec.snp.leading).offset(12)
+            $0.centerY.equalTo(themeChangRec)
+            $0.leading.equalTo(themeChangRec.snp.leading).offset(16)
         }
 
         themeSettingImg.snp.makeConstraints {
-            $0.width.equalTo(24)
-            $0.height.equalTo(24)
-            $0.top.equalTo(themeChangRec.snp.top).offset(20)
+            $0.centerY.equalTo(themeChangRec)
             $0.trailing.equalToSuperview().inset(32)
+            $0.size.equalTo(24)
         }
 
         clockText.snp.makeConstraints {
-            $0.width.equalTo(184)
-            $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
-            $0.top.equalTo(themeChangRec.snp.bottom).offset(25)
+            $0.top.equalTo(themeChangRec.snp.bottom).offset(20)
         }
 
         clockDescription.snp.makeConstraints {
-            $0.width.equalTo(200)
-            $0.height.equalTo(20)
             $0.leading.equalTo(clockText.snp.leading)
-            $0.top.equalTo(clockText.snp.bottom)
+            $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
+            $0.top.equalTo(clockText.snp.bottom).offset(4)
         }
 
         clockToggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(themeChangRec.snp.bottom).offset(32)
+            $0.centerY.equalTo(clockText)
         }
 
         qrMakeOnText.snp.makeConstraints {
-            $0.width.equalTo(184)
-            $0.height.equalTo(28)
             $0.leading.equalTo(clockDescription.snp.leading)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(25)
+            $0.top.equalTo(clockDescription.snp.bottom).offset(20)
         }
 
         qrMakeOnDescription.snp.makeConstraints {
-            $0.width.equalTo(200)
-            $0.height.equalTo(20)
             $0.leading.equalTo(qrMakeOnText.snp.leading)
-            $0.top.equalTo(qrMakeOnText.snp.bottom)
+            $0.trailing.lessThanOrEqualTo(qrMakeOntoggleButton.snp.leading).offset(-8)
+            $0.top.equalTo(qrMakeOnText.snp.bottom).offset(4)
         }
 
         qrMakeOntoggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(35)
+            $0.centerY.equalTo(qrMakeOnText)
         }
 
-        passwordResetButton.snp.makeConstraints {
+        logoutMainButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(bounds.height * 0.08)
-            $0.top.equalTo(themeBottomLine.snp.bottom).offset(bounds.height * 0.01)
+            $0.height.equalTo(48)
+            $0.bottom.equalTo(tabBarView.snp.top).offset(-16)
         }
 
-        logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(22)
-            $0.height.equalTo(bounds.height * 0.08)
-            $0.top.equalTo(passwordResetButton.snp.bottom)
-        }
-
-        withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(bounds.height * 0.08)
-            $0.top.equalTo(logoutButton.snp.bottom)
+        tabBarView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            $0.height.equalTo(80)
         }
     }
 }
+
