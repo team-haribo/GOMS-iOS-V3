@@ -21,9 +21,31 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     let refreshControl = UIRefreshControl()
     
-    let searchController = UISearchController(searchResultsController: nil)
+    private lazy var searchTextField = GOMSTextField(
+        frame: CGRect(x: 0, y: 0, width: 0, height: 0),
+        placeholder: "학생 검색"
+    ).then {
+        let searchIconView = UIImageView(image: .image.search.image.withRenderingMode(.alwaysTemplate))
+        searchIconView.tintColor = .color.sub2.color
+        searchIconView.contentMode = .scaleAspectFit
+        searchIconView.frame = CGRect(x: 8, y: 0, width: 18, height: 18)
+
+        let containerView = UIView(frame: CGRect(x: 0, y: 0, width: 26, height: 18))
+        containerView.addSubview(searchIconView)
+
+        $0.rightView = containerView
+        $0.rightViewMode = .always
+        $0.clearButtonMode = .never
+        $0.returnKeyType = .search
+    }
     
     private let searchTitle = UILabel().then {
+        $0.text = "외출 현황"
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 29, weight: .bold)
+    }
+    
+    private let searchResultLabel = UILabel().then {
         $0.text = "검색 결과"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 18, weight: .semibold)
@@ -53,6 +75,13 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     // MARK: - Life Cycel
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        addView()
+        setLayout()
+        configureUI()
+
+        setup()
+
         viewModel.getOutingList {
             self.outingList = self.viewModel.outingListDatas
             self.setup()
@@ -70,15 +99,17 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     func setup() {
         if outingList.isEmpty {
-            searchTitle.isHidden = true
-            coffeeIcon.isHidden = false
-            outingNilLabel.isHidden = false
+        
+            searchResultLabel.isHidden = false
+            coffeeIcon.isHidden = true
+            outingNilLabel.isHidden = true
         } else {
-            searchTitle.isHidden = false
+            
+            searchResultLabel.isHidden = false
             coffeeIcon.isHidden = true
             outingNilLabel.isHidden = true
         }
-        
+
         setupSearchBar()
         setupCollectionView()
         setupScrollView()
@@ -106,7 +137,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
             }
         }
     }
-
+    
     private func setupCollectionView() {
         self.outingListCollectionView.dataSource = self
         self.outingListCollectionView.delegate  = self
@@ -115,8 +146,24 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     }
     
     func setupSearchBar() {
-        searchController.searchBar.placeholder = "학생 검색"
-        searchController.searchResultsUpdater = self
+        searchTextField.font = .suit(size: 16, weight: .medium)
+        searchTextField.textColor = .color.mainText.color
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 48))
+        searchTextField.leftView = paddingView
+        searchTextField.leftViewMode = .always
+        searchTextField.addTarget(self, action: #selector(searchTextFieldEditingChanged(_:)), for: .editingChanged)
+    }
+    
+    @objc private func searchTextFieldEditingChanged(_ textField: UITextField) {
+        let searchText = textField.text ?? ""
+        if searchText.isEmpty {
+            outingList = viewModel.outingListDatas
+        } else {
+            viewModel.searchStudent(searchString: searchText) {
+                self.outingList = self.viewModel.outingSearchListDatas
+                self.outingListCollectionView.reloadData()
+            }
+        }
     }
     
     // MARK: - Configure UI
@@ -126,40 +173,46 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     // MARK: - Add View
     public override func addView() {
-        [searchTitle, searchController.searchBar, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
+        [searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
     }
         
     // MARK: - Layout
     public override func setLayout() {
         searchTitle.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(bounds.width * 0.05)
-            $0.height.equalTo(32)
+            $0.height.equalTo(48)
+            $0.top.equalToSuperview().inset(100)
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
         }
         
-        searchController.searchBar.snp.makeConstraints {
+        searchTextField.snp.makeConstraints {
             $0.top.equalTo(searchTitle.snp.bottom).offset(24)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(bounds.width * 0.05)
-            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-(bounds.width * 0.05))
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
+            $0.height.equalTo(48)
+        }
+        
+        searchResultLabel.snp.makeConstraints {
+            $0.top.equalTo(searchTextField.snp.bottom).offset(24)
+            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
+            $0.height.equalTo(24)
         }
         
         outingListCollectionView.snp.makeConstraints {
-            $0.top.equalTo(searchController.searchBar.snp.bottom).offset(16)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(bounds.width * 0.05)
-            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-(bounds.width * 0.05))
+            $0.top.equalTo(searchResultLabel.snp.bottom).offset(8)
+            $0.leading.equalTo(bounds.width * 0.05)
+            $0.trailing.equalTo(-(bounds.width * 0.05))
             $0.bottom.equalToSuperview()
         }
         
         coffeeIcon.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.height.width.equalTo(80)
-            $0.top.equalTo(bounds.height * 0.49)
+            $0.centerY.equalToSuperview().offset(40)
+            $0.size.equalTo(80)
         }
         
         outingNilLabel.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(24)
-            $0.top.equalTo(coffeeIcon.snp.bottom).offset(8)
+            $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
         }
     }
 }
@@ -167,18 +220,24 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
 // MARK: - Extension
 extension AdminOutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return outingList.count
+        return outingList.isEmpty ? 5 : outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = outingListCollectionView.dequeueReusableCell(withReuseIdentifier: AdminOutingCollectionViewCell.identifier, for: indexPath) as! AdminOutingCollectionViewCell
-        
+
         cell.delegate = self
         cell.tag = indexPath.row
-        
-        let outingData = outingList[indexPath.row]
-        cell.configureData(with: outingData)
-        
+
+        if outingList.isEmpty {
+            cell.contentView.alpha = 1.0
+            cell.configureDummy()
+        } else {
+            cell.contentView.alpha = 1.0
+            let outingData = outingList[indexPath.row]
+            cell.configureData(with: outingData)
+        }
+
         return cell
     }
 }
@@ -194,7 +253,7 @@ extension AdminOutingViewController: UICollectionViewDelegate {
                     self.outingList = self.viewModel.outingListDatas
                     DispatchQueue.main.async {
                         self.outingListCollectionView.reloadData()
-                        self.searchController.searchBar.text = ""
+                        self.searchTextField.text = ""
                     }
                 }
             }
@@ -212,19 +271,5 @@ extension AdminOutingViewController: UICollectionViewDelegateFlowLayout {
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 0
-    }
-}
-
-extension AdminOutingViewController: UISearchResultsUpdating {
-    public func updateSearchResults(for searchController: UISearchController) {
-        guard let searchString = searchController.searchBar.text else { return }
-        if searchString.isEmpty {
-            outingList = viewModel.outingListDatas
-        } else {
-            viewModel.searchStudent(searchString: searchString) {
-                self.outingList = self.viewModel.outingSearchListDatas
-                self.outingListCollectionView.reloadData()
-            }
-        }
     }
 }
