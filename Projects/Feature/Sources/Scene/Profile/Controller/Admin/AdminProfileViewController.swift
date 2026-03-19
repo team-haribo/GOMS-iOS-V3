@@ -621,8 +621,8 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
 
         tabBarView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide)
-            $0.height.equalTo(80)
+            $0.bottom.equalToSuperview()
+            $0.height.equalTo(100)
         }
     }
 }
