@@ -11,7 +11,7 @@ import UIKit
 import SnapKit
 import Then
 protocol AdminOutingCellDelegate: AnyObject {
-    func deleteButtonTapped(index: Int)
+    func deleteButtonTapped(cell: AdminOutingCollectionViewCell)
 }
 
 final class AdminOutingCollectionViewCell: UICollectionViewCell {
@@ -62,7 +62,7 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
     }
     
     @objc private func deleteButtonTapped() {
-        delegate?.deleteButtonTapped(index: self.tag)
+        delegate?.deleteButtonTapped(cell: self)
     }
     
     func configureData(with outingData: OutingListData) {

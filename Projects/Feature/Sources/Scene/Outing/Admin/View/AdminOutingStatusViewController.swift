@@ -13,11 +13,9 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     // MARK: - Properties
     private let viewModel = OutingViewModel()
     
-    var outingList: [OutingListData] = [] {
-        didSet {
-            outingListCollectionView.reloadData()
-        }
-    }
+private var isInitialState = true
+private var dummyCount = 5
+    var outingList: [OutingListData] = []
     
     let refreshControl = UIRefreshControl()
     
@@ -83,6 +81,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
         setup()
 
         viewModel.getOutingList {
+            self.isInitialState = false
             self.outingList = self.viewModel.outingListDatas
             self.setup()
         }
@@ -225,20 +224,18 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
 // MARK: - Extension
 extension AdminOutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return outingList.isEmpty ? 5 : outingList.count
+        return isInitialState && outingList.isEmpty ? dummyCount : outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = outingListCollectionView.dequeueReusableCell(withReuseIdentifier: AdminOutingCollectionViewCell.identifier, for: indexPath) as! AdminOutingCollectionViewCell
 
         cell.delegate = self
-        cell.tag = indexPath.row
+        cell.tag = indexPath.item
 
-        if outingList.isEmpty {
-            cell.contentView.alpha = 1.0
+        if isInitialState && outingList.isEmpty {
             cell.configureDummy()
         } else {
-            cell.contentView.alpha = 1.0
             let outingData = outingList[indexPath.row]
             cell.configureData(with: outingData)
         }
@@ -248,21 +245,43 @@ extension AdminOutingViewController: UICollectionViewDataSource {
 }
 
 extension AdminOutingViewController: UICollectionViewDelegate {
-    func deleteButtonTapped(index: Int) {
-        let alertController = UIAlertController(title: "외출 강제 복귀", message: "외출자를 강제로 복귀시키시겠습니까?", preferredStyle: .alert)
+    func deleteButtonTapped(cell: AdminOutingCollectionViewCell) {
+        guard let indexPath = outingListCollectionView.indexPath(for: cell) else { return }
+        let index = indexPath.item
+
+        let alertController = UIAlertController(
+            title: "외출 강제 복귀",
+            message: "외출자를 강제로 복귀시키시겠습니까?",
+            preferredStyle: .alert
+        )
+
         alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
+
         alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
-            self.viewModel.deleteOutingStudent(user: self.outingList[index]) {
-                self.outingList = self.viewModel.outingListDatas
-                self.viewModel.getOutingList {
-                    self.outingList = self.viewModel.outingListDatas
-                    DispatchQueue.main.async {
-                        self.outingListCollectionView.reloadData()
-                        self.searchTextField.text = ""
-                    }
+            // 🔥 더미 상태일 때 (데이터 없음)
+            if self.isInitialState && self.outingList.isEmpty {
+                guard self.dummyCount > 0 else { return }
+                
+                self.dummyCount -= 1
+
+                DispatchQueue.main.async {
+                    self.outingListCollectionView.performBatchUpdates({
+                        self.outingListCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+                    }, completion: nil)
                 }
+                return
+            }
+
+            // 🔥 실제 데이터일 때
+            guard index < self.outingList.count else { return }
+
+            self.outingList.remove(at: index)
+
+            DispatchQueue.main.async {
+                self.outingListCollectionView.reloadData()
             }
         }))
+
         present(alertController, animated: true, completion: nil)
     }
 }
@@ -278,4 +297,3 @@ extension AdminOutingViewController: UICollectionViewDelegateFlowLayout {
         return 0
     }
 }
-
