@@ -189,7 +189,7 @@ private var dummyCount = 5
         }
         
         searchTextField.snp.makeConstraints {
-            $0.top.equalTo(searchTitle.snp.bottom).offset(24)
+            $0.top.equalTo(searchTitle.snp.bottom).offset(4)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
             $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
             $0.height.equalTo(48)
