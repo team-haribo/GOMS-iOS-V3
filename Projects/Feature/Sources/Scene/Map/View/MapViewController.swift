@@ -30,7 +30,7 @@ public final class MapViewController: UIViewController {
     }
     
     private let bottomSheetView = MapBottomSheetView()
-    private let tabBar = TabBar()
+    
     private let placeDetailView = MapPlaceDetailView().then {
         $0.isHidden = true
         $0.clipsToBounds = true
@@ -38,8 +38,10 @@ public final class MapViewController: UIViewController {
     
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
-    private let defaultHeight: CGFloat = 330
-    private let detailMinHeight: CGFloat = 330
+    
+    // [최종 수정] 버튼 아이콘이 탭바 바로 위로 오도록 높이를 210으로 조정
+    private let defaultHeight: CGFloat = 250
+    private let detailMinHeight: CGFloat = 250
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,32 +51,24 @@ public final class MapViewController: UIViewController {
         setupGesture()
         setupActions()
         setupReviewWriteAction()
-        bindTabBar()
     }
 
     private func setupView() {
         view.backgroundColor = .color.background.color
-        [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar, tabBar].forEach {
+        [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach {
             view.addSubview($0)
         }
-        view.bringSubviewToFront(tabBar)
     }
     
     private func setupLayout() {
-        tabBar.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(90)
-        }
-
         routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         routeSelectionView.recommendationStackView.snp.remakeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(tabBar.snp.top).offset(-20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-20)
             $0.height.equalTo(106)
         }
         
-        // [수정] 서치바 위치를 60 -> 64로 살짝 내렸습니다.
         searchBar.snp.makeConstraints {
             $0.top.equalToSuperview().offset(64)
             $0.leading.trailing.equalToSuperview().inset(24)
@@ -83,7 +77,6 @@ public final class MapViewController: UIViewController {
         
         recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
         
-        // [수정] 리스트를 위로 더 올리고(offset 20 -> 12), 서치바와의 간격도 조정
         recentSearchView.titleStack.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(24)
@@ -92,7 +85,7 @@ public final class MapViewController: UIViewController {
         recentSearchView.tableView.snp.remakeConstraints {
             $0.top.equalTo(recentSearchView.titleStack.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(tabBar.snp.top)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
         
         bottomSheetView.snp.makeConstraints {
@@ -103,19 +96,6 @@ public final class MapViewController: UIViewController {
         placeDetailView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             self.detailSheetHeight = $0.height.equalTo(0).priority(.high).constraint
-        }
-    }
-
-    private func bindTabBar() {
-        tabBar.onTabSelected = { [weak self] tabType in
-            guard let self = self else { return }
-            switch tabType {
-            case .home: self.navigationController?.popViewController(animated: false)
-            case .profile:
-                let profileVC = UserProfileViewController()
-                self.navigationController?.pushViewController(profileVC, animated: false)
-            case .map: break
-            }
         }
     }
 
@@ -168,8 +148,9 @@ public final class MapViewController: UIViewController {
         let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
         let newHeight = currentHeight - translation.y
         let minH = defaultHeight
-        let gap = dummyReviews.isEmpty ? 233 : 43
-        let maxH = view.frame.height - (searchBar.frame.maxY + CGFloat(gap))
+        
+        let gap: CGFloat = 84
+        let maxH = view.frame.height - (searchBar.frame.maxY + gap)
         
         if gesture.state == .changed {
             if newHeight >= minH && newHeight <= maxH {
@@ -191,7 +172,6 @@ public final class MapViewController: UIViewController {
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
         searchBar.isHidden = false
-        view.bringSubviewToFront(tabBar)
         detailSheetHeight?.update(offset: detailMinHeight)
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
     }
@@ -228,14 +208,12 @@ public final class MapViewController: UIViewController {
         if !placeDetailView.isHidden { hideDetailView() }
         searchBar.updateState(.search)
         recentSearchView.isHidden = false
-        view.bringSubviewToFront(tabBar)
     }
 
     @objc private func didTapArriveRoute() {
         routeSelectionView.isHidden = false
         searchBar.isHidden = true
         [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
-        view.bringSubviewToFront(tabBar)
     }
 
     @objc private func didTapStartRoute() { didTapArriveRoute() }
@@ -244,12 +222,10 @@ public final class MapViewController: UIViewController {
         routeSelectionView.isHidden = true
         placeDetailView.isHidden = false
         searchBar.isHidden = false
-        view.bringSubviewToFront(tabBar)
         detailSheetHeight?.update(offset: detailMinHeight)
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
     }
 }
-
 
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -260,8 +236,6 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
             cell.configure(title: dummyRecentSearches[indexPath.row], date: "26.02.11")
-            
-            // [배경색 수정] 셀 배경색도 투명하게 해서 뷰 컬러가 보이게 함
             cell.backgroundColor = .clear
             
             cell.onDeleteTap = { [weak self, weak tableView] in
