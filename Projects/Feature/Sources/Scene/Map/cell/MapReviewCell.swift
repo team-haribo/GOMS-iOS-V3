@@ -56,7 +56,7 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private let cellDivider = UIView().then {
-        $0.backgroundColor = .color.sub2.color
+        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3) // 구분선 너무 진하지 않게 조정
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -117,15 +117,8 @@ public final class MapReviewCell: UITableViewCell {
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
     }
     
-    @objc private func reportTapped() {
-        print("신고 버튼 클릭됨")
-        onReportTap?()
-    }
-    
-    @objc private func deleteTapped() {
-        print("삭제 버튼 클릭됨")
-        onDeleteTap?()
-    }
+    @objc private func reportTapped() { onReportTap?() }
+    @objc private func deleteTapped() { onDeleteTap?() }
     
     public func configure(name: String, info: String, content: String, date: String) {
         nameLabel.text = name
@@ -133,7 +126,6 @@ public final class MapReviewCell: UITableViewCell {
         contentLabel.text = content
         dateLabel.text = date
         
-        // 김민솔인 경우만 삭제 버튼 표시
         let isMyReview = (name == "김민솔")
         deleteButton.isHidden = !isMyReview
         reportButton.isHidden = isMyReview
