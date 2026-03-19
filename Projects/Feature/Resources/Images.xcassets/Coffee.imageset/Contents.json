@@ -1,8 +1,7 @@
 {
   "images" : [
     {
-<<<<<<< HEAD:Projects/Feature/Resources/Images.xcassets/grayCoffee.imageset/Contents.json
-      "filename" : "Frame 18521.pdf",
+      "filename" : "coffe.pdf",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -13,10 +12,6 @@
     {
       "idiom" : "universal",
       "scale" : "3x"
-=======
-      "filename" : "coffe.pdf",
-      "idiom" : "universal"
->>>>>>> dev:Projects/Feature/Resources/Images.xcassets/Coffee.imageset/Contents.json
     }
   ],
   "info" : {
