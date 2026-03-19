@@ -25,7 +25,10 @@ public final class MapViewController: UIViewController {
     private let recentSearchView = MapRecentSearchView().then { $0.isHidden = true }
     private let bottomSheetView = MapBottomSheetView()
     private let tabBar = TabBar()
-    private let placeDetailView = MapPlaceDetailView().then { $0.isHidden = true }
+    private let placeDetailView = MapPlaceDetailView().then {
+        $0.isHidden = true
+        $0.clipsToBounds = true
+    }
     
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
@@ -40,11 +43,11 @@ public final class MapViewController: UIViewController {
         setupGesture()
         setupActions()
         setupReviewWriteAction()
+        bindTabBar() // [수정] 탭바 바인딩 함수 호출 추가
     }
 
     private func setupView() {
         view.backgroundColor = .color.background.color
-        // 순서 중요: 아래에 깔릴 애들부터 추가
         [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar, tabBar].forEach {
             view.addSubview($0)
         }
@@ -61,7 +64,6 @@ public final class MapViewController: UIViewController {
             $0.edges.equalToSuperview()
         }
         
-        // 추천 카드 위치 수정 (탭바 바로 위)
         routeSelectionView.recommendationStackView.snp.remakeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(tabBar.snp.top).offset(-20)
@@ -86,10 +88,25 @@ public final class MapViewController: UIViewController {
             self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
         }
         
-        // [수정] placeDetailView의 좌우 제약을 명확히 하여 글자 튀어나옴 방지
         placeDetailView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview() // leading, trailing을 명시적으로 잡아야 함
-            self.detailSheetHeight = $0.height.equalTo(0).constraint
+            $0.leading.trailing.bottom.equalToSuperview()
+            self.detailSheetHeight = $0.height.equalTo(0).priority(.high).constraint
+        }
+    }
+
+    // [추가] 탭바 이동 로직
+    private func bindTabBar() {
+        tabBar.onTabSelected = { [weak self] tabType in
+            guard let self = self else { return }
+            switch tabType {
+            case .home:
+                self.navigationController?.popViewController(animated: false)
+            case .profile:
+                let profileVC = UserProfileViewController()
+                self.navigationController?.pushViewController(profileVC, animated: false)
+            case .map:
+                break // 현재 화면이 맵이므로 아무것도 안 함
+            }
         }
     }
 
@@ -110,7 +127,6 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
-        // 추천 카드 클릭 액션 연결
         routeSelectionView.recommendationStackView.arrangedSubviews.forEach { subview in
             if let card = subview as? PathRecommendationCard {
                 let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapRouteCard))
@@ -132,11 +148,9 @@ public final class MapViewController: UIViewController {
     @objc private func didTapRouteCard() {
         let detailVC = MapRouteDetailViewController()
         detailVC.modalPresentationStyle = .overFullScreen
-        
         detailVC.onDismiss = { [weak self] in
             self?.routeSelectionView.isHidden = false
         }
-        
         self.routeSelectionView.isHidden = true
         self.present(detailVC, animated: true)
     }
@@ -176,14 +190,14 @@ public final class MapViewController: UIViewController {
     }
 
     @objc private func hideDetailView() {
-        detailSheetHeight?.update(offset: 0)
-        UIView.animate(withDuration: 0.3) {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.detailSheetHeight?.update(offset: 0)
             self.view.layoutIfNeeded()
-        } completion: { _ in
-            self.placeDetailView.isHidden = true
-            self.bottomSheetView.isHidden = false
-            self.searchBar.isHidden = false
-            self.view.bringSubviewToFront(self.tabBar)
+        }) { _ in
+            if self.detailSheetHeight?.layoutConstraints.first?.constant == 0 {
+                self.placeDetailView.isHidden = true
+                self.bottomSheetView.isHidden = false
+            }
         }
     }
 
