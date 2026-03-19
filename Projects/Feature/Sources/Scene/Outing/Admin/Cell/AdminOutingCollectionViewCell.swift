@@ -10,9 +10,8 @@ import UIKit
 
 import SnapKit
 import Then
-
 protocol AdminOutingCellDelegate: AnyObject {
-    func deleteButtonTapped(index: Int)
+    func deleteButtonTapped(cell: AdminOutingCollectionViewCell)
 }
 
 final class AdminOutingCollectionViewCell: UICollectionViewCell {
@@ -46,7 +45,7 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
     }
     
     private lazy var deleteButton = UIButton().then {
-        $0.setImage(.image.gomsDeleteIcon.image, for: .normal)
+        $0.setImage(.image.trash.image, for: .normal)
         $0.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
     }
     
@@ -63,7 +62,7 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
     }
     
     @objc private func deleteButtonTapped() {
-        delegate?.deleteButtonTapped(index: self.tag)
+        delegate?.deleteButtonTapped(cell: self)
     }
     
     func configureData(with outingData: OutingListData) {
@@ -82,6 +81,21 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
             studentInfoLabel.text = "\(outingData.grade)기 | AI"
         }
         outingTime.text = "\(outingData.outingTime)에 외출"
+        nameLabel.textColor = .color.mainText.color
+        studentInfoLabel.textColor = .color.sub2.color
+        outingTime.textColor = .color.sub2.color
+        deleteButton.isHidden = false
+    }
+
+    func configureDummy() {
+        profileImageView.image = .image.profile.image
+        nameLabel.text = "김준표"
+        nameLabel.textColor = .color.mainText.color
+        studentInfoLabel.text = "9기 | iOS"
+        studentInfoLabel.textColor = .color.sub2.color
+        outingTime.text = "5:21에 외출"
+        outingTime.textColor = .color.sub2.color
+        deleteButton.isHidden = false
     }
     
     // MARK: - Configure UI
