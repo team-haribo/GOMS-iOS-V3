@@ -19,10 +19,10 @@ public final class MapPlaceDetailView: UIView {
         static let buttonHeight: CGFloat = 33
     }
     
+    // MARK: - UI Components
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
-        // 하단 탭바에 가려지지 않게 여유 공간 확보
-        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 100, right: 0)
+        $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0)
     }
     
     private let contentView = UIView()
@@ -34,7 +34,7 @@ public final class MapPlaceDetailView: UIView {
 
     public let titleLabel = UILabel().then {
         $0.text = "짬뽕관 광주송정선운점"
-        $0.textColor = .color.sub1.color
+        $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
     }
     
@@ -44,9 +44,19 @@ public final class MapPlaceDetailView: UIView {
         $0.font = .suit(size: 16, weight: .medium)
     }
     
+    // 🔥 하트 버튼 수정: normal과 selected에 다른 이미지를 할당
     public let heartButton = UIButton().then {
-        $0.setImage(UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
-        $0.tintColor = .color.sub2.color
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        
+        // 빈 하트 (테두리)
+        let emptyHeart = UIImage(systemName: "heart")?.withConfiguration(config).withRenderingMode(.alwaysTemplate)
+        // 채워진 하트 (속이 꽉 찬 것)
+        let filledHeart = UIImage(systemName: "heart.fill")?.withConfiguration(config).withRenderingMode(.alwaysTemplate)
+        
+        $0.setImage(emptyHeart, for: .normal)
+        $0.setImage(filledHeart, for: .selected)
+        
+        $0.tintColor = .color.sub2.color // 기본 회색
     }
     
     public let closeButton = UIButton().then {
@@ -92,10 +102,13 @@ public final class MapPlaceDetailView: UIView {
         let fullText = "학생 후기 4건"
         let attributedString = NSMutableAttributedString(string: fullText)
         let font = UIFont.suit(size: 22, weight: .bold)
+        
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "학생 후기"))
-        attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub1.color, range: (fullText as NSString).range(of: "학생 후기"))
+        attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
+        
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "4"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "4"))
+        
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "건"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
         $0.attributedText = attributedString
@@ -104,24 +117,27 @@ public final class MapPlaceDetailView: UIView {
     public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
         config.title = "후기 남기기"
-        config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
-        config.imagePadding = 4
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?.withConfiguration(imageConfig).withRenderingMode(.alwaysTemplate)
+        config.imagePadding = 6
         config.baseForegroundColor = .color.sub2.color
         $0.configuration = config
     }
 
-    public let tableView = UITableView().then {
+    public let tableView = IntrinsicTableView().then {
         $0.backgroundColor = .clear
-        $0.isScrollEnabled = false // 상세 뷰 내에서 스크롤은 스크롤뷰가 담당
+        $0.isScrollEnabled = false
         $0.separatorStyle = .singleLine
         $0.separatorColor = .color.sub2.color.withAlphaComponent(0.2)
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
     }
 
+    // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
         setLayout()
+        bindActions()
     }
     
     required init?(coder: NSCoder) { fatalError() }
@@ -219,9 +235,30 @@ public final class MapPlaceDetailView: UIView {
         tableView.snp.makeConstraints {
             $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
-            // [조심] 고정 높이 대신 데이터에 맞게 조절되도록 priority 설정 후 bottom 잡기
-            $0.height.equalTo(400).priority(.high)
             $0.bottom.equalToSuperview().offset(-20)
         }
+    }
+
+    private func bindActions() {
+        heartButton.addTarget(self, action: #selector(heartButtonTapped), for: .touchUpInside)
+    }
+
+    // 🔥 색상과 상태를 동시에 변경
+    @objc private func heartButtonTapped() {
+        heartButton.isSelected.toggle()
+        heartButton.tintColor = heartButton.isSelected ? .color.gomsPrimary.color : .color.sub2.color
+    }
+}
+
+public final class IntrinsicTableView: UITableView {
+    override public var contentSize: CGSize {
+        didSet {
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    override public var intrinsicContentSize: CGSize {
+        layoutIfNeeded()
+        return CGSize(width: UIView.noIntrinsicMetric, height: contentSize.height)
     }
 }
