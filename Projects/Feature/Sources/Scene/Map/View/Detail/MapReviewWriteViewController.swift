@@ -40,6 +40,18 @@ public final class MapReviewWriteViewController: UIViewController {
         viewModel.onNextButtonStateChanged = { [weak self] isEnabled in
             self?.mainView.updateButtonState(isEnabled: isEnabled)
         }
+        
+        viewModel.onReviewSuccess = { [weak self] in
+            guard let self = self else { return }
+            ReviewAlert.show(
+                in: self,
+                title: "후기 등록 완료",
+                message: "후기를 성공적으로 등록했습니다!",
+                completion: { [weak self] in
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            )
+        }
     }
     
     @objc private func didTapBack() {
@@ -49,11 +61,19 @@ public final class MapReviewWriteViewController: UIViewController {
     @objc private func didTapHeart() {
         isHeartSelected.toggle()
         mainView.heartButton.isSelected = isHeartSelected
-        mainView.heartButton.tintColor = isHeartSelected ? .color.gomsPrimary.color : .color.sub2.color
+        mainView.heartButton.tintColor = isHeartSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub2.color
     }
     
     @objc private func didTapNext() {
-        print("작성 내용: \(viewModel.currentText)")
+        self.view.endEditing(true)
+        ReviewAlert.show(
+            in: self,
+            title: "후기 등록",
+            message: "이 후기를 등록하시겠습니까?",
+            completion: { [weak self] in
+                self?.viewModel.postReview()
+            }
+        )
     }
 }
 
