@@ -24,24 +24,24 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private let nameLabel = UILabel().then {
-        $0.textColor = .color.sub1.color
-        $0.font = UIFont(name: "SUIT-SemiBold", size: 20) ?? .systemFont(ofSize: 20, weight: .bold)
+        $0.textColor = .color.mainText.color // sub1 -> mainText 수정
+        $0.font = .suit(size: 18, weight: .bold)
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = .color.sub1.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.textColor = .color.sub2.color // 기수는 서브 정보이므로 sub2가 적당하나, 요청대로라면 mainText로 변경 가능
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let contentLabel = UILabel().then {
-        $0.textColor = .color.sub1.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.textColor = .color.mainText.color // sub1 -> mainText 수정
+        $0.font = .suit(size: 16, weight: .medium)
         $0.numberOfLines = 0
     }
     
     private let dateLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = UIFont(name: "SUIT-Medium", size: 15) ?? .systemFont(ofSize: 15)
+        $0.font = .suit(size: 14, weight: .medium)
     }
     
     public let reportButton = UIButton().then {
@@ -56,7 +56,7 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private let cellDivider = UIView().then {
-        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3) // 구분선 너무 진하지 않게 조정
+        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.2)
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -78,34 +78,40 @@ public final class MapReviewCell: UITableViewCell {
     
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().inset(16)
+            $0.top.leading.equalToSuperview().inset(20)
             $0.size.equalTo(48)
         }
+        
         nameLabel.snp.makeConstraints {
             $0.top.equalTo(profileImageView)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
         }
+        
         infoLabel.snp.makeConstraints {
             $0.centerY.equalTo(nameLabel)
             $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
         }
+        
         contentLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(8)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
             $0.leading.equalTo(nameLabel)
-            $0.trailing.equalToSuperview().inset(50)
+            $0.trailing.equalToSuperview().inset(40)
         }
+        
         dateLabel.snp.makeConstraints {
             $0.top.equalTo(contentLabel.snp.bottom).offset(8)
             $0.leading.equalTo(nameLabel)
-            $0.bottom.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(20) // 셀 내부 하단 여백
         }
+        
         [reportButton, deleteButton].forEach {
             $0.snp.makeConstraints { make in
-                make.top.equalTo(profileImageView).offset(4)
-                make.trailing.equalToSuperview().inset(16)
+                make.centerY.equalTo(nameLabel)
+                make.trailing.equalToSuperview().inset(20)
                 make.size.equalTo(24)
             }
         }
+        
         cellDivider.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(1)
