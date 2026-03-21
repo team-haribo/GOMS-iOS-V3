@@ -11,14 +11,14 @@ import Then
 
 public final class MapViewController: UIViewController {
     
-    private var dummyRecentSearches = ["메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점", "메가MGC커피 광주송정시장점"]
+    private var dummyRecentSearches = MapMockData.recentSearches
     
-    private var dummyReviews: [MapReview] = [
-        MapReview(name: "김민솔", info: "8기 | AI", content: "굳굳", date: "26.02.12"),
-        MapReview(name: "권재현", info: "8기 | AI", content: "매워요", date: "26.02.12"),
-        MapReview(name: "김태은", info: "8기 | AI", content: "맛있어요", date: "26.02.12"),
-        MapReview(name: "이주언", info: "8기 | AI", content: "가성비 좋음", date: "26.02.12")
-    ]
+    private var dummyReviews = MapMockData.reviews {
+        didSet {
+            self.placeDetailView.updateReviewCount(dummyReviews.count)
+            self.placeDetailView.tableView.reloadData()
+        }
+    }
     
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
@@ -115,6 +115,13 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
+        // 하트 취소 로직
+        placeDetailView.onHeartToggled = { [weak self] isSelected in
+            if !isSelected {
+                print("하트 취소됨")
+            }
+        }
+
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
             let detailVC = MapRouteDetailViewController()
             detailVC.routeTypeTitle = routeTitle
@@ -130,7 +137,8 @@ public final class MapViewController: UIViewController {
     }
     
     @objc private func didTapReviewWrite() {
-        let reviewWriteVC = MapReviewWriteViewController()
+        let detailData = MapMockData.detailExample
+        let reviewWriteVC = MapReviewWriteViewController(placeData: detailData)
         self.navigationController?.pushViewController(reviewWriteVC, animated: true)
     }
 
@@ -166,6 +174,9 @@ public final class MapViewController: UIViewController {
     }
 
     private func showDetailView() {
+        let detailData = MapMockData.detailExample
+        placeDetailView.configure(with: detailData)
+        
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
         searchBar.isHidden = false
@@ -247,14 +258,16 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             let data = dummyReviews[indexPath.row]
-            cell.configure(name: data.name, info: data.info, content: data.content, date: data.date)
+            
+            cell.configure(with: data)
             
             cell.onDeleteTap = { [weak self, weak tableView] in
                 guard let self = self, let tableView = tableView else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
+                    // [수정] 정확한 인덱스를 찾아서 삭제
                     if let currentIndexPath = tableView.indexPath(for: cell) {
                         self.dummyReviews.remove(at: currentIndexPath.row)
-                        tableView.deleteRows(at: [currentIndexPath], with: .fade)
+                        // dummyReviews의 didSet에서 reloadData가 되므로 deleteRows는 생략하거나 didSet 로직을 확인하세요.
                     }
                 }
             }

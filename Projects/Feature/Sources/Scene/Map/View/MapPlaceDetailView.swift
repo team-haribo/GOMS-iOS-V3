@@ -32,36 +32,27 @@ public final class MapPlaceDetailView: UIView {
     }
 
     public let titleLabel = UILabel().then {
-        $0.text = "짬뽕관 광주송정선운점"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
     }
     
     public let categoryLabel = UILabel().then {
-        $0.text = "중식당"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
     
     public let heartButton = UIButton().then {
         let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
-        
         let emptyHeart = UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil)?
             .withConfiguration(config)
             .withRenderingMode(.alwaysTemplate)
-        
         let filledHeart = UIImage(systemName: "heart.fill")?
             .withConfiguration(config)
             .withRenderingMode(.alwaysTemplate)
         
         $0.setImage(emptyHeart, for: .normal)
         $0.setImage(filledHeart, for: .selected)
-        
-        // 이미지 크기 및 정렬 강제 고정
         $0.imageView?.contentMode = .scaleAspectFit
-        $0.contentHorizontalAlignment = .center
-        $0.contentVerticalAlignment = .center
-        
         $0.tintColor = .color.sub2.color
     }
     
@@ -71,19 +62,16 @@ public final class MapPlaceDetailView: UIView {
     }
     
     public let addressLabel = UILabel().then {
-        $0.text = "광주 광산구 상무대로 277-11층"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let infoLabel = UILabel().then {
-        $0.text = "149m | 4분"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let reviewCountLabel = UILabel().then {
-        $0.text = "학생 후기 4 | 추천 17"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
@@ -104,19 +92,7 @@ public final class MapPlaceDetailView: UIView {
         $0.layer.cornerRadius = 8
     }
     
-    private let reviewHeaderLabel = UILabel().then {
-        let fullText = "학생 후기 4건"
-        let attributedString = NSMutableAttributedString(string: fullText)
-        let font = UIFont.suit(size: 20, weight: .bold)
-        
-        attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "학생 후기"))
-        attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
-        attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "4"))
-        attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "4"))
-        attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "건"))
-        attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
-        $0.attributedText = attributedString
-    }
+    private let reviewHeaderLabel = UILabel()
 
     public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
@@ -138,6 +114,8 @@ public final class MapPlaceDetailView: UIView {
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
     }
 
+    public var onHeartToggled: ((Bool) -> Void)?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -147,6 +125,30 @@ public final class MapPlaceDetailView: UIView {
     
     required init?(coder: NSCoder) { fatalError() }
     
+    public func configure(with data: MapPlaceDetailData) {
+        titleLabel.text = data.title
+        categoryLabel.text = data.category
+        addressLabel.text = data.address
+        infoLabel.text = "\(data.distance) | \(data.time)"
+        updateReviewCount(data.reviewCount)
+        tableView.reloadData()
+    }
+
+    public func updateReviewCount(_ count: Int) {
+        reviewCountLabel.text = "학생 후기 \(count) | 추천 17"
+        
+        let fullText = "학생 후기 \(count)건"
+        let attributedString = NSMutableAttributedString(string: fullText)
+        let font = UIFont.suit(size: 20, weight: .bold)
+        
+        attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
+        attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "\(count)"))
+        attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
+        attributedString.addAttribute(.font, value: font, range: NSRange(location: 0, length: fullText.count))
+        
+        reviewHeaderLabel.attributedText = attributedString
+    }
+
     private func setupView() {
         self.backgroundColor = .color.surface.color
         self.layer.cornerRadius = 20
@@ -251,15 +253,6 @@ public final class MapPlaceDetailView: UIView {
     @objc private func heartButtonTapped() {
         heartButton.isSelected.toggle()
         heartButton.tintColor = heartButton.isSelected ? .color.gomsPrimary.color : .color.sub2.color
-    }
-}
-
-public final class IntrinsicTableView: UITableView {
-    override public var contentSize: CGSize {
-        didSet { invalidateIntrinsicContentSize() }
-    }
-    override public var intrinsicContentSize: CGSize {
-        layoutIfNeeded()
-        return CGSize(width: UIView.noIntrinsicMetric, height: contentSize.height)
+        onHeartToggled?(heartButton.isSelected)
     }
 }
