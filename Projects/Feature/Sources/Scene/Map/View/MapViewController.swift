@@ -115,11 +115,8 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
-        // 하트 취소 로직
         placeDetailView.onHeartToggled = { [weak self] isSelected in
-            if !isSelected {
-                print("하트 취소됨")
-            }
+            if !isSelected { print("하트 취소됨") }
         }
 
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
@@ -264,10 +261,8 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             cell.onDeleteTap = { [weak self, weak tableView] in
                 guard let self = self, let tableView = tableView else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
-                    // [수정] 정확한 인덱스를 찾아서 삭제
                     if let currentIndexPath = tableView.indexPath(for: cell) {
                         self.dummyReviews.remove(at: currentIndexPath.row)
-                        // dummyReviews의 didSet에서 reloadData가 되므로 deleteRows는 생략하거나 didSet 로직을 확인하세요.
                     }
                 }
             }
