@@ -28,6 +28,8 @@ public final class PathRecommendationCard: UIView {
         $0.font = .suit(size: 14, weight: .regular)
     }
     
+    public var title: String { titleLabel.text ?? "" }
+    
     public init(title: String, time: String, info: String) {
         super.init(frame: .zero)
         self.backgroundColor = .color.surface.color
@@ -61,6 +63,9 @@ public final class PathRecommendationCard: UIView {
 public final class MapRouteSelectionView: UIView {
     private let locations = ["내 위치", "학교"]
     private var destinationName: String = "짬뽕관 광주송정선운점"
+    
+    // [추가] 카드 클릭 시 컨트롤러에 알려주기 위한 클로저
+    public var onCardTapped: ((String) -> Void)?
     
     private let containerView = UIView().then {
         $0.backgroundColor = .color.surface.color
@@ -230,9 +235,8 @@ public final class MapRouteSelectionView: UIView {
             $0.height.equalTo(52)
         }
 
-        // [수정 핵심] 추천 카드 박스를 화면 아래로 배치 (탭바 높이 약 90~100 고려)
         recommendationStackView.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(110) // 아래에서 110만큼 띄움
+            $0.bottom.equalToSuperview().inset(110)
             $0.leading.equalToSuperview().offset(20)
             $0.height.equalTo(106)
             $0.width.equalTo(192 * 2 + 12)
@@ -266,6 +270,16 @@ public final class MapRouteSelectionView: UIView {
         recommendationStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let card1 = PathRecommendationCard(title: "추천", time: "8분", info: "339m | 25kcal")
         let card2 = PathRecommendationCard(title: "큰길 우선", time: "10분", info: "450m | 30kcal")
-        [card1, card2].forEach { recommendationStackView.addArrangedSubview($0) }
+        
+        [card1, card2].forEach { card in
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapCard(_:)))
+            card.addGestureRecognizer(tapGesture)
+            recommendationStackView.addArrangedSubview(card)
+        }
+    }
+    
+    @objc private func didTapCard(_ gesture: UITapGestureRecognizer) {
+        guard let card = gesture.view as? PathRecommendationCard else { return }
+        onCardTapped?(card.title)
     }
 }
