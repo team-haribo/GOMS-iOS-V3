@@ -1,11 +1,3 @@
-//
-//  MapReviewCell.swift
-//  Feature
-//
-//  Created by 김민선 on 2/20/26.
-//  Copyright © 2026 HARIBO. All rights reserved.
-//
-
 import UIKit
 import SnapKit
 import Then
@@ -25,24 +17,24 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private let nameLabel = UILabel().then {
-        $0.textColor = .label
-        $0.font = .systemFont(ofSize: 18, weight: .bold)
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 16, weight: .bold)
     }
     
     private let infoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = .systemFont(ofSize: 15, weight: .medium)
+        $0.font = .suit(size: 14, weight: .medium)
     }
     
     private let contentLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = .systemFont(ofSize: 17, weight: .medium)
+        $0.font = .suit(size: 15, weight: .medium)
         $0.numberOfLines = 0
     }
     
     private let dateLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = .systemFont(ofSize: 15, weight: .medium)
+        $0.font = .suit(size: 13, weight: .medium)
     }
     
     public let reportButton = UIButton().then {
@@ -55,10 +47,6 @@ public final class MapReviewCell: UITableViewCell {
         $0.tintColor = .color.sub2.color
         $0.isHidden = true
     }
-    
-    private let cellDivider = UIView().then {
-        $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.2)
-    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -68,25 +56,34 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     required init?(coder: NSCoder) { fatalError() }
+
+    // MARK: - 셀 재사용 이슈 방지
+    override public func prepareForReuse() {
+        super.prepareForReuse()
+        deleteButton.isHidden = true
+        reportButton.isHidden = false
+        onDeleteTap = nil
+        onReportTap = nil
+    }
     
     private func setupView() {
         self.backgroundColor = .clear
         self.selectionStyle = .none
-        [profileImageView, nameLabel, infoLabel, contentLabel, dateLabel, reportButton, deleteButton, cellDivider].forEach {
+        [profileImageView, nameLabel, infoLabel, contentLabel, dateLabel, reportButton, deleteButton].forEach {
             contentView.addSubview($0)
         }
     }
     
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.centerY.equalToSuperview()
+            $0.top.equalToSuperview().offset(18) // 고정 위치로 변경
             $0.leading.equalToSuperview().offset(24)
             $0.size.equalTo(48)
         }
         
         nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(18)
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
+            $0.top.equalTo(profileImageView)
+            $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
         }
         
         infoLabel.snp.makeConstraints {
@@ -96,8 +93,8 @@ public final class MapReviewCell: UITableViewCell {
         
         [reportButton, deleteButton].forEach {
             $0.snp.makeConstraints {
-                $0.centerY.equalToSuperview()
-                $0.trailing.equalToSuperview().inset(36)
+                $0.top.equalTo(nameLabel) // 버튼 위치도 상단으로 정렬
+                $0.trailing.equalToSuperview().inset(24)
                 $0.size.equalTo(24)
             }
         }
@@ -109,14 +106,9 @@ public final class MapReviewCell: UITableViewCell {
         }
         
         dateLabel.snp.makeConstraints {
-            $0.top.equalTo(contentLabel.snp.bottom).offset(4)
+            $0.top.equalTo(contentLabel.snp.bottom).offset(6)
             $0.leading.equalTo(nameLabel)
             $0.bottom.equalToSuperview().inset(18)
-        }
-        
-        cellDivider.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(1)
         }
     }
     
@@ -128,15 +120,14 @@ public final class MapReviewCell: UITableViewCell {
     @objc private func reportTapped() { onReportTap?() }
     @objc private func deleteTapped() { onDeleteTap?() }
     
-    public func configure(profileImageName: String = "New_jeans", name: String, info: String, content: String, date: String) {
-        profileImageView.image = UIImage(named: profileImageName, in: Bundle.module, compatibleWith: nil)
-        nameLabel.text = name
-        infoLabel.text = info
-        contentLabel.text = content
-        dateLabel.text = date
+    public func configure(with data: MapReview) {
+        nameLabel.text = data.name
+        infoLabel.text = data.info
+        contentLabel.text = data.content
+        dateLabel.text = data.date
         
-        let isMyReview = (name == "김민솔")
-        deleteButton.isHidden = !isMyReview
-        reportButton.isHidden = isMyReview
+        // 이름 비교 대신 모델의 isMine 값을 사용
+        deleteButton.isHidden = !data.isMine
+        reportButton.isHidden = data.isMine
     }
 }
