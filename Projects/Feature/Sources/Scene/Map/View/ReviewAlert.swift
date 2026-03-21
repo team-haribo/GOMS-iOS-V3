@@ -156,7 +156,6 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         }
         
         messageLabel.snp.makeConstraints {
-            // 신고 알럿일 때만 간격을 8로 좁힘
             $0.top.equalTo(titleLabel.snp.bottom).offset(isReportFlow ? 8 : 16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
@@ -226,18 +225,21 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
     }
     
     @objc func didTapAction() {
-        let savedTitle = self.currentTitle
-        let savedVC = self.parentVC
+        // [수정] 지적 사항 반영: 중복 방지 및 완료 상태 체크
+        let titleAtTap = self.currentTitle
+        let vcAtTap = self.parentVC
         
         self.removeFromSuperview()
         completionHandler?()
         
-        if savedTitle.contains("완료") { return }
+        // "완료" 알림에서 돌아가기를 누른 경우 더 이상의 알림을 띄우지 않음
+        if titleAtTap.contains("완료") { return }
         
-        if let vc = savedVC {
-            if savedTitle.contains("삭제") {
+        // 삭제/신고 성공 후 완료 알림 띄우기
+        if let vc = vcAtTap {
+            if titleAtTap.contains("삭제") {
                 ReviewAlert.show(in: vc, title: "삭제 완료", message: "후기가 성공적으로 삭제되었습니다.")
-            } else if savedTitle.contains("신고") {
+            } else if titleAtTap.contains("신고") {
                 ReviewAlert.show(in: vc, title: "신고 완료", message: "신고가 정상적으로 접수되었습니다.\n더 나은 GOMS가 되기 위해 노력하겠습니다!")
             }
         }
