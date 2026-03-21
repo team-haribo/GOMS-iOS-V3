@@ -13,12 +13,14 @@ public struct MapReview {
     public let info: String
     public let content: String
     public let date: String
+    public let isMine: Bool
     
-    public init(name: String, info: String, content: String, date: String) {
+    public init(name: String, info: String, content: String, date: String, isMine: Bool = false) {
         self.name = name
         self.info = info
         self.content = content
         self.date = date
+        self.isMine = isMine
     }
 }
 
