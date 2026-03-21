@@ -1,3 +1,11 @@
+//
+//  MapReviewCell.swift
+//  Feature
+//
+//  Created by 김민선 on 2/20/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
+//
+
 import UIKit
 import SnapKit
 import Then
@@ -57,7 +65,6 @@ public final class MapReviewCell: UITableViewCell {
     
     required init?(coder: NSCoder) { fatalError() }
 
-    // MARK: - 셀 재사용 이슈 방지
     override public func prepareForReuse() {
         super.prepareForReuse()
         deleteButton.isHidden = true
@@ -76,7 +83,7 @@ public final class MapReviewCell: UITableViewCell {
     
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(18) // 고정 위치로 변경
+            $0.top.equalToSuperview().offset(18)
             $0.leading.equalToSuperview().offset(24)
             $0.size.equalTo(48)
         }
@@ -93,7 +100,7 @@ public final class MapReviewCell: UITableViewCell {
         
         [reportButton, deleteButton].forEach {
             $0.snp.makeConstraints {
-                $0.top.equalTo(nameLabel) // 버튼 위치도 상단으로 정렬
+                $0.top.equalTo(nameLabel)
                 $0.trailing.equalToSuperview().inset(24)
                 $0.size.equalTo(24)
             }
@@ -126,7 +133,7 @@ public final class MapReviewCell: UITableViewCell {
         contentLabel.text = data.content
         dateLabel.text = data.date
         
-        // 이름 비교 대신 모델의 isMine 값을 사용
+        // 보안 이슈 반영: 오직 data.isMine 값에 의해서만 버튼 노출 결정
         deleteButton.isHidden = !data.isMine
         reportButton.isHidden = data.isMine
     }
