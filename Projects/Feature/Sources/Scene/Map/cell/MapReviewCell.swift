@@ -17,31 +17,32 @@ public final class MapReviewCell: UITableViewCell {
     public var onReportTap: (() -> Void)?
     
     private let profileImageView = UIImageView().then {
-        $0.image = UIImage(systemName: "person.circle.fill")
-        $0.tintColor = .color.sub2.color
+        $0.image = UIImage(named: "New_jeans", in: Bundle.module, compatibleWith: nil)
         $0.layer.cornerRadius = 24
         $0.clipsToBounds = true
+        $0.contentMode = .scaleAspectFill
+        $0.backgroundColor = .systemGray6
     }
     
     private let nameLabel = UILabel().then {
-        $0.textColor = .color.mainText.color // sub1 -> mainText 수정
-        $0.font = .suit(size: 18, weight: .bold)
+        $0.textColor = .label
+        $0.font = .systemFont(ofSize: 18, weight: .bold)
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = .color.sub2.color // 기수는 서브 정보이므로 sub2가 적당하나, 요청대로라면 mainText로 변경 가능
-        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = .color.sub2.color
+        $0.font = .systemFont(ofSize: 15, weight: .medium)
     }
     
     private let contentLabel = UILabel().then {
-        $0.textColor = .color.mainText.color // sub1 -> mainText 수정
-        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = .color.sub2.color
+        $0.font = .systemFont(ofSize: 17, weight: .medium)
         $0.numberOfLines = 0
     }
     
     private let dateLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 14, weight: .medium)
+        $0.font = .systemFont(ofSize: 15, weight: .medium)
     }
     
     public let reportButton = UIButton().then {
@@ -78,13 +79,14 @@ public final class MapReviewCell: UITableViewCell {
     
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().inset(20)
+            $0.centerY.equalToSuperview()
+            $0.leading.equalToSuperview().offset(24)
             $0.size.equalTo(48)
         }
         
         nameLabel.snp.makeConstraints {
-            $0.top.equalTo(profileImageView)
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
+            $0.top.equalToSuperview().offset(18)
+            $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
         }
         
         infoLabel.snp.makeConstraints {
@@ -92,24 +94,24 @@ public final class MapReviewCell: UITableViewCell {
             $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
         }
         
+        [reportButton, deleteButton].forEach {
+            $0.snp.makeConstraints {
+                $0.centerY.equalToSuperview()
+                $0.trailing.equalToSuperview().inset(36)
+                $0.size.equalTo(24)
+            }
+        }
+        
         contentLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
             $0.leading.equalTo(nameLabel)
-            $0.trailing.equalToSuperview().inset(40)
+            $0.trailing.equalTo(reportButton.snp.leading).offset(-16)
         }
         
         dateLabel.snp.makeConstraints {
-            $0.top.equalTo(contentLabel.snp.bottom).offset(8)
+            $0.top.equalTo(contentLabel.snp.bottom).offset(4)
             $0.leading.equalTo(nameLabel)
-            $0.bottom.equalToSuperview().inset(20) // 셀 내부 하단 여백
-        }
-        
-        [reportButton, deleteButton].forEach {
-            $0.snp.makeConstraints { make in
-                make.centerY.equalTo(nameLabel)
-                make.trailing.equalToSuperview().inset(20)
-                make.size.equalTo(24)
-            }
+            $0.bottom.equalToSuperview().inset(18)
         }
         
         cellDivider.snp.makeConstraints {
@@ -126,7 +128,8 @@ public final class MapReviewCell: UITableViewCell {
     @objc private func reportTapped() { onReportTap?() }
     @objc private func deleteTapped() { onDeleteTap?() }
     
-    public func configure(name: String, info: String, content: String, date: String) {
+    public func configure(profileImageName: String = "New_jeans", name: String, info: String, content: String, date: String) {
+        profileImageView.image = UIImage(named: profileImageName, in: Bundle.module, compatibleWith: nil)
         nameLabel.text = name
         infoLabel.text = info
         contentLabel.text = content

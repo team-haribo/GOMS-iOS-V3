@@ -19,7 +19,6 @@ public final class MapPlaceDetailView: UIView {
         static let buttonHeight: CGFloat = 33
     }
     
-    // MARK: - UI Components
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
         $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0)
@@ -44,19 +43,26 @@ public final class MapPlaceDetailView: UIView {
         $0.font = .suit(size: 16, weight: .medium)
     }
     
-    // 🔥 하트 버튼 수정: normal과 selected에 다른 이미지를 할당
     public let heartButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
         
-        // 빈 하트 (테두리)
-        let emptyHeart = UIImage(systemName: "heart")?.withConfiguration(config).withRenderingMode(.alwaysTemplate)
-        // 채워진 하트 (속이 꽉 찬 것)
-        let filledHeart = UIImage(systemName: "heart.fill")?.withConfiguration(config).withRenderingMode(.alwaysTemplate)
+        let emptyHeart = UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil)?
+            .withConfiguration(config)
+            .withRenderingMode(.alwaysTemplate)
+        
+        let filledHeart = UIImage(systemName: "heart.fill")?
+            .withConfiguration(config)
+            .withRenderingMode(.alwaysTemplate)
         
         $0.setImage(emptyHeart, for: .normal)
         $0.setImage(filledHeart, for: .selected)
         
-        $0.tintColor = .color.sub2.color // 기본 회색
+        // 이미지 크기 및 정렬 강제 고정
+        $0.imageView?.contentMode = .scaleAspectFit
+        $0.contentHorizontalAlignment = .center
+        $0.contentVerticalAlignment = .center
+        
+        $0.tintColor = .color.sub2.color
     }
     
     public let closeButton = UIButton().then {
@@ -101,14 +107,12 @@ public final class MapPlaceDetailView: UIView {
     private let reviewHeaderLabel = UILabel().then {
         let fullText = "학생 후기 4건"
         let attributedString = NSMutableAttributedString(string: fullText)
-        let font = UIFont.suit(size: 22, weight: .bold)
+        let font = UIFont.suit(size: 20, weight: .bold)
         
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "학생 후기"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
-        
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "4"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "4"))
-        
         attributedString.addAttribute(.font, value: font, range: (fullText as NSString).range(of: "건"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
         $0.attributedText = attributedString
@@ -117,8 +121,10 @@ public final class MapPlaceDetailView: UIView {
     public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
         config.title = "후기 남기기"
-        let imageConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?.withConfiguration(imageConfig).withRenderingMode(.alwaysTemplate)
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?
+            .withConfiguration(imageConfig)
+            .withRenderingMode(.alwaysTemplate)
         config.imagePadding = 6
         config.baseForegroundColor = .color.sub2.color
         $0.configuration = config
@@ -132,7 +138,6 @@ public final class MapPlaceDetailView: UIView {
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
     }
 
-    // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -211,7 +216,7 @@ public final class MapPlaceDetailView: UIView {
         }
         
         arriveButton.snp.makeConstraints {
-            $0.top.equalTo(reviewCountLabel.snp.bottom).offset(14)
+            $0.top.equalTo(reviewCountLabel.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
             $0.width.equalTo(92); $0.height.equalTo(Metric.buttonHeight)
         }
@@ -223,7 +228,7 @@ public final class MapPlaceDetailView: UIView {
         }
         
         reviewHeaderLabel.snp.makeConstraints {
-            $0.top.equalTo(arriveButton.snp.bottom).offset(40)
+            $0.top.equalTo(arriveButton.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
         }
         
@@ -233,7 +238,7 @@ public final class MapPlaceDetailView: UIView {
         }
         
         tableView.snp.makeConstraints {
-            $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(16)
+            $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().offset(-20)
         }
@@ -243,7 +248,6 @@ public final class MapPlaceDetailView: UIView {
         heartButton.addTarget(self, action: #selector(heartButtonTapped), for: .touchUpInside)
     }
 
-    // 🔥 색상과 상태를 동시에 변경
     @objc private func heartButtonTapped() {
         heartButton.isSelected.toggle()
         heartButton.tintColor = heartButton.isSelected ? .color.gomsPrimary.color : .color.sub2.color
@@ -252,11 +256,8 @@ public final class MapPlaceDetailView: UIView {
 
 public final class IntrinsicTableView: UITableView {
     override public var contentSize: CGSize {
-        didSet {
-            invalidateIntrinsicContentSize()
-        }
+        didSet { invalidateIntrinsicContentSize() }
     }
-
     override public var intrinsicContentSize: CGSize {
         layoutIfNeeded()
         return CGSize(width: UIView.noIntrinsicMetric, height: contentSize.height)

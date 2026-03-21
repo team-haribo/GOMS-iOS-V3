@@ -39,9 +39,8 @@ public final class MapViewController: UIViewController {
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
     
-    // [최종 수정] 버튼 아이콘이 탭바 바로 위로 오도록 높이를 210으로 조정
-    private let defaultHeight: CGFloat = 250
-    private let detailMinHeight: CGFloat = 250
+    private let defaultHeight: CGFloat = 240
+    private let detailMinHeight: CGFloat = 225
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -116,12 +115,13 @@ public final class MapViewController: UIViewController {
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
-        routeSelectionView.recommendationStackView.arrangedSubviews.forEach { subview in
-            if let card = subview as? PathRecommendationCard {
-                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapRouteCard))
-                card.addGestureRecognizer(tapGesture)
-                card.isUserInteractionEnabled = true
-            }
+        routeSelectionView.onCardTapped = { [weak self] routeTitle in
+            let detailVC = MapRouteDetailViewController()
+            detailVC.routeTypeTitle = routeTitle
+            detailVC.modalPresentationStyle = .overFullScreen
+            detailVC.onDismiss = { [weak self] in self?.routeSelectionView.isHidden = false }
+            self?.routeSelectionView.isHidden = true
+            self?.present(detailVC, animated: true)
         }
     }
     
@@ -134,34 +134,31 @@ public final class MapViewController: UIViewController {
         self.navigationController?.pushViewController(reviewWriteVC, animated: true)
     }
 
-    @objc private func didTapRouteCard() {
-        let detailVC = MapRouteDetailViewController()
-        detailVC.modalPresentationStyle = .overFullScreen
-        detailVC.onDismiss = { [weak self] in self?.routeSelectionView.isHidden = false }
-        self.routeSelectionView.isHidden = true
-        self.present(detailVC, animated: true)
-    }
-
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let isDetail = gesture.view == placeDetailView
         let translation = gesture.translation(in: view)
         let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
         let newHeight = currentHeight - translation.y
-        let minH = defaultHeight
         
-        let gap: CGFloat = 84
+        let minH = isDetail ? detailMinHeight : defaultHeight
+        let gap: CGFloat = 20
         let maxH = view.frame.height - (searchBar.frame.maxY + gap)
         
         if gesture.state == .changed {
-            if newHeight >= minH && newHeight <= maxH {
-                if isDetail { detailSheetHeight?.update(offset: newHeight) }
-                else { bottomSheetHeight?.update(offset: newHeight) }
-            }
+            let clampedHeight = max(minH, min(newHeight, maxH))
+            if isDetail { detailSheetHeight?.update(offset: clampedHeight) }
+            else { bottomSheetHeight?.update(offset: clampedHeight) }
         } else if gesture.state == .ended {
-            let target = newHeight > (minH + maxH) / 2 ? maxH : minH
-            UIView.animate(withDuration: 0.3) {
-                if isDetail { self.detailSheetHeight?.update(offset: target) }
-                else { self.bottomSheetHeight?.update(offset: target) }
+            let velocity = gesture.velocity(in: view).y
+            let targetHeight: CGFloat
+            
+            if velocity < -500 { targetHeight = maxH }
+            else if velocity > 500 { targetHeight = minH }
+            else { targetHeight = newHeight > (minH + maxH) / 2 ? maxH : minH }
+
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                if isDetail { self.detailSheetHeight?.update(offset: targetHeight) }
+                else { self.bottomSheetHeight?.update(offset: targetHeight) }
                 self.view.layoutIfNeeded()
             }
         }
@@ -177,11 +174,11 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupGesture() {
-            let bottomSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-            bottomSheetView.addGestureRecognizer(bottomSheetPan)
-            
-            let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-            placeDetailView.addGestureRecognizer(detailSheetPan)
+        let bottomSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        bottomSheetView.addGestureRecognizer(bottomSheetPan)
+        
+        let detailSheetPan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        placeDetailView.addGestureRecognizer(detailSheetPan)
     }
 
     @objc private func hideDetailView() {

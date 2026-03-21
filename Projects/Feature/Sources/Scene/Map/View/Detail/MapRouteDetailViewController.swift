@@ -16,15 +16,26 @@ public final class MapRouteDetailViewController: UIViewController {
     private var containerHeightConstraint: Constraint?
     private var isInitialLayout = true
     
-    public var routeTypeTitle: String = "추천 경로"
+    private var currentSteps: [RouteStepModel] = []
+    
+    public var routeTypeTitle: String = "추천"
     public var minSheetHeight: CGFloat = 330
     public var onDismiss: (() -> Void)?
     
-    private let steps: [RouteStepModel] = [
+    // 1. 추천 경로 데이터
+    private let recommendationSteps: [RouteStepModel] = [
         RouteStepModel(turnType: .start, title: "출발", description: "학교"),
         RouteStepModel(turnType: .straight, title: "OO건물", description: "OO건물 까지 100m 이동"),
         RouteStepModel(turnType: .left, title: "OO건물", description: "OO건물 앞에서 왼쪽길로 4m 이동"),
         RouteStepModel(turnType: .right, title: "**건물", description: "**건물 앞에서 오른쪽길로 4m 이동"),
+        RouteStepModel(turnType: .end, title: "도착", description: "짬뽕관 광주송정선운점")
+    ]
+    
+    // 2. 큰길 우선 데이터
+    private let mainRoadSteps: [RouteStepModel] = [
+        RouteStepModel(turnType: .start, title: "출발", description: "학교 정문"),
+        RouteStepModel(turnType: .straight, title: "큰대로변", description: "대로를 따라 300m 직진"),
+        RouteStepModel(turnType: .right, title: "사거리", description: "우회전 후 50m 이동"),
         RouteStepModel(turnType: .end, title: "도착", description: "짬뽕관 광주송정선운점")
     ]
 
@@ -92,13 +103,22 @@ public final class MapRouteDetailViewController: UIViewController {
     }
     
     private func configureData() {
-        mainView.routeTypeLabel.text = routeTypeTitle
-        mainView.timeLabel.text = "8분"
-        mainView.infoLabel.text = "339m | 25kcal"
+        if routeTypeTitle.contains("추천") {
+            mainView.routeTypeLabel.text = "추천 경로"
+            currentSteps = recommendationSteps
+            mainView.timeLabel.text = "8분"
+            mainView.infoLabel.text = "339m | 25kcal"
+        } else {
+            mainView.routeTypeLabel.text = "큰길 우선 경로"
+            currentSteps = mainRoadSteps
+            mainView.timeLabel.text = "10분"
+            mainView.infoLabel.text = "450m | 30kcal"
+        }
+        
+        mainView.tableView.reloadData()
     }
     
     @objc private func didTapCloseButton() {
-        // [수정] 닫힐 때 onDismiss를 호출하여 MapViewController에 신호를 보냄
         self.dismiss(animated: true) { [weak self] in
             self?.onDismiss?()
         }
@@ -107,7 +127,7 @@ public final class MapRouteDetailViewController: UIViewController {
 
 extension MapRouteDetailViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return steps.count
+        return currentSteps.count
     }
     
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -118,7 +138,7 @@ extension MapRouteDetailViewController: UITableViewDelegate, UITableViewDataSour
         guard let cell = tableView.dequeueReusableCell(withIdentifier: RouteStepCell.identifier, for: indexPath) as? RouteStepCell else {
             return UITableViewCell()
         }
-        cell.configure(with: steps[indexPath.row])
+        cell.configure(with: currentSteps[indexPath.row])
         return cell
     }
 }

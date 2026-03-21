@@ -10,6 +10,10 @@ import UIKit
 import SnapKit
 import Then
 
+public struct ReviewReportRequestDTO: Codable {
+    let reason: String
+}
+
 public class ReviewAlert {
     public static func show(
         in vc: UIViewController,
@@ -17,7 +21,7 @@ public class ReviewAlert {
         message: String,
         completion: @escaping () -> Void = {}
     ) {
-        let alert = ReviewAlertView(title: title, message: message)
+        let alert = ReviewAlertView(title: title, message: message, vc: vc)
         vc.view.addSubview(alert)
         alert.snp.makeConstraints { $0.edges.equalToSuperview() }
         
@@ -27,8 +31,12 @@ public class ReviewAlert {
     }
 }
 
-private class ReviewAlertView: UIView {
+private class ReviewAlertView: UIView, UITextViewDelegate {
     var completionHandler: (() -> Void)?
+    private weak var parentVC: UIViewController?
+    private var currentTitle: String = ""
+    private let placeholderText = "신고 사유 작성"
+    private var isReportFlow: Bool = false
     
     private let containerView = UIView().then {
         $0.backgroundColor = UIColor.color.gomsAlertBackground.color
@@ -37,86 +45,109 @@ private class ReviewAlertView: UIView {
     }
     
     private let titleLabel = UILabel().then {
-        $0.textColor = UIColor.color.mainText.color
-        $0.font = .systemFont(ofSize: 17, weight: .bold)
+        $0.textColor = .label
+        $0.font = .systemFont(ofSize: 18, weight: .semibold)
         $0.textAlignment = .center
     }
     
     private let messageLabel = UILabel().then {
-        $0.textColor = UIColor.color.mainText.color
-        $0.font = .systemFont(ofSize: 13, weight: .medium)
+        $0.textColor = .label
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
         $0.numberOfLines = 0
         $0.textAlignment = .center
+    }
+
+    private let reasonTextView = UITextView().then {
+        $0.backgroundColor = UIColor.color.gomsTextFieldBackground.color
+        $0.textColor = UIColor.color.sub2.color
+        $0.text = "신고 사유 작성"
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.layer.cornerRadius = 8
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.color.sub2.color.cgColor
+        $0.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        $0.isHidden = true
+    }
+
+    private let countLabel = UILabel().then {
+        $0.text = "0/100"
+        $0.textColor = UIColor.color.sub2.color
+        $0.font = .systemFont(ofSize: 12, weight: .regular)
+        $0.textAlignment = .right
+        $0.isHidden = true
     }
     
     let cancelButton = UIButton(type: .system).then {
         $0.setTitle("취소", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
+        $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
     }
     
     let actionButton = UIButton(type: .system).then {
-        $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
+        $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
     }
     
     private let hLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
     private let vLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
 
-    init(title: String, message: String) {
+    init(title: String, message: String, vc: UIViewController?) {
         super.init(frame: .zero)
+        self.parentVC = vc
+        self.currentTitle = title
+        self.isReportFlow = title.contains("신고")
         self.backgroundColor = UIColor.black.withAlphaComponent(0.4)
         
-        titleLabel.text = title
-        messageLabel.text = message
+        if title.contains("신고") && !title.contains("완료") {
+            titleLabel.text = "후기 신고"
+            messageLabel.text = "이 후기를 신고하시겠습니까?\n신고 내용은 운영팀의 검토 후 처리됩니다."
+        } else {
+            titleLabel.text = title
+            messageLabel.text = message
+        }
         
+        reasonTextView.delegate = self
         setupLayoutByTitle(title)
         setupView()
         setupConstraints()
     }
     
     private func setupLayoutByTitle(_ title: String) {
-        // 기존 등록하기 알럿 (건드리지 않음)
-        if title.contains("등록") && !title.contains("완료") {
+        if title.contains("완료") {
+            cancelButton.isHidden = true
+            vLine.isHidden = true
+            reasonTextView.isHidden = true
+            countLabel.isHidden = true
+            actionButton.setTitle("돌아가기", for: .normal)
+            actionButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+        }
+        else if title.contains("등록") {
             actionButton.setTitle("등록하기", for: .normal)
             actionButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
             cancelButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
-            cancelButton.isHidden = false
-            vLine.isHidden = false
         }
-        // 삭제하기 알럿
-        else if title.contains("삭제") && !title.contains("완료") {
+        else if title.contains("삭제") {
             actionButton.setTitle("삭제하기", for: .normal)
             actionButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
             cancelButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
-            cancelButton.isHidden = false
-            vLine.isHidden = false
         }
-        // 신고하기 알럿 (글자 누락 수정 및 색상 반영)
         else if title.contains("신고") {
             actionButton.setTitle("신고하기", for: .normal)
             actionButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
             cancelButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
-            cancelButton.isHidden = false
-            vLine.isHidden = false
-        }
-        // 완료/돌아가기 알럿 (삭제 완료 등)
-        else if title.contains("완료") {
-            cancelButton.isHidden = true
-            vLine.isHidden = true
-            actionButton.setTitle("돌아가기", for: .normal)
-            actionButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+            reasonTextView.isHidden = false
+            countLabel.isHidden = false
         }
     }
     
     private func setupView() {
         addSubview(containerView)
-        [titleLabel, messageLabel, hLine, vLine, cancelButton, actionButton].forEach { containerView.addSubview($0) }
+        [titleLabel, messageLabel, reasonTextView, countLabel, cancelButton, actionButton, hLine, vLine].forEach { containerView.addSubview($0) }
     }
     
     private func setupConstraints() {
         containerView.snp.makeConstraints {
             $0.center.equalToSuperview()
-            $0.width.equalTo(270)
-            $0.height.equalTo(142)
+            $0.width.equalTo(285)
+            $0.height.equalTo(!reasonTextView.isHidden ? 212 : 145)
         }
         
         titleLabel.snp.makeConstraints {
@@ -125,8 +156,21 @@ private class ReviewAlertView: UIView {
         }
         
         messageLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(14)
+            // 신고 알럿일 때만 간격을 8로 좁힘
+            $0.top.equalTo(titleLabel.snp.bottom).offset(isReportFlow ? 8 : 16)
             $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        if !reasonTextView.isHidden {
+            reasonTextView.snp.makeConstraints {
+                $0.top.equalTo(messageLabel.snp.bottom).offset(12)
+                $0.leading.trailing.equalToSuperview().inset(16)
+                $0.height.equalTo(43)
+            }
+            countLabel.snp.makeConstraints {
+                $0.top.equalTo(reasonTextView.snp.bottom).offset(4)
+                $0.trailing.equalTo(reasonTextView)
+            }
         }
         
         hLine.snp.makeConstraints {
@@ -143,14 +187,37 @@ private class ReviewAlertView: UIView {
         
         cancelButton.snp.makeConstraints {
             $0.leading.bottom.equalToSuperview()
-            $0.trailing.equalTo(vLine.snp.leading)
+            $0.trailing.equalTo(containerView.snp.centerX)
             $0.height.equalTo(44)
         }
         
         actionButton.snp.makeConstraints {
             $0.trailing.bottom.equalToSuperview()
-            $0.leading.equalTo(cancelButton.isHidden ? containerView.snp.leading : vLine.snp.trailing)
+            $0.leading.equalTo(cancelButton.isHidden ? containerView.snp.leading : containerView.snp.centerX)
             $0.height.equalTo(44)
+        }
+    }
+
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if textView.text == placeholderText {
+            textView.text = nil
+            textView.textColor = .label
+        }
+    }
+
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if textView.text.isEmpty {
+            textView.text = placeholderText
+            textView.textColor = UIColor.color.sub2.color
+        }
+    }
+    
+    func textViewDidChange(_ textView: UITextView) {
+        let count = textView.text.count
+        countLabel.text = "\(count)/100"
+        if count > 100 {
+            textView.text = String(textView.text.prefix(100))
+            countLabel.text = "100/100"
         }
     }
     
@@ -159,8 +226,21 @@ private class ReviewAlertView: UIView {
     }
     
     @objc func didTapAction() {
+        let savedTitle = self.currentTitle
+        let savedVC = self.parentVC
+        
         self.removeFromSuperview()
         completionHandler?()
+        
+        if savedTitle.contains("완료") { return }
+        
+        if let vc = savedVC {
+            if savedTitle.contains("삭제") {
+                ReviewAlert.show(in: vc, title: "삭제 완료", message: "후기가 성공적으로 삭제되었습니다.")
+            } else if savedTitle.contains("신고") {
+                ReviewAlert.show(in: vc, title: "신고 완료", message: "신고가 정상적으로 접수되었습니다.\n더 나은 GOMS가 되기 위해 노력하겠습니다!")
+            }
+        }
     }
     
     required init?(coder: NSCoder) { fatalError() }
