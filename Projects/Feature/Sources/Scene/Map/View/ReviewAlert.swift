@@ -51,7 +51,6 @@ private class ReviewAlertView: UIView {
     
     let cancelButton = UIButton(type: .system).then {
         $0.setTitle("취소", for: .normal)
-        $0.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
     }
     
@@ -59,7 +58,6 @@ private class ReviewAlertView: UIView {
         $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
     }
     
-    // 화이트 모드에서도 잘 보이도록 sub1 색상 적용
     private let hLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
     private let vLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
 
@@ -76,12 +74,32 @@ private class ReviewAlertView: UIView {
     }
     
     private func setupLayoutByTitle(_ title: String) {
+        // 기존 등록하기 알럿 (건드리지 않음)
         if title.contains("등록") && !title.contains("완료") {
             actionButton.setTitle("등록하기", for: .normal)
             actionButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+            cancelButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
             cancelButton.isHidden = false
             vLine.isHidden = false
-        } else if title.contains("완료") {
+        }
+        // 삭제하기 알럿
+        else if title.contains("삭제") && !title.contains("완료") {
+            actionButton.setTitle("삭제하기", for: .normal)
+            actionButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
+            cancelButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+            cancelButton.isHidden = false
+            vLine.isHidden = false
+        }
+        // 신고하기 알럿 (글자 누락 수정 및 색상 반영)
+        else if title.contains("신고") {
+            actionButton.setTitle("신고하기", for: .normal)
+            actionButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
+            cancelButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+            cancelButton.isHidden = false
+            vLine.isHidden = false
+        }
+        // 완료/돌아가기 알럿 (삭제 완료 등)
+        else if title.contains("완료") {
             cancelButton.isHidden = true
             vLine.isHidden = true
             actionButton.setTitle("돌아가기", for: .normal)
@@ -98,7 +116,7 @@ private class ReviewAlertView: UIView {
         containerView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.width.equalTo(270)
-            $0.height.equalTo(142) // 간격 확보를 위해 전체 높이 소폭 조정
+            $0.height.equalTo(142)
         }
         
         titleLabel.snp.makeConstraints {
@@ -107,7 +125,6 @@ private class ReviewAlertView: UIView {
         }
         
         messageLabel.snp.makeConstraints {
-            // 타이틀과 메시지 사이의 간격을 8로 넓힘
             $0.top.equalTo(titleLabel.snp.bottom).offset(14)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
