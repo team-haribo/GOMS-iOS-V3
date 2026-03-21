@@ -12,7 +12,16 @@ public final class MapReviewWriteViewController: UIViewController {
     
     private let mainView = MapReviewWriteView()
     private let viewModel = MapReviewWriteViewModel()
+    private let placeData: MapPlaceDetailData // 데이터를 담을 변수 추가
     private var isHeartSelected = false
+    
+    // 초기화 시점에 데이터를 주입받습니다.
+    public init(placeData: MapPlaceDetailData) {
+        self.placeData = placeData
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
     
     public override func loadView() {
         self.view = mainView
@@ -21,9 +30,13 @@ public final class MapReviewWriteViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         self.navigationController?.setNavigationBarHidden(true, animated: false)
+        
         setupDelegate()
         setupActions()
         bindViewModel()
+        
+        // 주입받은 데이터를 뷰에 적용
+        mainView.configure(with: placeData)
     }
     
     private func setupDelegate() {

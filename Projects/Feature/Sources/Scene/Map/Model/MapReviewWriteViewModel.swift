@@ -13,19 +13,16 @@ public final class MapReviewWriteViewModel {
     // MARK: - Properties
     private let maxTextCount = 100
     
-    // 현재 입력된 텍스트
     public var currentText: String = "" {
         didSet {
             onNextButtonStateChanged?(isButtonEnabled)
         }
     }
     
-    // 버튼 활성화 상태 계산
     public var isButtonEnabled: Bool {
         return !currentText.isEmpty && currentText.count <= maxTextCount
     }
     
-    // 글자 수 레이블에 표시할 텍스트
     public var limitText: String {
         return "\(currentText.count)/\(maxTextCount)"
     }
@@ -43,7 +40,7 @@ public final class MapReviewWriteViewModel {
     
     // 실제 서버에 후기를 등록하는 함수
     public func postReview() {
-        // [TODO]: 나중에 여기에 Moya/네트워킹 코드를 작성 (예: requestPostReview)
+        // [TODO]: 나중에 여기에 Moya/네트워킹 코드를 작성
         print("서버로 후기 전송 시도: \(currentText)")
         
         // API 통신이 성공했다는 가정하에 콜백 호출
