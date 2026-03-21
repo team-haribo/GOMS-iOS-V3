@@ -1,4 +1,3 @@
-//
 //  MapBottomSheetView.swift
 //  Feature
 //
@@ -10,10 +9,17 @@ import UIKit
 import SnapKit
 import Then
 
+struct MapCardData {
+    let id: UUID = UUID()
+    var isFavorite: Bool
+}
+
 public final class MapBottomSheetView: UIView {
     public var onCardTapped: (() -> Void)?
-    private var recommendedCount: Int = 2
-    private var reviewCount: Int = 3
+    
+    private var popularPlaces = [MapCardData(isFavorite: false), MapCardData(isFavorite: false), MapCardData(isFavorite: false)]
+    private var recommendedPlaces = [MapCardData(isFavorite: true), MapCardData(isFavorite: true)]
+    private var reviewPlaces = [MapCardData(isFavorite: false), MapCardData(isFavorite: false), MapCardData(isFavorite: false)]
     
     private let pointColor = UIColor.color.gomsPrimary.color
     
@@ -68,98 +74,87 @@ public final class MapBottomSheetView: UIView {
             $0.width.equalTo(scrollView.frameLayoutGuide)
         }
     }
-    
-    private func createPopularTitleView() -> UIView {
-        let titleLabel = createTitleLabel("최근 인기 장소", fontSize: 22)
-        let fireImageView = UIImageView().then {
-            $0.image = UIImage(named: "Fire", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
-            $0.tintColor = UIColor.color.gomsNegative.color
-            $0.contentMode = .scaleAspectFit
-            $0.snp.makeConstraints { $0.size.equalTo(24) }
-        }
-        let stack = UIStackView(arrangedSubviews: [titleLabel, fireImageView]).then {
-            $0.axis = .horizontal
-            $0.alignment = .center
-            $0.spacing = 6.77
-        }
-        let container = UIView()
-        container.addSubview(stack)
-        stack.snp.makeConstraints {
-            $0.leading.equalToSuperview()
-            $0.top.bottom.equalToSuperview()
-        }
-        return container
-    }
 
     private func renderUI() {
         contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        
         addSpacer(32)
         contentStackView.addArrangedSubview(createPopularTitleView())
         addSpacer(16)
-        for _ in 0..<3 {
-            addCard(type: .popular, isFavorite: false)
+        
+        for (index, place) in popularPlaces.enumerated() {
+            addCard(type: .popular, data: place, index: index)
             addSpacer(12)
         }
+        
         addSpacer(28)
         contentStackView.addArrangedSubview(createTitleLabel("내 활동", fontSize: 22))
         addSpacer(16)
-        if recommendedCount > 0 {
-            contentStackView.addArrangedSubview(createSubTitleLabel(title: "추천한 가게", count: recommendedCount, unit: "곳", fontSize: 18))
+        
+        if !recommendedPlaces.isEmpty {
+            contentStackView.addArrangedSubview(createSubTitleLabel(title: "추천한 가게", count: recommendedPlaces.count, unit: "곳", fontSize: 18))
             addSpacer(16)
-            for _ in 0..<recommendedCount {
-                addCard(type: .recommended, isFavorite: true)
+            for (index, place) in recommendedPlaces.enumerated() {
+                addCard(type: .recommended, data: place, index: index)
                 addSpacer(12)
             }
         }
-        if reviewCount > 0 {
+        
+        if !reviewPlaces.isEmpty {
             addSpacer(8)
-            contentStackView.addArrangedSubview(createSubTitleLabel(title: "작성한 후기", count: reviewCount, unit: "건", fontSize: 18))
+            contentStackView.addArrangedSubview(createSubTitleLabel(title: "작성한 후기", count: reviewPlaces.count, unit: "건", fontSize: 18))
             addSpacer(16)
-            for _ in 0..<reviewCount {
-                addCard(type: .reviewed, isFavorite: false)
+            for (index, _) in reviewPlaces.enumerated() {
+                addCard(type: .reviewed, data: MapCardData(isFavorite: false), index: index)
                 addSpacer(12)
             }
         }
         addSpacer(40)
     }
 
-    private func addCard(type: MapCardType, isFavorite: Bool) {
+    private func addCard(type: MapCardType, data: MapCardData, index: Int) {
         let card = MapCardView(type: type)
-        
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.05
-        card.layer.shadowOffset = CGSize(width: 0, height: 2)
-        card.layer.shadowRadius = 4
-        card.layer.masksToBounds = false
+        card.actionButton.isSelected = data.isFavorite
+        card.actionButton.tintColor = data.isFavorite ? pointColor : UIColor.color.sub1.color
 
         if type == .reviewed {
+            card.actionButton.tag = index
+            card.actionButton.tintColor = UIColor.color.gomsNegative.color
             card.actionButton.addTarget(self, action: #selector(deleteButtonTapped(_:)), for: .touchUpInside)
         } else {
-            card.actionButton.isSelected = isFavorite
+            card.actionButton.tag = (type == .popular ? 100 : 200) + index
             card.actionButton.addTarget(self, action: #selector(heartButtonTapped(_:)), for: .touchUpInside)
         }
         
-        card.isUserInteractionEnabled = true
         card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapCard)))
-        
         contentStackView.addArrangedSubview(card)
         card.snp.makeConstraints { $0.height.equalTo(105) }
     }
 
     @objc private func heartButtonTapped(_ sender: UIButton) {
-        sender.isSelected.toggle()
-        // 하트 채워질 때 gomsPrimary, 비워질 때 sub1
-        sender.tintColor = sender.isSelected ? pointColor : UIColor.color.sub1.color
+        let isPopular = sender.tag < 200
+        let index = isPopular ? sender.tag - 100 : sender.tag - 200
+        
+        if isPopular {
+            popularPlaces[index].isFavorite.toggle()
+            if popularPlaces[index].isFavorite {
+                recommendedPlaces.insert(MapCardData(isFavorite: true), at: 0)
+            } else {
+                if !recommendedPlaces.isEmpty { recommendedPlaces.removeFirst() }
+            }
+        } else {
+            if index < recommendedPlaces.count {
+                recommendedPlaces.remove(at: index)
+            }
+        }
+        renderUI()
     }
 
     @objc private func deleteButtonTapped(_ sender: UIButton) {
-        var view = sender.superview
-        while view != nil {
-            if let card = view as? MapCardView {
-                card.removeFromSuperview()
-                break
-            }
-            view = view?.superview
+        let index = sender.tag
+        if index < reviewPlaces.count {
+            reviewPlaces.remove(at: index)
+            renderUI()
         }
     }
 
@@ -184,6 +179,23 @@ public final class MapBottomSheetView: UIView {
         label.attributedText = attributedString
         label.font = .systemFont(ofSize: fontSize, weight: .semibold)
         return label
+    }
+
+    private func createPopularTitleView() -> UIView {
+        let titleLabel = createTitleLabel("최근 인기 장소", fontSize: 22)
+        let fireImageView = UIImageView().then {
+            $0.image = UIImage(named: "Fire", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+            $0.tintColor = UIColor.color.gomsNegative.color
+            $0.contentMode = .scaleAspectFit
+            $0.snp.makeConstraints { $0.size.equalTo(24) }
+        }
+        let stack = UIStackView(arrangedSubviews: [titleLabel, fireImageView]).then {
+            $0.axis = .horizontal; $0.alignment = .center; $0.spacing = 6.77
+        }
+        let container = UIView()
+        container.addSubview(stack)
+        stack.snp.makeConstraints { $0.leading.top.bottom.equalToSuperview() }
+        return container
     }
 
     private func addSpacer(_ height: CGFloat) {
