@@ -126,46 +126,18 @@ public final class MapBottomSheetView: UIView {
     private func addCard(type: MapCardType, isFavorite: Bool) {
         let card = MapCardView(type: type)
         
-        // 1. 카드 배경색 설정
-        card.backgroundColor = UIColor.color.gomsCardBackgroundColor.color
-        card.layer.cornerRadius = 12
-        
-        // 2. 카드 그림자 추가 (디자인과 비슷하게)
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOpacity = 0.05
         card.layer.shadowOffset = CGSize(width: 0, height: 2)
         card.layer.shadowRadius = 4
         card.layer.masksToBounds = false
 
-        // 3. 버튼 설정
-        if let actionButton = card.subviews.first(where: { $0 is UIButton }) as? UIButton {
-            if type == .reviewed {
-                actionButton.tintColor = UIColor.color.gomsNegative.color
-            } else {
-                actionButton.isSelected = isFavorite
-                actionButton.tintColor = isFavorite ? pointColor : UIColor.color.gomsDivider.color
-                actionButton.addTarget(self, action: #selector(heartButtonTapped(_:)), for: .touchUpInside)
-            }
+        if type == .reviewed {
+            card.actionButton.addTarget(self, action: #selector(deleteButtonTapped(_:)), for: .touchUpInside)
+        } else {
+            card.actionButton.isSelected = isFavorite
+            card.actionButton.addTarget(self, action: #selector(heartButtonTapped(_:)), for: .touchUpInside)
         }
-        
-        // 4. 🔥 핵심 해결책: 카드 내부의 모든 라벨을 재귀적으로 탐색하여 색상 강제 적용
-        func applyLabelColors(in view: UIView) {
-            for subview in view.subviews {
-                if let label = subview as? UILabel {
-                    // 텍스트 내용이나 폰트 굵기를 기준으로 장소 제목 구분
-                    if label.font.pointSize >= 15 || label.font == .systemFont(ofSize: 16, weight: .bold) {
-                        label.textColor = UIColor.color.mainText.color
-                    } else {
-                        label.textColor = UIColor.color.sub1.color
-                    }
-                } else {
-                    // 라벨이 아닌 경우 더 깊게 들어감
-                    applyLabelColors(in: subview)
-                }
-            }
-        }
-        
-        applyLabelColors(in: card)
         
         card.isUserInteractionEnabled = true
         card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapCard)))
@@ -176,7 +148,19 @@ public final class MapBottomSheetView: UIView {
 
     @objc private func heartButtonTapped(_ sender: UIButton) {
         sender.isSelected.toggle()
-        sender.tintColor = sender.isSelected ? pointColor : UIColor.color.gomsDivider.color
+        // 하트 채워질 때 gomsPrimary, 비워질 때 sub1
+        sender.tintColor = sender.isSelected ? pointColor : UIColor.color.sub1.color
+    }
+
+    @objc private func deleteButtonTapped(_ sender: UIButton) {
+        var view = sender.superview
+        while view != nil {
+            if let card = view as? MapCardView {
+                card.removeFromSuperview()
+                break
+            }
+            view = view?.superview
+        }
     }
 
     @objc private func didTapCard() { onCardTapped?() }
