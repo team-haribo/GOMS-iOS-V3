@@ -1,5 +1,5 @@
 //
-//  IntrinsicTableView..swift
+//  IntrinsicTableView.swift
 //  Feature
 //
 //  Created by 김민선 on 3/22/26.
