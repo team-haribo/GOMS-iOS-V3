@@ -53,40 +53,30 @@ public final class MapReviewWriteView: UIView {
     }
     
     public let placeNameLabel = UILabel().then {
-        $0.text = "짬뽕관 광주송정선운점"
         $0.font = .suit(size: 20, weight: .semibold)
         $0.textColor = .color.mainText.color
     }
     
     public let categoryLabel = UILabel().then {
-        $0.text = "중식당"
         $0.font = .suit(size: 16, weight: .medium)
         $0.textColor = .color.sub1.color
     }
     
     public let addressLabel = UILabel().then {
-        $0.text = "광주 광산구 상무대로 277-1 1층"
         $0.font = .suit(size: 16, weight: .medium)
         $0.textColor = .color.sub2.color
     }
     
     public let statsLabel = UILabel().then {
-        $0.text = "학생 후기 4 | 추천 17"
         $0.font = .suit(size: 16, weight: .medium)
         $0.textColor = .color.sub2.color
     }
     
     public let heartButton = UIButton().then {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-            $0.setImage(
-                UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil),
-                for: .normal
-            )
-            $0.setImage(
-                UIImage(systemName: "heart.fill", withConfiguration: config),
-                for: .selected
-            )
-            $0.tintColor = .color.sub2.color
+        $0.setImage(UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil), for: .normal)
+        $0.setImage(UIImage(systemName: "heart.fill", withConfiguration: config), for: .selected)
+        $0.tintColor = .color.sub2.color
     }
     
     public let contentContainerView = UIView().then {
@@ -128,21 +118,16 @@ public final class MapReviewWriteView: UIView {
         setupLayout()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder: NSCoder) { fatalError() }
     
     private func setupView() {
         self.backgroundColor = .color.background.color
-        
         [backButtonIcon, backButtonLabel].forEach { backButtonStack.addArrangedSubview($0) }
         [placeNameLabel, categoryLabel].forEach { nameCategoryStack.addArrangedSubview($0) }
         [nameCategoryStack, addressLabel, statsLabel].forEach { placeInfoStack.addArrangedSubview($0) }
-        
         [backButton, backButtonStack, titleLabel, placeInfoStack, heartButton, contentContainerView, limitLabel, nextButton].forEach {
             addSubview($0)
         }
-        
         contentContainerView.addSubview(textView)
         contentContainerView.addSubview(placeholderLabel)
     }
@@ -154,53 +139,51 @@ public final class MapReviewWriteView: UIView {
             $0.width.equalTo(100)
             $0.height.equalTo(30)
         }
-        
-        backButtonIcon.snp.makeConstraints { $0.size.equalTo(24) }
-        
         backButtonStack.snp.makeConstraints {
             $0.centerY.equalTo(backButton)
             $0.leading.equalTo(backButton)
         }
-        
+        backButtonIcon.snp.makeConstraints { $0.size.equalTo(24) }
         titleLabel.snp.makeConstraints {
             $0.top.equalTo(backButton.snp.bottom).offset(32)
             $0.leading.equalToSuperview().offset(24)
         }
-        
         placeInfoStack.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(24)
             $0.leading.equalToSuperview().offset(24)
         }
-        
         heartButton.snp.makeConstraints {
             $0.centerY.equalTo(placeNameLabel)
             $0.trailing.equalToSuperview().offset(-24)
             $0.size.equalTo(28)
         }
-        
         contentContainerView.snp.makeConstraints {
             $0.top.equalTo(placeInfoStack.snp.bottom).offset(40)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(160)
         }
-        
         textView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        
         placeholderLabel.snp.makeConstraints {
             $0.top.equalToSuperview().offset(16)
             $0.leading.equalToSuperview().offset(20)
         }
-        
         limitLabel.snp.makeConstraints {
             $0.top.equalTo(contentContainerView.snp.bottom).offset(8)
             $0.trailing.equalTo(contentContainerView)
         }
-        
         nextButton.snp.makeConstraints {
             $0.bottom.equalTo(keyboardLayoutGuide.snp.top).offset(-24)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
+    }
+    
+    // 외부에서 데이터 주입하는 함수
+    public func configure(with data: MapPlaceDetailData) {
+        placeNameLabel.text = data.title
+        categoryLabel.text = data.category
+        addressLabel.text = data.address
+        statsLabel.text = "학생 후기 \(data.reviewCount) | 추천 \(data.recommendationCount)"
     }
     
     public func updateButtonState(isEnabled: Bool) {
