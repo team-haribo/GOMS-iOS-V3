@@ -19,9 +19,15 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     var cancellables = Set<AnyCancellable>()
 private let tabBarView = TabBar()
 
-private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아웃").then {
-    $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
-}
+    let logo = UIImageView().then {
+        $0.image = UIImage(
+            named: "graylogo",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+        $0.contentMode = .scaleAspectFit
+    }
+
 
     let userProfile = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
@@ -34,36 +40,45 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     let userProfilePencil = UIButton().then {
         $0.setImage(.image.gomsProfilePencil.image, for: .normal)
         $0.addTarget(self, action: #selector(ShowActionSheetProfilImageChange), for: .touchUpInside)
+
+        $0.layer.shadowColor = UIColor.black.cgColor
+        $0.layer.shadowOpacity = 0.25
+        $0.layer.shadowRadius = 6
+        $0.layer.shadowOffset = CGSize(width: 0, height: 3)
     }
     
     let userName = UILabel().then {
-        $0.text = ""
+        $0.text = "테스트 사용자"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .bold)
     }
     
     let userGradeDepartment = UILabel().then {
-        $0.text = ""
-        $0.textColor = .color.gomsSecondary.color
-        $0.font = .suit(size: 16, weight: .regular)
+        $0.text = "3기 | AI"
+        $0.textColor = .color.sub2.color
+        $0.font = .suit(size: 14, weight: .medium)
     }
     
     let perceptionCount = UILabel().then {
         $0.text = "지각 횟수"
-        $0.textColor = .color.sub1.color
+        $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
     
     let perceptionNum = UILabel().then {
         $0.text = "0"
         $0.textColor = .color.gomsNegative.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .semibold)
     }
     
     let perceptionText = UILabel().then {
         $0.text = "번"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .semibold)
+        $0.font = .suit(size: 18, weight: .semibold)
+    }
+    
+    let profileBottomLine = UIView().then {
+        $0.backgroundColor = .color.button.color
     }
     
     let themeTopLine = UIView().then {
@@ -81,11 +96,9 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     }
     
     let themeChangRec = UIButton().then {
-        $0.backgroundColor = UIColor(red: 28/255, green: 28/255, blue: 30/255, alpha: 1)
-        $0.layer.cornerRadius = 12
-        $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.color.button.color.cgColor
+        $0.backgroundColor = .color.gomsTheme.color
         $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
+        $0.layer.cornerRadius = 8
     }
     
     let themeSettingText = UILabel().then {
@@ -95,7 +108,9 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     }
     
     let themeSettingImg = UIImageView().then {
-        $0.image = .image.under.image
+        let image = UIImage.image.under.image.withRenderingMode(.alwaysTemplate)
+        $0.image = image
+        $0.tintColor = .color.gomsDivider.color
     }
     
     let clockText = UILabel().then {
@@ -106,8 +121,9 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     
     let clockDescription = UILabel().then {
         $0.text = "프로필 카드에 초 단위의 시간을 나타내요"
-        $0.textColor = UIColor.lightGray
+        $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .regular)
+        $0.numberOfLines = 0
     }
     
     let clockToggleButton: UISwitch = UISwitch().then {
@@ -126,8 +142,9 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     
     let qrMakeOnDescription = UILabel().then {
         $0.text = "앱을 실행하면 즉시 QR코드를 생성해요"
-        $0.textColor = UIColor.lightGray
+        $0.textColor = .color.sub2.color
         $0.font = UIFont.suit(size: 14, weight: .regular)
+        $0.numberOfLines = 0
     }
     
     let qrMakeOntoggleButton: UISwitch = UISwitch().then {
@@ -136,6 +153,18 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
         $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchQRMake(_:)), for: .valueChanged)
         $0.isOn = false
+    }
+
+    private lazy var passwordResetButton = ProfileButton(icon: .image.satting.image, title: "비밀번호 재설정").then {
+        $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
+    }
+
+    lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
+        $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
+    }
+
+    lazy var withdrawalButton = ProfileButton(icon: .image.cancelUser.image, title: "회원탈퇴").then {
+        $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
     }
     
     
@@ -184,7 +213,7 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-        // iPad 대응: popover anchor 지정
+        //ipad 반응형임
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
@@ -286,11 +315,12 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
-        if isActionSheetShowing {
-            themeSettingImg.image = UIImage.image.gomsTopButton.image
-        } else {
-            themeSettingImg.image = UIImage.image.gomsBottomButton.image
-        }
+        let image = isActionSheetShowing
+            ? UIImage.image.gomsTopButton.image
+            : UIImage.image.gomsBottomButton.image
+
+        themeSettingImg.image = image.withRenderingMode(.alwaysTemplate)
+        themeSettingImg.tintColor = .color.gomsDivider.color
     }
     
     @objc func themaChang() {
@@ -394,9 +424,6 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
         self.navigationItem.backBarButtonItem = backBarButtonItem
         
         imagePickerController.delegate = self
-        logoutMainButton.backgroundColor = .color.gomsNegative.color
-        logoutMainButton.setTitleColor(.white, for: .normal)
-        logoutMainButton.layer.borderWidth = 0
         
     }
     
@@ -493,9 +520,13 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
     
     public override func addView() {
         [
+            logo,
             userProfile,
             userName,
             userGradeDepartment,
+            perceptionCount,
+            perceptionNum,
+            perceptionText,
             userProfilePencil,
 
             themeTopLine,
@@ -514,19 +545,31 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
             qrMakeOnDescription,
             qrMakeOntoggleButton,
 
-            logoutMainButton,
+            passwordResetButton,
+            logoutButton,
+            withdrawalButton,
+
             tabBarView
         ].forEach {
             view.addSubview($0)
         }
+        view.bringSubviewToFront(userProfilePencil)
+        view.bringSubviewToFront(userName)
+        view.bringSubviewToFront(userGradeDepartment)
     }
 
     public override func setLayout() {
+        logo.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            $0.leading.equalToSuperview().inset(20)
+            $0.width.equalTo(135)
+            $0.height.equalTo(56)
+        }
         userProfile.snp.makeConstraints {
             $0.width.equalTo(64)
             $0.height.equalTo(64)
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(16)
+            $0.top.equalTo(logo.snp.bottom).offset(16)
         }
 
         userProfilePencil.snp.makeConstraints {
@@ -536,25 +579,54 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
 
         userName.snp.makeConstraints {
             $0.leading.equalTo(userProfile.snp.trailing).offset(12)
+            $0.trailing.lessThanOrEqualTo(perceptionCount.snp.leading).offset(-8)
             $0.top.equalTo(userProfile.snp.top).offset(12)
         }
 
         userGradeDepartment.snp.makeConstraints {
             $0.leading.equalTo(userName.snp.leading)
+            $0.trailing.lessThanOrEqualToSuperview().inset(20)
             $0.top.equalTo(userName.snp.bottom).offset(4)
+        }
+
+        perceptionCount.snp.makeConstraints { // 지각횟수
+            $0.trailing.equalToSuperview().inset(20)
+            $0.top.equalTo(userName.snp.top)
+        }
+
+        perceptionNum.snp.makeConstraints {
+            $0.trailing.equalTo(perceptionText.snp.leading).inset(-1)
+            $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
+        }
+
+        perceptionText.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(20)
+            $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
+        }
+
+        passwordResetButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(48)
+            $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
+        }
+
+        logoutButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(48)
+            $0.top.equalTo(passwordResetButton.snp.bottom)
+        }
+
+        withdrawalButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(48)
+            $0.top.equalTo(logoutButton.snp.bottom)
         }
 
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
-            $0.bottom.equalTo(userProfile.snp.bottom).offset(24)
+            $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
             $0.leading.equalToSuperview().offset(20)
             $0.trailing.equalToSuperview().inset(20)
-        }
-
-        themeBottomLine.snp.makeConstraints {
-            $0.height.equalTo(1)
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.top.equalTo(qrMakeOnDescription.snp.bottom).offset(24)
         }
 
         themeChangText.snp.makeConstraints {
@@ -565,30 +637,32 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
         }
 
         themeChangRec.snp.makeConstraints {
-            $0.height.equalTo(56)
+            $0.height.equalTo(64)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
 
         themeSettingText.snp.makeConstraints {
-            $0.centerY.equalTo(themeChangRec)
-            $0.leading.equalTo(themeChangRec.snp.leading).offset(16)
+            $0.width.equalTo(106)
+            $0.height.equalTo(28)
+            $0.top.equalTo(themeChangRec.snp.top).offset(18)
+            $0.leading.equalTo(themeChangRec.snp.leading).offset(12)
         }
 
         themeSettingImg.snp.makeConstraints {
-            $0.centerY.equalTo(themeChangRec)
+            $0.width.equalTo(24)
+            $0.height.equalTo(24)
+            $0.top.equalTo(themeChangRec.snp.top).offset(20)
             $0.trailing.equalToSuperview().inset(32)
-            $0.size.equalTo(24)
         }
 
         clockText.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(28)
-            $0.top.equalTo(themeChangRec.snp.bottom).offset(20)
+            $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
 
         clockDescription.snp.makeConstraints {
             $0.leading.equalTo(clockText.snp.leading)
-            $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
             $0.top.equalTo(clockText.snp.bottom).offset(4)
         }
 
@@ -598,13 +672,12 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
         }
 
         qrMakeOnText.snp.makeConstraints {
-            $0.leading.equalTo(clockDescription.snp.leading)
-            $0.top.equalTo(clockDescription.snp.bottom).offset(20)
+            $0.leading.equalToSuperview().inset(28)
+            $0.top.equalTo(clockDescription.snp.bottom).offset(24)
         }
 
         qrMakeOnDescription.snp.makeConstraints {
             $0.leading.equalTo(qrMakeOnText.snp.leading)
-            $0.trailing.lessThanOrEqualTo(qrMakeOntoggleButton.snp.leading).offset(-8)
             $0.top.equalTo(qrMakeOnText.snp.bottom).offset(4)
         }
 
@@ -613,11 +686,14 @@ private lazy var logoutMainButton = GOMSButton(frame: .zero, title: "로그아�
             $0.centerY.equalTo(qrMakeOnText)
         }
 
-        logoutMainButton.snp.makeConstraints {
+        themeBottomLine.snp.makeConstraints {
+            $0.height.equalTo(1)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(48)
-            $0.bottom.equalTo(tabBarView.snp.top).offset(-16)
+            $0.top.equalTo(qrMakeOnDescription.snp.bottom).offset(25)
         }
+
+
+
 
         tabBarView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
