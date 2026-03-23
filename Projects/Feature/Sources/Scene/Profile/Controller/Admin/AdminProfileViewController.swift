@@ -110,7 +110,7 @@ private let tabBarView = TabBar()
     let themeSettingImg = UIImageView().then {
         let image = UIImage.image.under.image.withRenderingMode(.alwaysTemplate)
         $0.image = image
-        $0.tintColor = .color.gomsDivider.color
+        $0.tintColor = .color.button.color
     }
     
     let clockText = UILabel().then {
@@ -169,7 +169,7 @@ private let tabBarView = TabBar()
     
     
     let borderView = UIView().then() {
-        $0.backgroundColor = .color.gomsDivider.color
+        $0.backgroundColor = .color.button.color
     }
     
     @objc func switchQRMake(_ sender: UISwitch) {
@@ -315,12 +315,11 @@ private let tabBarView = TabBar()
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
-        let image = isActionSheetShowing
-            ? UIImage.image.gomsTopButton.image
-            : UIImage.image.gomsBottomButton.image
-
-        themeSettingImg.image = image.withRenderingMode(.alwaysTemplate)
-        themeSettingImg.tintColor = .color.gomsDivider.color
+        if isActionSheetShowing {
+            themeSettingImg.image = UIImage.image.gomsTopButton.image
+        } else {
+            themeSettingImg.image = UIImage.image.gomsBottomButton.image
+        }
     }
     
     @objc func themaChang() {

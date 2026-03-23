@@ -23,7 +23,7 @@ public class ProfileButton: UIButton {
     }
     
     let arrowIcon = UIImageView().then {
-        $0.image = .image.rightArrowGray.image
+        $0.image = .image.rightArrow.image
     }
     
     init(icon: UIImage, title: String) {
