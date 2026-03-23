@@ -15,22 +15,28 @@ public final class MapRecentSearchCell: UITableViewCell {
     public var onDeleteTap: (() -> Void)?
     
     private let pinIcon = UIImageView().then {
-        $0.image = UIImage(named: "Destination", in: Bundle.module, compatibleWith: nil)
+        $0.image = UIImage(named: "Destination", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.tintColor = UIColor.color.sub2.color
     }
+    
     private let titleLabel = UILabel().then {
-        $0.textColor = .white
-        $0.font = .systemFont(ofSize: 16, weight: .regular) // 장소 글자 크기
+        $0.textColor = UIColor.color.sub1.color
+        // [수정] 장소 글자 크기 16
+        $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
     }
+    
     private let dateLabel = UILabel().then {
-        $0.textColor = UIColor(red: 95/255, green: 95/255, blue: 95/255, alpha: 1)
-        $0.font = .systemFont(ofSize: 12)
+        $0.textColor = UIColor.color.sub2.color
+        $0.font = UIFont(name: "SUIT-Medium", size: 14) ?? .systemFont(ofSize: 14)
         $0.textAlignment = .right
     }
+    
     private let deleteButton = UIButton().then {
         $0.setImage(
-            UIImage(named: "Cancel", in: Bundle.module, compatibleWith: nil),
+            UIImage(named: "cancelButton", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate),
             for: .normal
         )
+        $0.tintColor = UIColor.color.sub2.color
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -39,6 +45,7 @@ public final class MapRecentSearchCell: UITableViewCell {
         setupView()
         deleteButton.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
     }
+    
     required init?(coder: NSCoder) { fatalError() }
     
     private func setupView() {
@@ -48,13 +55,13 @@ public final class MapRecentSearchCell: UITableViewCell {
         pinIcon.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(24)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(24) // 핀 아이콘 24
+            $0.size.equalTo(24) // [고정] 24x24
         }
         
         deleteButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-24)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(20) // X 아이콘 20
+            $0.size.equalTo(20) // [고정] 20x20
         }
         
         dateLabel.snp.makeConstraints {
@@ -63,7 +70,7 @@ public final class MapRecentSearchCell: UITableViewCell {
         }
         
         titleLabel.snp.makeConstraints {
-            $0.leading.equalTo(pinIcon.snp.trailing).offset(16) // 간격 16
+            $0.leading.equalTo(pinIcon.snp.trailing).offset(12)
             $0.trailing.equalTo(dateLabel.snp.leading).offset(-8)
             $0.centerY.equalToSuperview()
         }
