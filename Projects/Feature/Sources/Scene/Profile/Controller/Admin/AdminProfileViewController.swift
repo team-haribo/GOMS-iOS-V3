@@ -38,13 +38,16 @@ private let tabBarView = TabBar()
     }
     
     let userProfilePencil = UIButton().then {
-        $0.setImage(.image.gomsProfilePencil.image, for: .normal)
+        $0.setImage(.image.adminpencil.image, for: .normal)
         $0.addTarget(self, action: #selector(ShowActionSheetProfilImageChange), for: .touchUpInside)
 
         $0.layer.shadowColor = UIColor.black.cgColor
         $0.layer.shadowOpacity = 0.25
         $0.layer.shadowRadius = 6
         $0.layer.shadowOffset = CGSize(width: 0, height: 3)
+  
+     
+        $0.clipsToBounds = false
     }
     
     let userName = UILabel().then {
@@ -572,7 +575,8 @@ private let tabBarView = TabBar()
         }
 
         userProfilePencil.snp.makeConstraints {
-            $0.top.equalTo(userGradeDepartment.snp.top)
+            $0.width.height.equalTo(24)
+            $0.bottom.equalTo(userProfile.snp.bottom)
             $0.trailing.equalTo(userProfile.snp.trailing)
         }
 

@@ -36,7 +36,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     let userProfilePencil = UIButton().then {
-        $0.setImage(.image.gomsProfilePencil.image, for: .normal)
+        $0.setImage(.image.adminpencil.image, for: .normal)
         $0.addTarget(self, action: #selector(ShowActionSheetProfilImageChange), for: .touchUpInside)
 
         $0.layer.shadowColor = UIColor.black.cgColor
