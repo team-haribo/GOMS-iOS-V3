@@ -349,19 +349,10 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
             switch tab {
             case .home:
-               
                 let adminVC = AdminMainViewController()
                 self.navigationController?.setViewControllers([adminVC], animated: false)
             case .map:
                 let mapVC = MapViewController()
-
-                
-                let transition = CATransition()
-                transition.duration = 0.25
-                transition.type = .push
-                transition.subtype = .fromLeft
-                navigationController?.view.layer.add(transition, forKey: kCATransition)
-
                 self.navigationController?.pushViewController(mapVC, animated: false)
             case .profile:
                 let profileVC = AdminProfileViewController()
