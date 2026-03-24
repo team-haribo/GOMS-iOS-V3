@@ -95,6 +95,8 @@ private let tabBar = TabBar()
 
 private let mapContainerView = UIView()
 private let mapVC = MapViewController()
+private let profileContainerView = UIView()
+private let profileVC = AdminProfileViewController()
     
     private lazy var qrButton = AdminQRButton(
         frame: CGRect(x: 0, y: 0, width: 64, height: 64),
@@ -163,8 +165,14 @@ private let mapVC = MapViewController()
         fetchData()
         bindTabBar()
         setupMapContainer()
+        setupProfileContainer()
+
         mapContainerView.isHidden = true
+        profileContainerView.isHidden = true
+
+       
         view.bringSubviewToFront(mapContainerView)
+        view.bringSubviewToFront(profileContainerView)
         view.bringSubviewToFront(tabBar)
         view.bringSubviewToFront(qrButton)
         view.bringSubviewToFront(codeButton)
@@ -356,20 +364,27 @@ private let mapVC = MapViewController()
         tabBar.onTabSelected = { [weak self] tab in
             guard let self = self else { return }
 
+            self.tabBar.updateSelectedTab(tab)
+
             switch tab {
             case .home:
                 self.mapContainerView.isHidden = true
+                self.profileContainerView.isHidden = true
                 self.scrollView.isHidden = false
                 self.qrButton.isHidden = false
                 self.codeButton.isHidden = false
             case .map:
                 self.mapContainerView.isHidden = false
+                self.profileContainerView.isHidden = true
                 self.scrollView.isHidden = true
                 self.qrButton.isHidden = true
                 self.codeButton.isHidden = true
             case .profile:
-                let profileVC = AdminProfileViewController()
-                self.navigationController?.pushViewController(profileVC, animated: true)
+                self.mapContainerView.isHidden = true
+                self.profileContainerView.isHidden = false
+                self.scrollView.isHidden = true
+                self.qrButton.isHidden = true
+                self.codeButton.isHidden = true
             }
         }
     }
@@ -380,6 +395,14 @@ private let mapVC = MapViewController()
         mapVC.view.frame = mapContainerView.bounds
         mapVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         mapVC.didMove(toParent: self)
+    }
+
+    private func setupProfileContainer() {
+        addChild(profileVC)
+        profileContainerView.addSubview(profileVC.view)
+        profileVC.view.frame = profileContainerView.bounds
+        profileVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        profileVC.didMove(toParent: self)
     }
     // MARK: - Selector
     @objc func moreOutingStatusButtonTapped() {
@@ -448,6 +471,7 @@ private let mapVC = MapViewController()
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
         view.addSubview(mapContainerView)
+        view.addSubview(profileContainerView)
         view.addSubview(tabBar)
         view.addSubview(qrButton)
         view.addSubview(codeButton)
@@ -514,6 +538,12 @@ private let mapVC = MapViewController()
         }
 
         mapContainerView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+        }
+
+        profileContainerView.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
