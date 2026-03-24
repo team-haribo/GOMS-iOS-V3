@@ -17,7 +17,7 @@ public final class MapReviewCell: UITableViewCell {
     public var onReportTap: (() -> Void)?
     
     private let profileImageView = UIImageView().then {
-        $0.image = UIImage(named: "New_jeans", in: Bundle.module, compatibleWith: nil)
+        $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
         $0.layer.cornerRadius = 24
         $0.clipsToBounds = true
         $0.contentMode = .scaleAspectFill
@@ -132,8 +132,6 @@ public final class MapReviewCell: UITableViewCell {
         infoLabel.text = data.info
         contentLabel.text = data.content
         dateLabel.text = data.date
-        
-        // 보안 이슈 반영: 오직 data.isMine 값에 의해서만 버튼 노출 결정
         deleteButton.isHidden = !data.isMine
         reportButton.isHidden = data.isMine
     }
