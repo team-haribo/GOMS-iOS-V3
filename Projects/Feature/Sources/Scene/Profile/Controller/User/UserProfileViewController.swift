@@ -295,44 +295,29 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     @objc func logoutButtonTapped() {
-        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
-        
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 17, weight: .semibold)
-        ]
-        let attributedTitle = NSAttributedString(string: "로그아웃\n", attributes: titleAttributes)
-        alertController.setValue(attributedTitle, forKey: "attributedTitle")
-        
-        let messageAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 15, weight: .regular)
-        ]
-        let attributedMessage = NSAttributedString(string: "로그아웃 하시겠습니까?", attributes: messageAttributes)
-        alertController.setValue(attributedMessage, forKey: "attributedMessage")
-        
+        let alertController = UIAlertController(
+            title: "로그아웃",
+            message: "로그아웃 하시겠습니까?",
+            preferredStyle: .alert
+        )
+
         let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
-        
+
         let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
             
             let introVC = IntroViewController()
             let nav = UINavigationController(rootViewController: introVC)
 
-            if let window = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first?.windows.first {
-
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
                 window.rootViewController = nav
                 window.makeKeyAndVisible()
             }
         }
-        
-        
+
         alertController.addAction(confirmAction)
-        
-        alertController.view.subviews.first?.subviews.first?.subviews.first?.backgroundColor = .color.gomsTheme.color
-        
+
         self.present(alertController, animated: true, completion: nil)
     }
     
