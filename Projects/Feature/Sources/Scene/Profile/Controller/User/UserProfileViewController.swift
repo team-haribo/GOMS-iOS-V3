@@ -11,6 +11,10 @@ import Combine
 import Moya
 import Service
 
+private enum Layout {
+    static let horizontal: CGFloat = 20
+}
+
 public class UserProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     let imagePickerController = UIImagePickerController()
@@ -557,14 +561,14 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     public override func setLayout() {
         logo.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.width.equalTo(135)
             $0.height.equalTo(56)
         }
         userProfile.snp.makeConstraints {
             $0.width.equalTo(64)
             $0.height.equalTo(64)
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(logo.snp.bottom).offset(16)
         }
 
@@ -585,7 +589,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         perceptionCount.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(userName.snp.top)
         }
 
@@ -596,20 +600,20 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
 
         perceptionText.snp.makeConstraints {
             $0.width.equalTo(17)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
 
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().offset(20)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
         }
 
         themeBottomLine.snp.makeConstraints {
             $0.height.equalTo(1)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(cameraNowOnDescription.snp.bottom).offset(24)
         }
 
@@ -617,12 +621,12 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.width.equalTo(93)
             $0.height.equalTo(28)
             $0.top.equalTo(themeTopLine.snp.top).offset(24)
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
         }
 
         themeChangRec.snp.makeConstraints {
             $0.height.equalTo(64)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
 
@@ -637,11 +641,11 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.width.equalTo(24)
             $0.height.equalTo(24)
             $0.top.equalTo(themeChangRec.snp.top).offset(20)
-            $0.trailing.equalToSuperview().inset(32)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
         }
 
         clockText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
 
@@ -652,12 +656,12 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         clockToggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(28)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(clockText)
         }
 
         alarmText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(clockDescription.snp.bottom).offset(24)
         }
         alarmDescription.snp.makeConstraints {
@@ -667,46 +671,45 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
         
         alarmsettingButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(28)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(alarmText)
         }
         
-            
         cameraNowOnText.snp.makeConstraints {
             $0.width.equalTo(184)
             $0.height.equalTo(28)
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(alarmDescription.snp.bottom).offset(25.5)
         }
 
         cameraNowOnDescription.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.trailing.lessThanOrEqualTo(cameraNowOntoggleButton.snp.leading).offset(-8)
             $0.top.equalTo(cameraNowOnText.snp.bottom).offset(4)
         }
 
         cameraNowOntoggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(28)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(cameraNowOnText)
         }
 
         passwordResetButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
         }
 
         logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(passwordResetButton.snp.bottom).offset(0)
         }
 
         withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(logoutButton.snp.bottom)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(Layout.horizontal)
         }
     }
 }
