@@ -13,6 +13,7 @@ import Service
 
 private enum Layout {
     static let horizontal: CGFloat = 20
+    static let trailingPadding: CGFloat = 32
 }
 
 public class UserProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
@@ -80,11 +81,11 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     let themeTopLine = UIView().then {
-        $0.backgroundColor = .color.button.color
+        $0.backgroundColor = .color.gomsDivider.color
     }
-    
+
     let themeBottomLine = UIView().then {
-        $0.backgroundColor = .color.button.color
+        $0.backgroundColor = .color.gomsDivider.color
     }
     
     let themeChangText = UILabel().then {
@@ -92,17 +93,13 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 16, weight: .semibold)
     }
-    
+
     let themeChangRec = UIButton().then {
         $0.backgroundColor = .color.gomsTheme.color
         $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
         $0.layer.cornerRadius = 8
     }
     
-    let themeChangLine = UIButton().then {
-        $0.backgroundColor = .color.gomsDivider.color
-        $0.layer.cornerRadius = 12
-    }
     
     let themeSettingText = UILabel().then {
         $0.text = ""
@@ -113,7 +110,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
  
     
     let themeSettingImg = UIImageView().then {
-        $0.image = .image.under.image
+        let image = UIImage.image.under.image.withRenderingMode(.alwaysTemplate)
+        $0.image = image
+        $0.tintColor = .color.button.color
     }
     
     let cameraNowOnText = UILabel().then {
@@ -192,9 +191,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
     }
     
-    let borderView = UIView().then() {
-        $0.backgroundColor = .color.gomsDivider.color
-    }
     
     @objc func withdrawalButtonTapped() {
         let alert = UIAlertController(title: "회원 탈퇴", message: "정말로 회원을 탈퇴하시겠습니까?", preferredStyle: .alert)
@@ -324,9 +320,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         self.navigationController?.pushViewController(changPassword, animated: true)
     }
     
-    func performLogout() {
-        let alertController = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
-    }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
         if isActionSheetShowing {
@@ -336,7 +329,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
     }
     
-    @objc func themaChang() {
+    @objc func themeChange() {
         let isDarkMode = traitCollection.userInterfaceStyle == .dark
         let nextMode: UIUserInterfaceStyle = isDarkMode ? .light : .dark
         overrideUserInterfaceStyle = nextMode
@@ -515,7 +508,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             perceptionNum,
             perceptionText,
             userProfilePencil,
-            passwordResetButton,
             themeTopLine,
             themeBottomLine,
             alarmText,
@@ -527,12 +519,12 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             clockText,
             clockDescription,
             clockToggleButton,
-            logoutButton,
             themeChangText,
             themeChangRec,
             themeSettingImg,
             themeSettingText,
-            themeChangLine,
+            passwordResetButton,
+            logoutButton,
             withdrawalButton
         ].forEach {
             self.view.addSubview($0)
@@ -597,7 +589,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         themeBottomLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
-            $0.top.equalTo(cameraNowOnDescription.snp.bottom).offset(24)
+            $0.top.equalTo(cameraNowOnDescription.snp.bottom).offset(25)
         }
 
         themeChangText.snp.makeConstraints {
@@ -624,7 +616,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.width.equalTo(24)
             $0.height.equalTo(24)
             $0.top.equalTo(themeChangRec.snp.top).offset(20)
-            $0.trailing.equalToSuperview().inset(Layout.horizontal)
+            $0.trailing.equalToSuperview().inset(Layout.trailingPadding)
         }
 
         clockText.snp.makeConstraints {
@@ -685,14 +677,13 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         logoutButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
-            $0.top.equalTo(passwordResetButton.snp.bottom).offset(0)
+            $0.top.equalTo(passwordResetButton.snp.bottom)
         }
 
         withdrawalButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(logoutButton.snp.bottom)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(Layout.horizontal)
         }
     }
 }
