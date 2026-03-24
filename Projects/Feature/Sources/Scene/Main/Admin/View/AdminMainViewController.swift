@@ -360,9 +360,13 @@ private let mapVC = MapViewController()
             case .home:
                 self.mapContainerView.isHidden = true
                 self.scrollView.isHidden = false
+                self.qrButton.isHidden = false
+                self.codeButton.isHidden = false
             case .map:
                 self.mapContainerView.isHidden = false
                 self.scrollView.isHidden = true
+                self.qrButton.isHidden = true
+                self.codeButton.isHidden = true
             case .profile:
                 let profileVC = AdminProfileViewController()
                 self.navigationController?.pushViewController(profileVC, animated: true)
