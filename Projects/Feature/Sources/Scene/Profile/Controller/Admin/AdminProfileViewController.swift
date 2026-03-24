@@ -17,7 +17,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     let imagePickerController = UIImagePickerController()
     let profileViewModel = ProfileViewModel()
     var cancellables = Set<AnyCancellable>()
-private let tabBarView = TabBar()
 
     let logo = UIImageView().then {
         $0.image = UIImage(
@@ -333,29 +332,6 @@ private let tabBarView = TabBar()
     }
 
 
-    private func bindTabBar() {
-        tabBarView.onTabSelected = { [weak self] tab in
-            guard let self = self else { return }
-
-            switch tab {
-            case .home:
-                let adminVC = AdminMainViewController()
-                self.navigationController?.setViewControllers([adminVC], animated: false)
-            case .map:
-                let mapVC = MapViewController()
-
-                let transition = CATransition()
-                transition.duration = 0.25
-                transition.type = .push
-                transition.subtype = .fromLeft
-                self.navigationController?.view.layer.add(transition, forKey: kCATransition)
-
-                self.navigationController?.pushViewController(mapVC, animated: false)
-            case .profile:
-                break
-            }
-        }
-    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -419,8 +395,6 @@ private let tabBarView = TabBar()
         
         view.backgroundColor = .color.background.color
 
-        tabBarView.selectedTab = .profile
-        bindTabBar()
         
         let backBarButtonItem = UIBarButtonItem(title: "돌아가기", style: .plain, target: self, action: nil)
         self.navigationItem.backBarButtonItem = backBarButtonItem
@@ -549,9 +523,7 @@ private let tabBarView = TabBar()
 
             passwordResetButton,
             logoutButton,
-            withdrawalButton,
-
-            tabBarView
+            withdrawalButton
         ].forEach {
             view.addSubview($0)
         }
@@ -698,11 +670,6 @@ private let tabBarView = TabBar()
 
 
 
-        tabBarView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalToSuperview()
-            $0.height.equalTo(100)
-        }
     }
 }
 
