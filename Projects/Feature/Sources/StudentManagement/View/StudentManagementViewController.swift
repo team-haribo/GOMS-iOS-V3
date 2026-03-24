@@ -2,188 +2,144 @@
 //  StudentManagementViewController.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 3/23/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import SnapKit
+import Then
 
 public final class StudentManagementViewController: BaseViewController {
     
-    // MARK: - Properties
     private let viewModel = StudentManagementViewModel()
-    
     var userList: [UserData] = [] {
-        didSet {
-            studentCollectionView.reloadData()
-        }
+        didSet { studentCollectionView.reloadData() }
     }
     
-    let refreshControl = UIRefreshControl()
-    
-    let searchController = UISearchController(searchResultsController: nil)
+    private lazy var backButton = UIButton().then {
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        $0.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.tintColor = UIColor.color.admin.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
     
     private let titleLabel = UILabel().then {
+        $0.text = "학생 관리"
+        $0.textColor = UIColor.color.mainText.color
+        $0.font = .suit(size: 24, weight: .bold)
+    }
+    
+    private let searchBar = GOMSSearchBar()
+    
+    private let resultLabel = UILabel().then {
         $0.text = "검색 결과"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 18, weight: .semibold)
+        $0.textColor = UIColor.color.mainText.color
+        $0.font = .suit(size: 20, weight: .bold)
     }
     
     private lazy var filterButton = UIButton().then {
         $0.setTitle("필터", for: .normal)
-        $0.backgroundColor = .clear
-        $0.setTitleColor(.color.gomsInformation.color, for: .normal)
+        $0.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
+        $0.titleLabel?.font = .suit(size: 14, weight: .medium)
         $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
     }
     
-    lazy var studentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout.init()).then {
+    lazy var studentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
         $0.backgroundColor = .clear
-        $0.isScrollEnabled = true
-        $0.showsHorizontalScrollIndicator = false
-        $0.showsVerticalScrollIndicator = true
-        $0.clipsToBounds = true
-        $0.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    }
-    
-    @objc func filterButtonTapped() {
-        let filterVC = FilterBottomSheetVC(studentManagementVC: self)
-        filterVC.modalPresentationStyle = .overFullScreen
-        self.present(filterVC, animated: false, completion: nil)
-    }
-    
-    // MARK: - Life Cycel
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-    
-        viewModel.getUserList {
-            self.userList = self.viewModel.userListDatas
-            self.setupCollectionView()
-            self.setupSearchBar()
-            self.configureRefreshControl()
-            self.studentCollectionView.reloadData()
-        }
+        $0.showsVerticalScrollIndicator = false
     }
     
     public override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
-    }
-    
-    private func setupScrollView() {
-        addView()
-        configureRefreshControl()
-    }
-
-    // MARK: - Refresh Control Setup
-    func configureRefreshControl() {
-        studentCollectionView.refreshControl = refreshControl
-        refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
-        refreshControl.tintColor = .color.admin.color
-    }
-
-    @objc private func handleRefreshControl() {
-        viewModel.gomsRefreshToken.tokenReissuance(){ success in}
+        setupCollectionView()
+        setupSearchBar()
+        
+        // 일단 화면 확인용 9명 데이터 넣기 (서버 연결 전 확인용)
+        self.userList = StudentMockData.students
+        
+        // 서버에서 진짜 데이터 가져오기 (성공 시 위 userList를 덮어씌움)
         viewModel.getUserList {
-            self.userList = self.viewModel.userListDatas
-            DispatchQueue.main.async {
-                self.studentCollectionView.reloadData()
-                self.refreshControl.endRefreshing()
+            if !self.viewModel.userListDatas.isEmpty {
+                self.userList = self.viewModel.userListDatas
             }
         }
     }
-
-    public override func configNavigation() {
-        super.configNavigation()
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationItem.title = "학생 관리"
-        navigationController?.navigationBar.tintColor = .color.admin.color
-        navigationItem.searchController = searchController
-        self.navigationItem.hidesSearchBarWhenScrolling = false
-        self.navigationController?.navigationBar.isHidden = false
-    }
     
     private func setupCollectionView() {
-        self.studentCollectionView.dataSource = self
-        self.studentCollectionView.delegate = self
+        studentCollectionView.dataSource = self
+        studentCollectionView.delegate = self
         studentCollectionView.register(StudentCollectionViewCell.self, forCellWithReuseIdentifier: StudentCollectionViewCell.identifier)
     }
     
-    func setupSearchBar() {
-        searchController.searchBar.placeholder = "학생 검색"
-        searchController.searchResultsUpdater = self
+    private func setupSearchBar() {
+        searchBar.textField.addTarget(self, action: #selector(searchTextFieldDidChange), for: .editingChanged)
+    }
+
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
+    }
+
+    @objc private func searchTextFieldDidChange(_ textField: UITextField) {
+        let text = textField.text ?? ""
+        viewModel.serachStudent(searchString: text.isEmpty ? nil : text) { self.userList = $0 }
     }
     
-    // MARK: - Add View
+    @objc private func filterButtonTapped() {
+        let filterVC = FilterBottomSheetVC(studentManagementVC: self)
+        filterVC.modalPresentationStyle = .overFullScreen
+        self.present(filterVC, animated: false)
+    }
+    
     public override func addView() {
-        [titleLabel, filterButton, studentCollectionView].forEach { view.addSubview($0) }
+        [backButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView].forEach { view.addSubview($0) }
     }
     
-    // MARK: Layout
     public override func setLayout() {
+        backButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
+            $0.top.equalTo(backButton.snp.bottom).offset(16)
+            $0.leading.equalToSuperview().offset(24)
         }
-        
+        searchBar.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(52)
+        }
+        resultLabel.snp.makeConstraints {
+            $0.top.equalTo(searchBar.snp.bottom).offset(32)
+            $0.leading.equalToSuperview().offset(24)
+        }
         filterButton.snp.makeConstraints {
-            $0.height.equalTo(32)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.centerY.equalTo(resultLabel)
+            $0.trailing.equalToSuperview().inset(24)
         }
-        
         studentCollectionView.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-(bounds.width * 0.05))
+            $0.top.equalTo(resultLabel.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
     }
 }
 
-// MARK: - Extension
-extension StudentManagementViewController: UICollectionViewDataSource {
+extension StudentManagementViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return userList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = studentCollectionView.dequeueReusableCell(withReuseIdentifier: StudentCollectionViewCell.identifier, for: indexPath) as! StudentCollectionViewCell
-    
-        let userData = userList[indexPath.row]
-        cell.configureData(with: userData)
-        
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StudentCollectionViewCell.identifier, for: indexPath) as? StudentCollectionViewCell else { return UICollectionViewCell() }
+        cell.configureData(with: userList[indexPath.row])
         return cell
     }
-}
 
-extension StudentManagementViewController: UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = bounds.width * 0.9
-        let height: CGFloat = 72
-        return CGSize(width: width, height: height)
-    }
-    
-    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 0
-    }
-}
-
-extension StudentManagementViewController: UISearchResultsUpdating {
-    public func updateSearchResults(for searchController: UISearchController) {
-        guard let searchString = searchController.searchBar.text else { return }
-        if searchString.isEmpty {
-            viewModel.resetInfo()
-            viewModel.serachStudent(searchString: nil) { newList in
-                self.userList = newList
-                self.studentCollectionView.reloadData()
-            }
-            userList = viewModel.userListDatas
-        } else {
-            viewModel.serachStudent(searchString: searchString) { newList in
-                self.userList = newList
-                self.studentCollectionView.reloadData()
-            }
-        }
+        return CGSize(width: collectionView.frame.width, height: 80)
     }
 }
