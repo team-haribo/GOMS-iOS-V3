@@ -91,7 +91,10 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.backgroundColor = .clear
     }
 
-    private let tabBar = TabBar()
+private let tabBar = TabBar()
+
+private let mapContainerView = UIView()
+private let mapVC = MapViewController()
     
     private lazy var qrButton = AdminQRButton(
         frame: CGRect(x: 0, y: 0, width: 64, height: 64),
@@ -159,6 +162,12 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         refreshControl.beginRefreshing()
         fetchData()
         bindTabBar()
+        setupMapContainer()
+        mapContainerView.isHidden = true
+        view.bringSubviewToFront(mapContainerView)
+        view.bringSubviewToFront(tabBar)
+        view.bringSubviewToFront(qrButton)
+        view.bringSubviewToFront(codeButton)
     }
 
 
@@ -349,16 +358,24 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
             switch tab {
             case .home:
-                let adminVC = AdminMainViewController()
-                self.navigationController?.setViewControllers([adminVC], animated: false)
+                self.mapContainerView.isHidden = true
+                self.scrollView.isHidden = false
             case .map:
-                let mapVC = MapViewController()
-                self.navigationController?.pushViewController(mapVC, animated: false)
+                self.mapContainerView.isHidden = false
+                self.scrollView.isHidden = true
             case .profile:
                 let profileVC = AdminProfileViewController()
-                self.navigationController?.setViewControllers([profileVC], animated: false)
+                self.navigationController?.pushViewController(profileVC, animated: true)
             }
         }
+    }
+
+    private func setupMapContainer() {
+        addChild(mapVC)
+        mapContainerView.addSubview(mapVC.view)
+        mapVC.view.frame = mapContainerView.bounds
+        mapVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        mapVC.didMove(toParent: self)
     }
     // MARK: - Selector
     @objc func moreOutingStatusButtonTapped() {
@@ -426,6 +443,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
+        view.addSubview(mapContainerView)
         view.addSubview(tabBar)
         view.addSubview(qrButton)
         view.addSubview(codeButton)
@@ -489,6 +507,12 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.leading.trailing.equalToSuperview()
             $0.top.equalTo(latecomerCollectionView.snp.bottom).offset(24)
             $0.bottom.equalTo(contentView.snp.bottom).offset(-100)
+        }
+
+        mapContainerView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
         }
 
         outingStatusLabel.snp.makeConstraints {
