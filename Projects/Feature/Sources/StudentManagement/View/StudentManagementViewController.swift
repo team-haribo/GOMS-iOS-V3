@@ -18,22 +18,24 @@ public final class StudentManagementViewController: BaseViewController {
     }
     
     private lazy var backButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         $0.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
     
     private let titleLabel = UILabel().then {
         $0.text = "학생 관리"
         $0.textColor = UIColor.color.mainText.color
-        $0.font = .suit(size: 24, weight: .bold)
+        $0.font = .suit(size: 26, weight: .bold)
     }
     
-    private let searchBar = GOMSSearchBar()
+    private let searchBar = GOMSSearchBar().then {
+        $0.textField.font = .suit(size: 14, weight: .medium)
+    }
     
     private let resultLabel = UILabel().then {
         $0.text = "검색 결과"
@@ -43,8 +45,8 @@ public final class StudentManagementViewController: BaseViewController {
     
     private lazy var filterButton = UIButton().then {
         $0.setTitle("필터", for: .normal)
-        $0.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
-        $0.titleLabel?.font = .suit(size: 14, weight: .medium)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
         $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
     }
     
@@ -52,16 +54,23 @@ public final class StudentManagementViewController: BaseViewController {
         $0.backgroundColor = .clear
         $0.showsVerticalScrollIndicator = false
     }
+
+    private let createQRButton = AdminQRButton(
+        frame: .zero,
+        backgroundColor: UIColor.color.admin.color,
+        icon: UIImage(systemName: "qrcode") ?? UIImage()
+    ).then {
+        $0.layer.cornerRadius = 32
+        $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
+    }
     
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
         setupSearchBar()
         
-        // 일단 화면 확인용 9명 데이터 넣기 (서버 연결 전 확인용)
         self.userList = StudentMockData.students
         
-        // 서버에서 진짜 데이터 가져오기 (성공 시 위 userList를 덮어씌움)
         viewModel.getUserList {
             if !self.viewModel.userListDatas.isEmpty {
                 self.userList = self.viewModel.userListDatas
@@ -93,9 +102,12 @@ public final class StudentManagementViewController: BaseViewController {
         filterVC.modalPresentationStyle = .overFullScreen
         self.present(filterVC, animated: false)
     }
+
+    @objc private func createQRButtonTapped() {
+    }
     
     public override func addView() {
-        [backButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView].forEach { view.addSubview($0) }
+        [backButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
     }
     
     public override func setLayout() {
@@ -108,12 +120,12 @@ public final class StudentManagementViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(24)
         }
         searchBar.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
-            $0.leading.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(52)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(48)
         }
         resultLabel.snp.makeConstraints {
-            $0.top.equalTo(searchBar.snp.bottom).offset(32)
+            $0.top.equalTo(searchBar.snp.bottom).offset(28)
             $0.leading.equalToSuperview().offset(24)
         }
         filterButton.snp.makeConstraints {
@@ -121,9 +133,14 @@ public final class StudentManagementViewController: BaseViewController {
             $0.trailing.equalToSuperview().inset(24)
         }
         studentCollectionView.snp.makeConstraints {
-            $0.top.equalTo(resultLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.top.equalTo(resultLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview()
+        }
+        createQRButton.snp.makeConstraints {
+            $0.width.height.equalTo(64)
+            $0.trailing.equalToSuperview().inset(24)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
     }
 }
@@ -140,6 +157,6 @@ extension StudentManagementViewController: UICollectionViewDataSource, UICollect
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 80)
+        return CGSize(width: collectionView.frame.width, height: 72)
     }
 }

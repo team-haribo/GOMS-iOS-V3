@@ -19,12 +19,12 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 24
-        $0.layer.borderWidth = 2
+        $0.layer.borderWidth = 4
         $0.layer.borderColor = UIColor.clear.cgColor
     }
     
     private let nameLabel = UILabel().then {
-        $0.font = .suit(size: 16, weight: .medium)
+        $0.font = .suit(size: 16, weight: .semibold)
     }
     
     private let infoLabel = UILabel().then {
@@ -48,23 +48,27 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         [profileImageView, nameLabel, infoLabel, editButton, dividerView].forEach { contentView.addSubview($0) }
         
         profileImageView.snp.makeConstraints {
-            $0.leading.equalToSuperview()
+            $0.leading.equalToSuperview().offset(10)
             $0.centerY.equalToSuperview()
             $0.width.height.equalTo(48)
         }
+        
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
-            $0.top.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(12)
         }
+        
         infoLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
             $0.top.equalTo(nameLabel.snp.bottom).offset(4)
         }
+        
         editButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview()
+            $0.trailing.equalToSuperview().inset(10)
             $0.centerY.equalToSuperview()
-            $0.width.height.equalTo(24)
+            $0.width.height.equalTo(28)
         }
+        
         dividerView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(1)
@@ -74,10 +78,12 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
     
     func configureData(with userData: UserData) {
+        let defaultImage = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        
         if let urlStr = userData.profileImageURL, let url = URL(string: urlStr) {
-            profileImageView.kf.setImage(with: url, placeholder: UIImage(named: "new_jeans", in: Bundle.module, compatibleWith: nil))
+            profileImageView.kf.setImage(with: url, placeholder: defaultImage)
         } else {
-            profileImageView.image = UIImage(named: "new_jeans", in: Bundle.module, compatibleWith: nil)
+            profileImageView.image = defaultImage
         }
         
         nameLabel.text = userData.name
