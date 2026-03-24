@@ -1,5 +1,5 @@
 //
-//  StudentManagementViewModel.swift
+//  StudentMockData.swift
 //  Feature
 //
 //  Created by 김민선 on 3/24/26.
