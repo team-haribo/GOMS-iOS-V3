@@ -97,8 +97,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.backgroundColor = .color.gomsTheme.color
         $0.addTarget(self, action: #selector(ShowActionSheetClick), for: .touchUpInside)
         $0.layer.cornerRadius = 8
-        $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.color.surface.color.cgColor
     }
     
     let themeChangLine = UIButton().then {
