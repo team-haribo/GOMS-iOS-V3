@@ -37,7 +37,13 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     let content = UIView()
 
-    private let logo = UIImageView(image: .image.gomsLightGrayLogo.image)
+    private let logo = UIImageView().then {
+        $0.image = UIImage(
+            named: "graylogo",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+    }
 
     private lazy var adminMenuButton = ExpandableButton().then {
         $0.setBackgroundImage(.image.adminMenu.image, for: .normal)
@@ -511,9 +517,9 @@ private let profileVC = AdminProfileViewController()
 
         logo.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalTo(contentView.snp.top).offset(20)
-            $0.height.equalTo(24)
-            $0.width.equalTo(87)
+            $0.top.equalTo(contentView.snp.top)
+            $0.height.equalTo(56)
+            $0.width.equalTo(135)
         }
 
 
