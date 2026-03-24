@@ -22,7 +22,7 @@ public final class GOMSSearchBar: UIView {
             string: "학교 검색",
             attributes: [
                 .foregroundColor: UIColor.color.sub1.color,
-                .font: UIFont.suit(size: 16, weight: .medium)
+                .font: UIFont.suit(size: 17, weight: .medium)
             ]
         )
     
