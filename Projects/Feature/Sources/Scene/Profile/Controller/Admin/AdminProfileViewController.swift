@@ -1,3 +1,4 @@
+
 //
 //  AdminProfileViewController.swift
 //  Feature
@@ -11,6 +12,21 @@ import Combine
 import Moya
 import Service
 
+private enum Layout {
+    static let horizontal: CGFloat = 20
+    static let sectionInset: CGFloat = 28
+}
+
+extension Layout {
+    static let trailingPadding: CGFloat = 32
+}
+
+private enum UserDefaultsKey {
+    static let theme = "selectedTheme"
+    static let themeText = "themeText"
+    static let isClockOn = "isClockOn"
+    static let isSwitchMakeOn = "isSwitchMakeOn"
+}
 
 public class AdminProfileViewController: BaseViewController,UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -161,11 +177,11 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.addTarget(self, action: #selector(passwordResetPage), for: .touchUpInside)
     }
 
-    lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
+    private lazy var logoutButton = ProfileButton(icon: .image.outing.image, title: "로그아웃").then {
         $0.addTarget(self, action: #selector(logoutButtonTapped), for: .touchUpInside)
     }
 
-    lazy var withdrawalButton = ProfileButton(icon: .image.cancelUser.image, title: "회원탈퇴").then {
+    private lazy var withdrawalButton = ProfileButton(icon: .image.cancelUser.image, title: "회원탈퇴").then {
         $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
     }
     
@@ -176,20 +192,12 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     
     @objc func switchQRMake(_ sender: UISwitch) {
         print("QR카메라 바로생성: \(sender.isOn ? "On" : "Off")")
-        UserDefaults.standard.set(sender.isOn, forKey: "isSwitchMakeOn")
-        
-        let defaults = UserDefaults.standard
-        
-        let isSwitchMakeOn = defaults.bool(forKey: "isSwitchMakeOn")
+        UserDefaults.standard.set(sender.isOn, forKey: UserDefaultsKey.isSwitchMakeOn)
     }
     
     @objc func switchClockOn(_ sender: UISwitch) {
         print("시계 나타내기: \(sender.isOn ? "On" : "Off")")
-        UserDefaults.standard.set(sender.isOn, forKey: "isClockOn")
-        
-        let defaults = UserDefaults.standard
-        
-        let isClockOn = defaults.bool(forKey: "isClockOn")
+        UserDefaults.standard.set(sender.isOn, forKey: UserDefaultsKey.isClockOn)
         if let mainViewController = navigationController?.viewControllers.first(where: { $0 is AdminMainViewController  }) as? AdminMainViewController {
             mainViewController.isClockOn = sender.isOn
         }
@@ -227,35 +235,33 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
     
     private func applySavedTheme() {
-        let savedThemeValue = UserDefaults.standard.integer(forKey: "selectedTheme")
+        let savedThemeValue = UserDefaults.standard.integer(forKey: UserDefaultsKey.theme)
         let savedTheme: UIUserInterfaceStyle
         switch savedThemeValue {
         case 1: savedTheme = .light
         case 2: savedTheme = .dark
         default: savedTheme = .unspecified
-            
-    }
-        
-    guard let window = UIApplication.shared.windows.first else {
-        return
-    }
-        
+        }
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+            .first else { return }
         window.overrideUserInterfaceStyle = savedTheme
         updateThemeText()
     }
-    
+
     private func setTheme(_ style: UIUserInterfaceStyle, themeText: String) {
-        if let window = UIApplication.shared.windows.first {
+        if let window = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+            .first {
             window.overrideUserInterfaceStyle = style
             themeSettingText.text = themeText
-            
-            UserDefaults.standard.set(style.rawValue, forKey: "selectedTheme")
-            UserDefaults.standard.set(themeText, forKey: "themeText")
+            UserDefaults.standard.set(style.rawValue, forKey: UserDefaultsKey.theme)
+            UserDefaults.standard.set(themeText, forKey: UserDefaultsKey.themeText)
         }
     }
     
     public func updateThemeText() {
-        self.themeSettingText.text = UserDefaults.standard.string(forKey: "themeText") ?? "시스템 테마 설정"
+        self.themeSettingText.text = UserDefaults.standard.string(forKey: UserDefaultsKey.themeText) ?? "시스템 테마 설정"
     }
     
     @objc func withdrawalButtonTapped() {
@@ -273,48 +279,33 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     }
     
     @objc func logoutButtonTapped() {
-        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
-        
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 17, weight: .semibold)
-        ]
-        
-        let attributedTitle = NSAttributedString(string: "로그아웃\n", attributes: titleAttributes)
-        alertController.setValue(attributedTitle, forKey: "attributedTitle")
-        
-        let messageAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 13, weight: .regular)
-        ]
-        
-        let attributedMessage = NSAttributedString(string: "로그아웃 하시겠습니까?", attributes: messageAttributes)
-        alertController.setValue(attributedMessage, forKey: "attributedMessage")
-        
+        let alertController = UIAlertController(
+            title: "로그아웃",
+            message: "로그아웃 하시겠습니까?",
+            preferredStyle: .alert
+        )
+
         let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
-        
+
         let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            self?.profileViewModel.profileLogout { [weak self] success in
-                if success {
-                    let introVC = IntroViewController()
-                    self?.navigationController?.pushViewController(introVC, animated: true)
-                } else {
-                    print("실패")
-                }
+            
+            let introVC = IntroViewController()
+            let nav = UINavigationController(rootViewController: introVC)
+
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController = nav
+                window.makeKeyAndVisible()
             }
         }
-        
+
         alertController.addAction(confirmAction)
-        
-        alertController.view.subviews.first?.subviews.first?.subviews.first?.backgroundColor = .color.gomsTheme.color
-        
+
         self.present(alertController, animated: true, completion: nil)
     }
     
-    func performLogout() {
-        let alertController = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
-    }
+  
     
     @objc func updateImage(isActionSheetShowing: Bool) {
         if isActionSheetShowing {
@@ -324,7 +315,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
     }
     
-    @objc func themaChang() {
+    @objc func themeChange() {
         let isDarkMode = traitCollection.userInterfaceStyle == .dark
         let nextMode: UIUserInterfaceStyle = isDarkMode ? .light : .dark
         overrideUserInterfaceStyle = nextMode
@@ -335,27 +326,32 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        applySavedTheme()
-        self.navigationController?.navigationBar.prefersLargeTitles = false
-        profileViewModel.loadProfileInfo { success, authority in
-            if success {
-                print("성공")
-            } else {
-                print("Failed to load profile information.")
-            }
-        }
+        setupUI()
+        bind()
+        fetchData()
+    }
 
-        let isSwitchOn = UserDefaults.standard.bool(forKey: "isSwitchMakeOn")
+    private func setupUI() {
+        applySavedTheme()
+        view.backgroundColor = .color.background.color
+        navigationController?.navigationBar.prefersLargeTitles = false
+        imagePickerController.delegate = self
+
+        let isSwitchOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isSwitchMakeOn)
         qrMakeOntoggleButton.isOn = isSwitchOn
-        
-        let isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
+
+        let isClockOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isClockOn)
         clockToggleButton.isOn = isClockOn
-        
-        profileViewModel.$profileInfo.sink { [weak self] profileInfo in
-            guard let profileInfo = profileInfo else { return }
-            DispatchQueue.main.async {
-                self?.userName.text = profileInfo.name
-                self?.perceptionNum.text = String(describing: profileInfo.lateCount)
+    }
+
+    private func bind() {
+        profileViewModel.$profileInfo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] profileInfo in
+                guard let self = self, let profileInfo else { return }
+
+                self.userName.text = profileInfo.name
+                self.perceptionNum.text = "\(profileInfo.lateCount)"
 
                 let majorText: String
                 switch profileInfo.major {
@@ -366,42 +362,23 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
                 default:
                     majorText = "AI"
                 }
-                let finalText = "\(profileInfo.grade)기ㅣ\(majorText)"
-                let profileUrlString = profileInfo.profileUrl ?? ""
 
-                if let profileUrl = URL(string: profileUrlString) {
-                    URLSession.shared.dataTask(with: profileUrl) { data, response, error in
-                        if let error = error {
-                            print("이미지 데이터를 가져오는 중 에러 발생: \(error)")
-                            return
-                        }
+                self.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
 
-                        if let imageData = data, let profileImage = UIImage(data: imageData) {
-                            DispatchQueue.main.async {
-                                self?.userProfile.image = profileImage
-                            }
-                        }
-                    }
-                    .resume()
+                if let url = URL(string: profileInfo.profileUrl ?? "") {
+                    self.userProfile.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.gomsBasicProfile.image
+                    )
                 }
-
-                let uploadimage = profileInfo.profileUrl
-                self?.userGradeDepartment.text = finalText
-
-            
             }
-        }
-        .store(in: &cancellables)
-        
-        view.backgroundColor = .color.background.color
-
-        
-        let backBarButtonItem = UIBarButtonItem(title: "돌아가기", style: .plain, target: self, action: nil)
-        self.navigationItem.backBarButtonItem = backBarButtonItem
-        
-        imagePickerController.delegate = self
-        
+            .store(in: &cancellables)
     }
+
+    private func fetchData() {
+        profileViewModel.loadProfileInfo { _, _ in }
+    }
+
     
     // MARK: - Configure Navigation
     public override func configNavigation() {
@@ -535,14 +512,14 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     public override func setLayout() {
         logo.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.width.equalTo(135)
             $0.height.equalTo(56)
         }
         userProfile.snp.makeConstraints {
             $0.width.equalTo(64)
             $0.height.equalTo(64)
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(logo.snp.bottom).offset(16)
         }
 
@@ -560,12 +537,12 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
         userGradeDepartment.snp.makeConstraints {
             $0.leading.equalTo(userName.snp.leading)
-            $0.trailing.lessThanOrEqualToSuperview().inset(20)
+            $0.trailing.lessThanOrEqualToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(userName.snp.bottom).offset(4)
         }
 
         perceptionCount.snp.makeConstraints { // 지각횟수
-            $0.trailing.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(userName.snp.top)
         }
 
@@ -575,24 +552,24 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         perceptionText.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
 
         passwordResetButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
         }
 
         logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(passwordResetButton.snp.bottom)
         }
 
         withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(logoutButton.snp.bottom)
         }
@@ -600,20 +577,20 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().offset(20)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
         }
 
         themeChangText.snp.makeConstraints {
             $0.width.equalTo(93)
             $0.height.equalTo(28)
             $0.top.equalTo(themeTopLine.snp.top).offset(24)
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
         }
 
         themeChangRec.snp.makeConstraints {
             $0.height.equalTo(64)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
 
@@ -628,11 +605,11 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             $0.width.equalTo(24)
             $0.height.equalTo(24)
             $0.top.equalTo(themeChangRec.snp.top).offset(20)
-            $0.trailing.equalToSuperview().inset(32)
+            $0.trailing.equalToSuperview().inset(Layout.trailingPadding)
         }
 
         clockText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
 
@@ -642,12 +619,12 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         clockToggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(28)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(clockText)
         }
 
         qrMakeOnText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(28)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(clockDescription.snp.bottom).offset(24)
         }
 
@@ -657,13 +634,13 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         qrMakeOntoggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(28)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(qrMakeOnText)
         }
 
         themeBottomLine.snp.makeConstraints {
             $0.height.equalTo(1)
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(qrMakeOnDescription.snp.bottom).offset(25)
         }
 
