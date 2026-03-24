@@ -19,16 +19,17 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 24
-        $0.layer.borderWidth = 4
+        $0.layer.borderWidth = 0
         $0.layer.borderColor = UIColor.clear.cgColor
     }
     
     private let nameLabel = UILabel().then {
         $0.font = .suit(size: 16, weight: .semibold)
+        $0.textColor = .color.mainText.color
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = UIColor.color.sub1.color
+        $0.textColor = .color.sub1.color
         $0.font = .suit(size: 14, weight: .medium)
     }
     
@@ -39,7 +40,8 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     }
 
     private let dividerView = UIView().then {
-        $0.backgroundColor = UIColor.systemGray5.withAlphaComponent(0.5)
+        // 화이트/다크 모드 모두에서 잘 보이도록 sub1 색상 적용
+        $0.backgroundColor = .color.sub1.color.withAlphaComponent(0.3)
     }
     
     override init(frame: CGRect) {
@@ -55,7 +57,7 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
-            $0.top.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(14)
         }
         
         infoLabel.snp.makeConstraints {
@@ -90,15 +92,20 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
         
+        // 권한 및 상태에 따른 테두리 두께(4) 및 색상 처리
         if userData.authority == "ROLE_ADMIN" {
+            profileImageView.layer.borderWidth = 4
             profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
             nameLabel.textColor = UIColor.color.admin.color
         } else if userData.isBlackList {
+            profileImageView.layer.borderWidth = 4
             profileImageView.layer.borderColor = UIColor.systemRed.cgColor
             nameLabel.textColor = UIColor.systemRed
         } else {
+            // 일반 학생은 테두리 없음
+            profileImageView.layer.borderWidth = 0
             profileImageView.layer.borderColor = UIColor.clear.cgColor
-            nameLabel.textColor = UIColor.color.mainText.color
+            nameLabel.textColor = .color.mainText.color
         }
     }
 
