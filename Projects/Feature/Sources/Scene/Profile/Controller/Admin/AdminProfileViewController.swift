@@ -585,7 +585,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             $0.width.equalTo(93)
             $0.height.equalTo(28)
             $0.top.equalTo(themeTopLine.snp.top).offset(24)
-            $0.leading.equalToSuperview().inset(Layout.sectionInset)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
         }
 
         themeChangRec.snp.makeConstraints {
@@ -609,7 +609,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         clockText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(Layout.sectionInset)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
 
@@ -619,12 +619,12 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         clockToggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(Layout.sectionInset)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(clockText)
         }
 
         qrMakeOnText.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(Layout.sectionInset)
+            $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(clockDescription.snp.bottom).offset(24)
         }
 
@@ -634,7 +634,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         qrMakeOntoggleButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(Layout.sectionInset)
+            $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(qrMakeOnText)
         }
 
