@@ -476,23 +476,25 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         basicsProfileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
         profileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
 
-        if let isBlackList = mainViewModel.profileData?.isBlackList, let isOuting = mainViewModel.profileData?.isOuting {
-            if isBlackList {
-                profileView.profileStatus.text = "외출 금지"
-                profileView.profileStatus.textColor = .color.gomsNegative.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 금지"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
-            } else if isOuting {
-                profileView.profileStatus.text = "외출 중"
-                profileView.profileStatus.textColor = .color.gomsPrimary.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
-            } else {
-                profileView.profileStatus.text = "외출 대기 중"
-                profileView.profileStatus.textColor = .color.sub1.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
-            }
+        
+        let isBlackList = false
+        let isOuting = true
+
+        if isBlackList {
+            profileView.profileStatus.text = "외출 금지"
+            profileView.profileStatus.textColor = .color.gomsNegative.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 금지"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
+        } else if isOuting {
+            profileView.profileStatus.text = "외출 중"
+            profileView.profileStatus.textColor = .color.gomsPrimary.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
+        } else {
+            profileView.profileStatus.text = "외출 대기 중"
+            profileView.profileStatus.textColor = .color.sub1.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
         }
     }
 
