@@ -69,7 +69,7 @@ final class ProfileCardView: UIView {
         studentInformationLabel.isHidden = false
 
         if isAdmin {
-            // ❗️ Admin에서는 중복 방지: 기본 라벨 숨기고 subInfo만 사용
+           
             studentInformationLabel.isHidden = true
             lateCountLabel.isHidden = true
             subInfoLabel.isHidden = false
@@ -78,7 +78,7 @@ final class ProfileCardView: UIView {
             myOutingStatusLabel.text = "관리자"
             myOutingStatusLabel.textColor = .color.admin.color
         } else {
-            // ❗️ User에서는 기본 라벨 사용
+        
             studentInformationLabel.isHidden = false
             studentInformationLabel.text = studentInfo
             lateCountLabel.isHidden = false

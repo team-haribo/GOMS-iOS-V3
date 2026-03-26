@@ -140,19 +140,19 @@ public final class MainProfileView: UIView {
         studentInformationLabel.snp.remakeConstraints {
 
             if isAdmin {
-                // 🔥 어드민 → 항상 이름 아래
+               
                 $0.leading.equalTo(nameLabel)
                 $0.top.equalTo(nameLabel.snp.bottom).offset(4)
                 $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
 
             } else {
                 if isClockOn {
-                    // 유저 + 시계 ON → 이름 오른쪽
+                    
                     $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
                     $0.centerY.equalTo(nameLabel)
                     $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
                 } else {
-                    // 유저 + 시계 OFF → 이름 아래
+                  
                     $0.leading.equalTo(nameLabel)
                     $0.top.equalTo(nameLabel.snp.bottom).offset(4)
                     $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)

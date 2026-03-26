@@ -371,7 +371,7 @@ private let profileVC = AdminProfileViewController()
 
         profileView.profileStatus.text = "관리자"
         profileView.profileStatus.textColor = .color.admin.color
-        // ❗️ 겹치는 원인 제거 (lateCountLabel 숨김)
+
         profileView.lateCountLabel.isHidden = true
         profileView.lateCountLabel.text = ""
         profileView.isClockOn = isClockOn
@@ -592,7 +592,7 @@ private let profileVC = AdminProfileViewController()
             $0.bottom.equalToSuperview()
         }
 
-        // (Removed invalid studentInformationLabel constraint block)
+        
     }
 
     func updateLayout() {
