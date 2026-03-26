@@ -59,7 +59,7 @@ public final class GOMSSearchBar: UIView {
     
     private func setLayout() {
         textField.snp.makeConstraints {
-            $0.edges.equalToSuperview() // 여기서 height 44 삭제 -> 밖에서 정해주는 52를 따르도록 수정
+            $0.edges.equalToSuperview()
         }
         
         searchIcon.snp.makeConstraints {
