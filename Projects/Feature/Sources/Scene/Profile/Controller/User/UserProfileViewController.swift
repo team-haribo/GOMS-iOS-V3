@@ -46,13 +46,13 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     let userName = UILabel().then {
-        $0.text = "테스트 사용자"
+        $0.text = "김준표"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 18, weight: .bold)
     }
     
     let userGradeDepartment = UILabel().then {
-        $0.text = "3기 | AI"
+        $0.text = "9기 | IoT"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .medium)
     }
@@ -217,15 +217,11 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     @objc func switchClockOn(_ sender: UISwitch) {
+       
         UserDefaults.standard.set(sender.isOn, forKey: "isClockOn")
-        
-        let defaults = UserDefaults.standard
-        
-        let isClockOn = defaults.bool(forKey: "isClockOn")
-        
-        if let mainViewController = navigationController?.viewControllers.first(where: { $0 is MainViewController }) as? MainViewController {
-            mainViewController.isClockOn = sender.isOn
-        }
+
+   
+        NotificationCenter.default.post(name: Notification.Name("clockChanged"), object: nil)
     }
     
     @IBAction private func ShowActionSheetClick(_ sender: UIButton) {

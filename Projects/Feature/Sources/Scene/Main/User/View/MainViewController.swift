@@ -137,6 +137,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         navigationController?.pushViewController(outingVC, animated: true)
     }
 
+    
     @objc func qrButtonTapped() {
         qrButton.isUserInteractionEnabled = false
 
@@ -240,6 +241,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         isVisible = true
+                isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         mainViewModel.getLateList { [weak self] in
             self?.mainViewModel.getOutingList { [weak self] in
@@ -271,6 +273,13 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         configureRefreshControl()
         updateSelectedTab()
         refreshControl.beginRefreshing()
+      
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleClockChanged),
+            name: Notification.Name("clockChanged"),
+            object: nil
+        )
     }
 
     func configureRefreshControl() {
@@ -464,6 +473,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
         }
         basicsProfileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
+        profileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
 
         if let isBlackList = mainViewModel.profileData?.isBlackList, let isOuting = mainViewModel.profileData?.isOuting {
             if isBlackList {
@@ -647,6 +657,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         view.layoutIfNeeded()
+    }
+
+    @objc private func handleClockChanged() {
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
     }
 
     // MARK: - UICollectionViewDataSource

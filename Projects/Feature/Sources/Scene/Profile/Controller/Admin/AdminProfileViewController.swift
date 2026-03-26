@@ -66,13 +66,13 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     }
     
     let userName = UILabel().then {
-        $0.text = "테스트 사용자"
+        $0.text = "김준표"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 18, weight: .bold)
     }
     
     let userGradeDepartment = UILabel().then {
-        $0.text = "3기 | AI"
+        $0.text = "9기 | IoT"
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .medium)
     }
