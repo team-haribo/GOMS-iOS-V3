@@ -86,8 +86,12 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
     }
     
-    private let hLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
-    private let vLine = UIView().then { $0.backgroundColor = UIColor.color.sub1.color }
+    private let hLine = UIView().then {
+        $0.backgroundColor = UIColor.color.sub1.color.withAlphaComponent(0.2)
+    }
+    private let vLine = UIView().then {
+        $0.backgroundColor = UIColor.color.sub1.color.withAlphaComponent(0.2)
+    }
 
     init(title: String, message: String, vc: UIViewController?) {
         super.init(frame: .zero)
@@ -225,17 +229,14 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
     }
     
     @objc func didTapAction() {
-        // [수정] 지적 사항 반영: 중복 방지 및 완료 상태 체크
         let titleAtTap = self.currentTitle
         let vcAtTap = self.parentVC
         
         self.removeFromSuperview()
         completionHandler?()
-        
-        // "완료" 알림에서 돌아가기를 누른 경우 더 이상의 알림을 띄우지 않음
+
         if titleAtTap.contains("완료") { return }
         
-        // 삭제/신고 성공 후 완료 알림 띄우기
         if let vc = vcAtTap {
             if titleAtTap.contains("삭제") {
                 ReviewAlert.show(in: vc, title: "삭제 완료", message: "후기가 성공적으로 삭제되었습니다.")
