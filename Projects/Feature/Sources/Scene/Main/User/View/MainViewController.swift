@@ -30,6 +30,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
         didSet {
+            profileView.isClockOn = isClockOn
             updateLayout()
         }
     }
@@ -656,6 +657,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.isHidden = false
         }
 
+        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
     }
 

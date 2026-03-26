@@ -125,13 +125,15 @@ final class ProfileCardView: UIView {
         }
         
         studentInformationLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel)
-            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
+            $0.centerY.equalTo(nameLabel)
+            $0.trailing.lessThanOrEqualTo(myOutingStatusLabel.snp.leading).offset(-8)
         }
         
         lateCountLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
             $0.top.equalTo(nameLabel.snp.bottom).offset(6)
+            $0.trailing.lessThanOrEqualToSuperview().inset(16)
             $0.bottom.lessThanOrEqualToSuperview().inset(20)
         }
         
