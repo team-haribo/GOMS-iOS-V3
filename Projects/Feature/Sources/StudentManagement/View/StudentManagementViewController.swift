@@ -69,6 +69,7 @@ public final class StudentManagementViewController: BaseViewController {
         setupCollectionView()
         setupSearchBar()
         
+        // [복구] 서버 데이터 오기 전에 보여줄 임시 데이터 로드
         self.userList = StudentMockData.students
         
         viewModel.getUserList {
@@ -103,8 +104,7 @@ public final class StudentManagementViewController: BaseViewController {
         self.present(filterVC, animated: false)
     }
 
-    @objc private func createQRButtonTapped() {
-    }
+    @objc private func createQRButtonTapped() { }
     
     public override func addView() {
         [backButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
@@ -157,6 +157,14 @@ extension StudentManagementViewController: UICollectionViewDataSource, UICollect
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 72)
+        return CGSize(width: collectionView.frame.width, height: 69)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self)
+        // [유지] 데이터 먼저 주입 후 호출
+        authorityVC.userData = userList[indexPath.row]
+        authorityVC.modalPresentationStyle = .overFullScreen
+        self.present(authorityVC, animated: false)
     }
 }
