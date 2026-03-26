@@ -17,8 +17,18 @@ public final class MainProfileView: UIView {
             didSet {
                 timeLabel.isHidden = !isClockOn
                 timeLabel.alpha = 0.6
+
+                updateStudentInfoLayout()
+                setNeedsLayout()
+                layoutIfNeeded()
+             
             }
         }
+    var isAdmin: Bool = false {
+        didSet {
+            updateStyle()
+        }
+    }
     
     // MARK: - Properties
     let profileImageView = UIImageView().then {
@@ -43,6 +53,14 @@ public final class MainProfileView: UIView {
         $0.font = UIFont.suit(size: 14, weight: .medium)
     }
 
+    private func updateStyle() {
+        if isAdmin {
+            studentInformationLabel.font = UIFont.suit(size: 15, weight: .medium)
+        } else {
+            studentInformationLabel.font = UIFont.suit(size: 15, weight: .medium)
+        }
+    }
+
     let profileStatus = UILabel().then {
         $0.text = ""
         $0.textColor = .color.sub1.color
@@ -64,7 +82,10 @@ public final class MainProfileView: UIView {
         configureUI()
         addView()
         setLayout()
+        updateStyle()
         startClock()
+    
+        
     }
     
     required init?(coder: NSCoder) {
@@ -92,11 +113,7 @@ public final class MainProfileView: UIView {
             $0.top.equalToSuperview().inset(16)
         }
 
-        studentInformationLabel.snp.remakeConstraints {
-            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
-            $0.centerY.equalTo(nameLabel)
-            $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
-        }
+        updateStudentInfoLayout()
 
         lateCountLabel.snp.remakeConstraints {
             $0.leading.equalToSuperview().inset(20)
@@ -117,6 +134,31 @@ public final class MainProfileView: UIView {
     
         timeLabel.isHidden = !isClockOn
         
+    }
+
+    private func updateStudentInfoLayout() {
+        studentInformationLabel.snp.remakeConstraints {
+
+            if isAdmin {
+                // 🔥 어드민 → 항상 이름 아래
+                $0.leading.equalTo(nameLabel)
+                $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+                $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+
+            } else {
+                if isClockOn {
+                    // 유저 + 시계 ON → 이름 오른쪽
+                    $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
+                    $0.centerY.equalTo(nameLabel)
+                    $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+                } else {
+                    // 유저 + 시계 OFF → 이름 아래
+                    $0.leading.equalTo(nameLabel)
+                    $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+                    $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+                }
+            }
+        }
     }
 
     private func startClock() {

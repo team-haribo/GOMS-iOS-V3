@@ -29,11 +29,13 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.translatesAutoresizingMaskIntoConstraints = false
     }
 
-    var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
-        didSet {
-            updateLayout()
-        }
+var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
+    didSet {
+        basicsProfileView.isClockOn = isClockOn
+        profileView.isClockOn = isClockOn
+        updateLayout()
     }
+}
 
     let content = UIView()
 
@@ -133,6 +135,7 @@ private let profileVC = AdminProfileViewController()
         super.viewWillAppear(animated)
 
         isVisible = true
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         viewModel.getLateList { [weak self] in
             self?.viewModel.getOutingList { [weak self] in
@@ -345,24 +348,33 @@ private let profileVC = AdminProfileViewController()
             basicsProfileView.profileImageView.image = .image.profile.image
         }
 
-        profileView.nameLabel.text = viewModel.profileData?.name
-        basicsProfileView.nameLabel.text = viewModel.profileData?.name
-        basicsProfileView.lateCountLabel.isHidden = true
-
+        let majorText: String
         if viewModel.profileData?.major == Major.sw.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW개발"
+            majorText = "SW개발"
         } else if viewModel.profileData?.major == Major.iot.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | IoT"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"
+            majorText = "IoT"
         } else {
-            profileView.studentInformationLabel.text = "\(grade)기 | AI"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
+            majorText = "AI"
         }
 
-        basicsProfileView.myOutingStatusLabel.text = "관리자"
-        basicsProfileView.myOutingStatusLabel.textColor = .color.admin.color
+        profileView.nameLabel.text = viewModel.profileData?.name
+        profileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
+        profileView.isAdmin = true
+
+        basicsProfileView.configure(
+            name: viewModel.profileData?.name ?? "",
+            studentInfo: "\(grade)기 | \(majorText)",
+            lateCount: 0,
+            outingStatus: "관리자",
+            isAdmin: true
+        )
+
         profileView.profileStatus.text = "관리자"
+        profileView.profileStatus.textColor = .color.admin.color
+        // ❗️ 겹치는 원인 제거 (lateCountLabel 숨김)
+        profileView.lateCountLabel.isHidden = true
+        profileView.lateCountLabel.text = ""
+        profileView.isClockOn = isClockOn
     }
 
 
@@ -579,6 +591,8 @@ private let profileVC = AdminProfileViewController()
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
+
+        // (Removed invalid studentInformationLabel constraint block)
     }
 
     func updateLayout() {
@@ -608,6 +622,8 @@ private let profileVC = AdminProfileViewController()
             basicsProfileView.isHidden = false
         }
 
+        basicsProfileView.isClockOn = isClockOn
+        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
     }
 

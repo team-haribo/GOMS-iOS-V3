@@ -15,7 +15,7 @@ final class ProfileCardView: UIView {
     
     var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
         didSet {
-            setLayout()
+            updateStudentInfoLayout()
         }
     }
     
@@ -45,6 +45,13 @@ final class ProfileCardView: UIView {
         $0.font = UIFont.suit(size: 15, weight: .medium)
     }
 
+    let subInfoLabel = UILabel().then {
+        $0.text = ""
+        $0.textColor = .color.sub1.color
+        $0.font = UIFont.suit(size: 15, weight: .medium)
+        $0.isHidden = true
+    }
+
     let myOutingStatusLabel = UILabel().then {
         $0.text = ""
         $0.textColor = .color.sub1.color
@@ -56,35 +63,35 @@ final class ProfileCardView: UIView {
                    lateCount: Int,
                    outingStatus: String,
                    isAdmin: Bool) {
-        
         nameLabel.text = name
         studentInformationLabel.text = studentInfo
-        
+        // 기본은 보이게
+        studentInformationLabel.isHidden = false
+
         if isAdmin {
-          
+            // ❗️ Admin에서는 중복 방지: 기본 라벨 숨기고 subInfo만 사용
+            studentInformationLabel.isHidden = true
             lateCountLabel.isHidden = true
-            
+            subInfoLabel.isHidden = false
+            subInfoLabel.text = studentInfo
+
             myOutingStatusLabel.text = "관리자"
             myOutingStatusLabel.textColor = .color.admin.color
-        
-            myOutingStatusLabel.snp.remakeConstraints {
-                $0.leading.equalTo(profileImageView.snp.trailing).offset(20)
-                $0.top.equalTo(studentInformationLabel.snp.bottom).offset(6)
-            }
-            
         } else {
-         
+            // ❗️ User에서는 기본 라벨 사용
+            studentInformationLabel.isHidden = false
+            studentInformationLabel.text = studentInfo
             lateCountLabel.isHidden = false
+            subInfoLabel.isHidden = true
             lateCountLabel.text = "지각 횟수: \(lateCount)회"
-            
+
             myOutingStatusLabel.text = outingStatus
             myOutingStatusLabel.textColor = .color.sub1.color
-            
-       
-            myOutingStatusLabel.snp.remakeConstraints {
-                $0.centerY.equalToSuperview()
-                $0.trailing.equalToSuperview().inset(16)
-            }
+        }
+
+        myOutingStatusLabel.snp.remakeConstraints {
+            $0.centerY.equalToSuperview()
+            $0.trailing.equalToSuperview().inset(16)
         }
     }
     
@@ -100,6 +107,7 @@ final class ProfileCardView: UIView {
         addView()
         setLayout()
         configureUI()
+        updateStudentInfoLayout()
     }
 
     required init?(coder: NSCoder) {
@@ -108,7 +116,7 @@ final class ProfileCardView: UIView {
     
     // MARK: - Add View
     private func addView() {
-        [profileImageView, nameLabel, studentInformationLabel, lateCountLabel, myOutingStatusLabel].forEach { self.addSubview($0) }
+        [profileImageView, nameLabel, studentInformationLabel, lateCountLabel, subInfoLabel, myOutingStatusLabel].forEach { self.addSubview($0) }
     }
     
     // MARK: - Layout
@@ -118,29 +126,35 @@ final class ProfileCardView: UIView {
             $0.leading.equalToSuperview().inset(16)
             $0.top.equalToSuperview().inset(20)
         }
-        
+
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(20)
             $0.top.equalToSuperview().inset(20)
         }
-        
-        studentInformationLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
-            $0.centerY.equalTo(nameLabel)
-            $0.trailing.lessThanOrEqualTo(myOutingStatusLabel.snp.leading).offset(-8)
-        }
-        
+
         lateCountLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
             $0.top.equalTo(nameLabel.snp.bottom).offset(6)
             $0.trailing.lessThanOrEqualToSuperview().inset(16)
             $0.bottom.lessThanOrEqualToSuperview().inset(20)
         }
-        
+
+        subInfoLabel.snp.makeConstraints {
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
+        }
+
         myOutingStatusLabel.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview().inset(16)
         }
- 
+    }
+
+    private func updateStudentInfoLayout() {
+        studentInformationLabel.snp.remakeConstraints {
+            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
+            $0.centerY.equalTo(nameLabel)
+            $0.trailing.lessThanOrEqualTo(myOutingStatusLabel.snp.leading).offset(-8)
+        }
     }
 }
