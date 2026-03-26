@@ -18,13 +18,10 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 24
-        $0.layer.borderWidth = 0
-        $0.layer.borderColor = UIColor.clear.cgColor
     }
     
     private let nameLabel = UILabel().then {
         $0.font = .suit(size: 16, weight: .semibold)
-        $0.textColor = .color.mainText.color
     }
     
     private let infoLabel = UILabel().then {
@@ -39,13 +36,11 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     }
 
     private let dividerView = UIView().then {
-        // 화이트/다크 모드 모두에서 잘 보이도록 sub1 색상 적용
         $0.backgroundColor = .color.sub1.color.withAlphaComponent(0.3)
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .clear
         [profileImageView, nameLabel, infoLabel, editButton, dividerView].forEach { contentView.addSubview($0) }
         
         profileImageView.snp.makeConstraints {
@@ -56,18 +51,18 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
-            $0.top.equalToSuperview().offset(14)
+            $0.bottom.equalTo(contentView.snp.centerY).offset(0)
         }
         
         infoLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
-            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+            $0.top.equalTo(contentView.snp.centerY).offset(0)
         }
         
         editButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(10)
             $0.centerY.equalToSuperview()
-            $0.width.height.equalTo(28)
+            $0.size.equalTo(28)
         }
         
         dividerView.snp.makeConstraints {
@@ -80,7 +75,6 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     
     func configureData(with userData: UserData) {
         let defaultImage = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
-        
         if let urlStr = userData.profileImageURL, let url = URL(string: urlStr) {
             profileImageView.kf.setImage(with: url, placeholder: defaultImage)
         } else {
@@ -91,19 +85,20 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
         
-        // 권한 및 상태에 따른 테두리 두께(4) 및 색상 처리
+        // 외출 중이어도 프로필 이미지는 선명하게 유지
+        profileImageView.alpha = 1.0
+        
+        // 상태별 UI (이미지 가이드 반영)
         if userData.authority == "ROLE_ADMIN" {
-            profileImageView.layer.borderWidth = 4
+            profileImageView.layer.borderWidth = 3
             profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
             nameLabel.textColor = UIColor.color.admin.color
         } else if userData.isBlackList {
-            profileImageView.layer.borderWidth = 4
+            profileImageView.layer.borderWidth = 3
             profileImageView.layer.borderColor = UIColor.systemRed.cgColor
             nameLabel.textColor = UIColor.systemRed
         } else {
-            // 일반 학생은 테두리 없음
             profileImageView.layer.borderWidth = 0
-            profileImageView.layer.borderColor = UIColor.clear.cgColor
             nameLabel.textColor = .color.mainText.color
         }
     }
@@ -113,6 +108,7 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         while responder != nil {
             if let vc = responder as? StudentManagementViewController {
                 let bottomSheet = AuthorityBottomSheetVC(studentManagementVC: vc)
+                bottomSheet.userData = vc.userList.first { $0.name == self.nameLabel.text }
                 vc.present(bottomSheet, animated: true)
                 break
             }
