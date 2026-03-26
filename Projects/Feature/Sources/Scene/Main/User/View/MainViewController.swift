@@ -30,6 +30,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
         didSet {
+            profileView.isClockOn = isClockOn
             updateLayout()
         }
     }
@@ -137,6 +138,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         navigationController?.pushViewController(outingVC, animated: true)
     }
 
+    
     @objc func qrButtonTapped() {
         qrButton.isUserInteractionEnabled = false
 
@@ -240,6 +242,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         isVisible = true
+                isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         mainViewModel.getLateList { [weak self] in
             self?.mainViewModel.getOutingList { [weak self] in
@@ -271,6 +274,13 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         configureRefreshControl()
         updateSelectedTab()
         refreshControl.beginRefreshing()
+      
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleClockChanged),
+            name: Notification.Name("clockChanged"),
+            object: nil
+        )
     }
 
     func configureRefreshControl() {
@@ -464,24 +474,27 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
         }
         basicsProfileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
+        profileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
 
-        if let isBlackList = mainViewModel.profileData?.isBlackList, let isOuting = mainViewModel.profileData?.isOuting {
-            if isBlackList {
-                profileView.profileStatus.text = "외출 금지"
-                profileView.profileStatus.textColor = .color.gomsNegative.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 금지"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
-            } else if isOuting {
-                profileView.profileStatus.text = "외출 중"
-                profileView.profileStatus.textColor = .color.gomsPrimary.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
-            } else {
-                profileView.profileStatus.text = "외출 대기 중"
-                profileView.profileStatus.textColor = .color.sub1.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
-            }
+        
+        let isBlackList = false
+        let isOuting = true
+
+        if isBlackList {
+            profileView.profileStatus.text = "외출 금지"
+            profileView.profileStatus.textColor = .color.gomsNegative.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 금지"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
+        } else if isOuting {
+            profileView.profileStatus.text = "외출 중"
+            profileView.profileStatus.textColor = .color.gomsPrimary.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
+        } else {
+            profileView.profileStatus.text = "외출 대기 중"
+            profileView.profileStatus.textColor = .color.sub1.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
         }
     }
 
@@ -646,7 +659,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.isHidden = false
         }
 
+        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
+    }
+
+    @objc private func handleClockChanged() {
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
     }
 
     // MARK: - UICollectionViewDataSource

@@ -15,9 +15,20 @@ public final class MainProfileView: UIView {
     
     var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
             didSet {
-                setLayout()
+                timeLabel.isHidden = !isClockOn
+                timeLabel.alpha = 0.6
+
+                updateStudentInfoLayout()
+                setNeedsLayout()
+                layoutIfNeeded()
+             
             }
         }
+    var isAdmin: Bool = false {
+        didSet {
+            updateStyle()
+        }
+    }
     
     // MARK: - Properties
     let profileImageView = UIImageView().then {
@@ -34,12 +45,20 @@ public final class MainProfileView: UIView {
     
     let nameLabel = UILabel().then {
         $0.textColor = .color.mainText.color
-        $0.font = UIFont.suit(size: 18, weight: .semibold)
+        $0.font = UIFont.suit(size: 20, weight: .bold)
     }
     
     let studentInformationLabel = UILabel().then {
         $0.textColor = .color.sub2.color
         $0.font = UIFont.suit(size: 14, weight: .medium)
+    }
+
+    private func updateStyle() {
+        if isAdmin {
+            studentInformationLabel.font = UIFont.suit(size: 15, weight: .medium)
+        } else {
+            studentInformationLabel.font = UIFont.suit(size: 15, weight: .medium)
+        }
     }
 
     let profileStatus = UILabel().then {
@@ -48,6 +67,14 @@ public final class MainProfileView: UIView {
         $0.font = UIFont.suit(size: 16, weight: .semibold)
     }
     
+    let timeLabel = UILabel().then {
+        $0.textColor = .color.sub2.color
+        $0.font = UIFont.suit(size: 24, weight: .heavy)
+        $0.isHidden = true
+    }
+
+    private var timer: Timer?
+    
     
     // MARK: - Initializer
     override init(frame: CGRect) {
@@ -55,6 +82,10 @@ public final class MainProfileView: UIView {
         configureUI()
         addView()
         setLayout()
+        updateStyle()
+        startClock()
+    
+        
     }
     
     required init?(coder: NSCoder) {
@@ -70,36 +101,78 @@ public final class MainProfileView: UIView {
     
     // MARK: - Add View
     private func addView() {
-        [profileImageView, nameLabel, studentInformationLabel, lateCountLabel, profileStatus].forEach { self.addSubview($0) }
+        [nameLabel, studentInformationLabel, lateCountLabel, profileStatus, timeLabel].forEach { self.addSubview($0) }
     }
     
     // MARK: - Layout
     private func setLayout() {
-        profileImageView.snp.makeConstraints {
-            $0.width.height.equalTo(52)
-            $0.leading.equalToSuperview().inset(16)
-            $0.top.equalToSuperview().inset(20)
+        
+
+        nameLabel.snp.remakeConstraints {
+            $0.leading.equalToSuperview().inset(20)
+            $0.top.equalToSuperview().inset(16)
         }
 
-        nameLabel.snp.makeConstraints {
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(20)
-            $0.top.equalToSuperview().inset(20)
+        updateStudentInfoLayout()
+
+        lateCountLabel.snp.remakeConstraints {
+            $0.leading.equalToSuperview().inset(20)
+            $0.trailing.lessThanOrEqualToSuperview().inset(16)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
         }
 
-        studentInformationLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
-            $0.centerY.equalTo(nameLabel)
-        }
-
-        lateCountLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel)
-            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
-            $0.bottom.lessThanOrEqualToSuperview().inset(20)
-        }
-
-        profileStatus.snp.makeConstraints {
-            $0.centerY.equalToSuperview()
+        profileStatus.snp.remakeConstraints {
+            $0.top.equalToSuperview().inset(16)
             $0.trailing.equalToSuperview().inset(16)
         }
+
+        timeLabel.snp.remakeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.top.equalTo(profileStatus.snp.bottom).offset(2)
+        }
+
+    
+        timeLabel.isHidden = !isClockOn
+        
+    }
+
+    private func updateStudentInfoLayout() {
+        studentInformationLabel.snp.remakeConstraints {
+
+            if isAdmin {
+               
+                $0.leading.equalTo(nameLabel)
+                $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+                $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+
+            } else {
+                if isClockOn {
+                    
+                    $0.leading.equalTo(nameLabel.snp.trailing).offset(8)
+                    $0.centerY.equalTo(nameLabel)
+                    $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+                } else {
+                  
+                    $0.leading.equalTo(nameLabel)
+                    $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+                    $0.trailing.lessThanOrEqualTo(profileStatus.snp.leading).offset(-8)
+                }
+            }
+        }
+    }
+
+    private func startClock() {
+        timer?.invalidate()
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            let formatter = DateFormatter()
+            formatter.dateFormat = "a h : mm : ss"
+            formatter.locale = Locale(identifier: "en_US")
+            self?.timeLabel.text = formatter.string(from: Date())
+        }
+    }
+
+    deinit {
+        timer?.invalidate()
     }
 }
