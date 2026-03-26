@@ -9,7 +9,7 @@
 import Foundation
 
 enum Major: String {
-    case sw = "SW_DEVELOP"
-    case iot = "SMART_IOT"
+    case sw = "SW"
+    case iot = "IOT"
     case ai = "AI"
 }
