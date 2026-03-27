@@ -18,6 +18,7 @@ public class GOMSAlert {
         actionTitle: String,
         cancelTitle: String = "취소",
         isNegative: Bool = false,
+        highlightKeywords: [String] = [],
         action: @escaping () -> Void = {},
         cancelAction: @escaping () -> Void = {}
     ) {
@@ -26,7 +27,8 @@ public class GOMSAlert {
             message: message,
             actionTitle: actionTitle,
             cancelTitle: cancelTitle,
-            isNegative: isNegative
+            isNegative: isNegative,
+            highlightKeywords: highlightKeywords
         )
         vc.view.addSubview(alert)
         alert.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -46,16 +48,18 @@ private class GOMSAlertView: UIView {
     }
     
     private let titleLabel = UILabel().then {
-        $0.textColor = .label
+        $0.textColor = UIColor.color.mainText.color
         $0.font = .systemFont(ofSize: 18, weight: .semibold)
         $0.textAlignment = .center
     }
     
     private let messageLabel = UILabel().then {
-        $0.textColor = .label
-        $0.font = .systemFont(ofSize: 16, weight: .regular)
+        $0.textColor = UIColor.color.mainText.color
+        $0.font = .systemFont(ofSize: 14, weight: .regular)
         $0.numberOfLines = 0
         $0.textAlignment = .center
+        $0.minimumScaleFactor = 0.8
+        $0.adjustsFontSizeToFitWidth = true
     }
     
     private let hLine = UIView().then {
@@ -74,7 +78,14 @@ private class GOMSAlertView: UIView {
         $0.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
     }
 
-    init(title: String, message: String, actionTitle: String, cancelTitle: String, isNegative: Bool) {
+    init(
+        title: String,
+        message: String,
+        actionTitle: String,
+        cancelTitle: String,
+        isNegative: Bool,
+        highlightKeywords: [String]
+    ) {
         super.init(frame: .zero)
         self.backgroundColor = UIColor.black.withAlphaComponent(0.4)
         
@@ -82,30 +93,31 @@ private class GOMSAlertView: UIView {
         cancelButton.setTitle(cancelTitle, for: .normal)
         actionButton.setTitle(actionTitle, for: .normal)
         
-        setMessageWithHighlight(message)
+        actionButton.setTitleColor(
+            isNegative ? UIColor.color.gomsNegative.color : UIColor.color.gomsInformation.color,
+            for: .normal
+        )
         
-        if isNegative {
-            actionButton.setTitleColor(UIColor.color.gomsNegative.color, for: .normal)
-        } else {
-            actionButton.setTitleColor(UIColor.color.gomsInformation.color, for: .normal)
-        }
+        setMessageWithHighlight(message, keywords: highlightKeywords)
         
         setupView()
         setupConstraints()
         setupEvents()
     }
     
-    private func setMessageWithHighlight(_ message: String) {
+    private func setMessageWithHighlight(_ message: String, keywords: [String]) {
         let attributedString = NSMutableAttributedString(string: message)
-        let redColor = UIColor.color.gomsNegative.color
-        let keywords = ["외출 금지", "해제"]
+        let highlightColor = UIColor.color.gomsNegative.color
         
         keywords.forEach { keyword in
-            let range = (message as NSString).range(of: keyword)
-            if range.location != NSNotFound {
-                attributedString.addAttribute(.foregroundColor, value: redColor, range: range)
+            var range = (message as NSString).range(of: keyword)
+            while range.location != NSNotFound {
+                attributedString.addAttribute(.foregroundColor, value: highlightColor, range: range)
+                let startLocation = range.location + range.length
+                range = (message as NSString).range(of: keyword, options: [], range: NSRange(location: startLocation, length: message.count - startLocation))
             }
         }
+        
         messageLabel.attributedText = attributedString
     }
     
