@@ -1,5 +1,5 @@
 //
-//  Major.swift
+//  Gender.swift
 //  Feature
 //
 //  Created by 김준표 on 2/25/26.
@@ -8,8 +8,7 @@
 
 import Foundation
 
-enum Major: String {
-    case sw = "SW"
-    case iot = "IOT"
-    case ai = "AI"
+public enum Gender: String, Codable {
+    case male = "MALE"
+    case female = "FEMALE"
 }
