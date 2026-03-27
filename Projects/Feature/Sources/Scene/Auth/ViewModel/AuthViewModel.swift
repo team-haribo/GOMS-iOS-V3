@@ -13,32 +13,22 @@ import Foundation
 public final class AuthViewModel: BaseViewModel {
 
     private let authProvider = MoyaProvider<AuthServices>()
-    private let accountProvider = MoyaProvider<AccountServices>()
 
     public override init() {}
 
-    var userData: SignInModel?
-
-    public let profileModel = ProfileViewModel()
-    public let notificationViewModel = NotificationViewModel()
-
+    // MARK: - Properties
     private var email: String = ""
     private var password: String = ""
     private var authCode: String = ""
-    private var newPassword: String = ""
-    private var newServePassword: String = ""
+    private var verifiedToken: String = ""
     private var name: String = ""
-    private var gender: String = ""
-    private var major: String = ""
-    private var emailStatus: String = ""
-    private var passwordServe: String = ""
 
-    func setupEmailStatus(emailStatus: String) {
-        self.emailStatus = emailStatus
-    }
+    private var gender: Gender = .male
+    private var major: Major = .sw
 
+    // MARK: - Setup
     func setupEmail(email: String) {
-        self.email = "\(email)@gsm.hs.kr"
+        self.email = email
     }
 
     func setupPassword(password: String) {
@@ -49,244 +39,99 @@ public final class AuthViewModel: BaseViewModel {
         self.authCode = authCode
     }
 
-    func setupNewPassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newPassword = newPassword
-    }
-
-    func setupNewServePassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newServePassword = newPassword
-    }
-
     func setupName(name: String) {
         self.name = name
     }
 
-    func setupGender(gender: String) {
+    func setupGender(gender: Gender) {
         self.gender = gender
     }
 
-    func setupMajor(major: String) {
+    func setupMajor(major: Major) {
         self.major = major
     }
 
-    func signIn(completion: @escaping (Int, String?) -> Void) {
-
-        let param = SignInRequest(email: email, password: password)
-
-        authProvider.request(.signIn(param: param)) { [weak self] response in
-            guard let self = self else { return }
-
-            DispatchQueue.global().async {
-
-                var authority: String? = nil
-                var statusCode = 0
-
-                switch response {
-
-                case .success(let result):
-
-                    statusCode = result.statusCode
-
-                    do {
-                        switch statusCode {
-
-                        case 200:
-
-                            let signInResponse = try result.map(SignInResponse.self)
-
-                            self.keyChain.create(key: Const.KeyChainKey.accessToken, token: signInResponse.accessToken)
-                            self.keyChain.create(key: Const.KeyChainKey.refreshToken, token: signInResponse.refreshToken)
-                            self.keyChain.create(key: Const.KeyChainKey.authority, token: signInResponse.authority)
-
-                            authority = signInResponse.authority
-
-                            if let savedToken = UserDefaults.standard.string(forKey: "FCMToken"),
-                               let accessToken = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) {
-
-                                self.notificationViewModel.setupFcmToken(fcmToken: savedToken)
-                                self.notificationViewModel.setupaccessToken(accessToken: accessToken)
-
-                                self.notificationViewModel.postFcmToken { success in
-                                    if success {
-                                        print("FCM 토큰 전송 성공")
-                                    } else {
-                                        print("FCM 토큰 전송 실패")
-                                    }
-                                }
-                            }
-
-                        default:
-                            break
-                        }
-
-                    } catch {
-                        print("Error parsing SignInResponse: \(error)")
-                    }
-
-                case .failure(let err):
-                    print("Network error: \(err.localizedDescription)")
-                }
-
-                DispatchQueue.main.async {
-                    completion(statusCode, authority)
-                }
-            }
-        }
-    }
-
+    // MARK: - 인증번호 발송
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
 
-        let param = SendAuthCodeRequest(email: email, emailStatus: emailStatus)
+        let param = SendAuthCodeRequest(
+            email: email,
+            purpose: "SIGNUP"
+        )
 
         authProvider.request(.sendAuthCode(param: param)) { response in
-
             switch response {
 
             case .success(let result):
+                completion((200..<300).contains(result.statusCode), result.statusCode)
 
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 404, 429:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("인증번호 발송 실패: \(error.localizedDescription)")
                 completion(false, 0)
             }
         }
     }
 
+    // MARK: - 인증번호 확인
     func verifyAuthCode(completion: @escaping (Bool) -> Void) {
 
-        authProvider.request(.verifyAuthNumber(email: email, authCode: authCode)) { response in
-
+        authProvider.request(.verifyAuthNumber(email: email, code: authCode)) { response in
             switch response {
 
             case .success(let result):
 
-                let statusCode = result.statusCode
+                guard (200..<300).contains(result.statusCode) else {
+                    print("인증번호 검증 실패: statusCode = \(result.statusCode)")
+                    completion(false)
+                    return
+                }
 
-                switch statusCode {
+                do {
+                    let data = try result.map(VerifyAuthResponse.self)
 
-                case 200..<300:
+                    self.verifiedToken = data.verifiedToken
+
                     completion(true)
 
-                case 401, 404, 429, 500:
-                    completion(false)
-
-                default:
+                } catch {
+                    print("VerifyAuthResponse 디코딩 실패: \(error.localizedDescription)")
                     completion(false)
                 }
 
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("인증번호 검증 네트워크 실패: \(error.localizedDescription)")
                 completion(false)
             }
         }
     }
 
-    func newPassword(completion: @escaping (Bool, Int) -> Void) {
-
-        let param = NewPasswordRequest(email: email, newPassword: newServePassword)
-
-        accountProvider.request(.newPassword(param: param)) { response in
-
-            switch response {
-
-            case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
-            }
-        }
-    }
-
-    func changNewPassword(completion: @escaping (Bool, Int) -> Void) {
-
-        let param = ChangPasswordRequest(password: password, newPassword: newPassword)
-
-        accountProvider.request(.changPassword(param: param, authorization: accessToken)) { response in
-
-            switch response {
-
-            case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
-                completion(false, 0)
-            }
-        }
-    }
-
+    // MARK: - 회원가입
     func signUp(completion: @escaping (Bool) -> Void) {
+
+        guard !verifiedToken.isEmpty else {
+            print("회원가입 실패: 인증 토큰 없음 (verifyAuthCode 먼저 수행 필요)")
+            completion(false)
+            return
+        }
 
         let param = SignUpRequest(
             email: email,
-            password: newPassword,
+            verifiedToken: verifiedToken,
+            password: password,
             name: name,
-            gender: gender,
-            major: major
+            grade: 1,
+            department: major,
+            gender: gender
         )
 
         authProvider.request(.signUp(param: param)) { response in
-
             switch response {
 
             case .success(let result):
+                completion(result.statusCode == 201)
 
-                switch result.statusCode {
-
-                case 201:
-                    completion(true)
-
-                case 500:
-                    completion(false)
-
-                default:
-                    completion(false)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("회원가입 네트워크 실패: \(error.localizedDescription)")
                 completion(false)
             }
         }

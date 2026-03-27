@@ -9,14 +9,14 @@
 import Foundation
 
 public struct SignUpRequest: Codable {
-    var email: String
-    var verifiedToken: String
-    var password: String
-    var name: String
-    var grade: Int
-    var department: Major
-    var gender: Gender
-    
+    let email: String
+    let verifiedToken: String
+    let password: String
+    let name: String
+    let grade: Int
+    let department: Major
+    let gender: Gender
+
     public init(
         email: String,
         verifiedToken: String,
