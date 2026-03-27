@@ -144,6 +144,40 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         updateLayoutForState()
     }
 
+    private func updateLayoutForState() {
+        let visibleViews = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }
+        
+        // 내부 요소들 간격/높이 재조정
+        forceOutingContainer.snp.updateConstraints {
+            $0.height.equalTo(forceOutingContainer.isHidden ? 0 : 72)
+        }
+        
+        blackListContainer.snp.updateConstraints {
+            $0.height.equalTo(blackListContainer.isHidden ? 0 : 72)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(forceOutingContainer.isHidden ? 28 : 104)
+        }
+        
+        let adminOffset: CGFloat = forceOutingContainer.isHidden && blackListContainer.isHidden ? 28 : (forceOutingContainer.isHidden || blackListContainer.isHidden ? 104 : 180)
+        adminContainer.snp.updateConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(adminOffset)
+        }
+
+        // MARK: -  높이 조절
+        bottomSheetView.snp.remakeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            
+            if visibleViews.count == 3 {
+                $0.height.equalToSuperview().multipliedBy(342.0 / 812.0)
+            } else if visibleViews.count == 2 {
+                $0.height.equalToSuperview().multipliedBy(266.0 / 812.0)
+            } else {
+                $0.height.equalToSuperview().multipliedBy(190.0 / 812.0)
+            }
+        }
+        
+        view.layoutIfNeeded()
+    }
+
     @objc private func outingButtonTapped() {
         guard let data = userData else { return }
         let isOut = data.isOuting
@@ -153,7 +187,8 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             title: isOut ? "강제외출 복귀" : "강제외출",
             message: isOut ? "학생을 복귀 상태로 변경하시겠습니까?" : "이 학생을 외출 상태로 변경하시겠습니까?",
             actionTitle: isOut ? "복귀" : "외출",
-            isNegative: !isOut,
+            isNegative: true,
+            highlightKeywords: [],
             action: { [weak self] in
                 self?.viewModel.forceOutingStudent(user: data) {
                     self?.studentManagementVC.userList = $0
@@ -162,7 +197,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             }
         )
     }
-
+    
     @objc private func blackListSwitchChanged() {
         guard let data = userData else { return }
         let isOn = blackListSwitch.isOn
@@ -170,9 +205,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         GOMSAlert.show(
             in: self,
             title: "외출금지",
-            message: isOn ? "이 학생을 외출 금지 시겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
+            message: isOn ? "이 학생을 외출 금지 시키겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
             actionTitle: isOn ? "외출 금지" : "외출 해제",
             isNegative: true,
+            highlightKeywords: isOn ? ["외출 금지"] : ["해제"],
             action: { [weak self] in
                 if isOn {
                     self?.viewModel.blackList(user: data) { self?.studentManagementVC.userList = $0 }
@@ -188,45 +224,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     @objc private func adminSwitchChanged() {
         guard let data = userData else { return }
-        let currentIsAdmin = (data.authority == "ROLE_ADMIN")
-        
-        GOMSAlert.show(
-            in: self,
-            title: "권한 부여",
-            message: "학생에게 권한을 부여하시겠습니까?",
-            actionTitle: "확인",
-            action: { [weak self] in
-                self?.viewModel.changeAuthority(user: data) { self?.studentManagementVC.userList = $0 }
-            },
-            cancelAction: { [weak self] in
-                self?.adminSwitch.isOn = currentIsAdmin
-            }
-        )
-    }
-
-    private func updateLayoutForState() {
-        let visibleViews = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }
-        
-        forceOutingContainer.snp.updateConstraints {
-            $0.height.equalTo(forceOutingContainer.isHidden ? 0 : 72)
+        viewModel.changeAuthority(user: data) { [weak self] in
+            self?.studentManagementVC.userList = $0
+            self?.dismiss(animated: true)
         }
-        
-        blackListContainer.snp.updateConstraints {
-            $0.height.equalTo(blackListContainer.isHidden ? 0 : 72)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(forceOutingContainer.isHidden ? 28 : 104)
-        }
-        
-        let adminOffset: CGFloat = forceOutingContainer.isHidden && blackListContainer.isHidden ? 28 : (forceOutingContainer.isHidden || blackListContainer.isHidden ? 104 : 180)
-        adminContainer.snp.updateConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(adminOffset)
-        }
-        
-        let dynamicHeight = 110 + (visibleViews.count * 76)
-        bottomSheetView.snp.updateConstraints {
-            $0.height.equalTo(dynamicHeight)
-        }
-        
-        view.layoutIfNeeded()
     }
 
     private func setupActions() {
@@ -291,7 +292,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     public override func setLayout() {
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(390)
+            $0.height.equalTo(342) // 기본값
         }
         titleLabel.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(24)
