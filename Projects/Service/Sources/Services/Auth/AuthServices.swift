@@ -69,11 +69,12 @@ extension AuthServices: TargetType {
     }
 
     public var sampleData: Data {
-        "@@".data(using: .utf8)!
+        Data()
     }
 
     public var task: Task {
         switch self {
+
         case let .signUp(param):
             return .requestJSONEncodable(param)
 
@@ -100,6 +101,7 @@ extension AuthServices: TargetType {
 
     public var headers: [String: String]? {
         switch self {
+
         case let .refreshToken(refreshToken),
              let .logoutToken(refreshToken):
             return [
@@ -114,4 +116,3 @@ extension AuthServices: TargetType {
         }
     }
 }
-

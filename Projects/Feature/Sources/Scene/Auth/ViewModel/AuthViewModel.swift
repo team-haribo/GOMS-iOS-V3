@@ -25,6 +25,7 @@ public final class AuthViewModel: BaseViewModel {
     private var email: String = ""
     private var password: String = ""
     private var authCode: String = ""
+    private var verifiedToken: String = ""
     private var newPassword: String = ""
     private var newServePassword: String = ""
     private var name: String = ""
@@ -145,148 +146,88 @@ public final class AuthViewModel: BaseViewModel {
             switch response {
 
             case .success(let result):
-
                 let statusCode = result.statusCode
 
                 switch statusCode {
-
                 case 204:
                     completion(true, statusCode)
-
-                case 404, 429:
-                    completion(false, statusCode)
-
                 default:
                     completion(false, statusCode)
                 }
 
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("sendAuthCode error: \(error.localizedDescription)")
                 completion(false, 0)
             }
         }
     }
 
+    // MARK: - 인증번호 검증
     func verifyAuthCode(completion: @escaping (Bool) -> Void) {
 
-        authProvider.request(.verifyAuthNumber(email: email, authCode: authCode)) { response in
+        authProvider.request(
+            .verifyAuthNumber(
+                email: email,
+                code: authCode,
+                purpose: "SIGNUP"
+            )
+        ) { response in
 
             switch response {
 
             case .success(let result):
 
-                let statusCode = result.statusCode
+                guard (200..<300).contains(result.statusCode) else {
+                    print("verifyAuthCode status error: \(result.statusCode)")
+                    completion(false)
+                    return
+                }
 
-                switch statusCode {
-
-                case 200..<300:
+                do {
+                    let data = try result.map(VerifyAuthResponse.self)
+                    self.verifiedToken = data.verifiedToken
                     completion(true)
 
-                case 401, 404, 429, 500:
-                    completion(false)
-
-                default:
+                } catch {
+                    print("verifyAuthCode decode error: \(error)")
                     completion(false)
                 }
 
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("verifyAuthCode network error: \(error.localizedDescription)")
                 completion(false)
             }
         }
     }
 
-    func newPassword(completion: @escaping (Bool, Int) -> Void) {
+    // MARK: - 회원가입
+    func signUp(grade: Int,
+                completion: @escaping (Bool) -> Void) {
 
-        let param = NewPasswordRequest(email: email, newPassword: newServePassword)
-
-        accountProvider.request(.newPassword(param: param)) { response in
-
-            switch response {
-
-            case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
-            }
+        guard !verifiedToken.isEmpty else {
+            print("verifiedToken 없음")
+            completion(false)
+            return
         }
-    }
-
-    func changNewPassword(completion: @escaping (Bool, Int) -> Void) {
-
-        let param = ChangPasswordRequest(password: password, newPassword: newPassword)
-
-        accountProvider.request(.changPassword(param: param, authorization: accessToken)) { response in
-
-            switch response {
-
-            case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
-                completion(false, 0)
-            }
-        }
-    }
-
-    func signUp(completion: @escaping (Bool) -> Void) {
 
         let param = SignUpRequest(
             email: email,
-            password: newPassword,
+            verifiedToken: verifiedToken,
+            password: password,
             name: name,
-            gender: gender,
-            major: major
+            grade: grade,
+            department: major,
+            gender: gender
         )
 
         authProvider.request(.signUp(param: param)) { response in
-
             switch response {
 
             case .success(let result):
+                completion(result.statusCode == 201)
 
-                switch result.statusCode {
-
-                case 201:
-                    completion(true)
-
-                case 500:
-                    completion(false)
-
-                default:
-                    completion(false)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("signUp error: \(error.localizedDescription)")
                 completion(false)
             }
         }
