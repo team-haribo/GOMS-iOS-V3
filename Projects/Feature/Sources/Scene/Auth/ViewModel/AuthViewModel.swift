@@ -16,17 +16,15 @@ public final class AuthViewModel: BaseViewModel {
 
     public override init() {}
 
-    // MARK: - Properties
     private var email: String = ""
     private var password: String = ""
     private var authCode: String = ""
     private var verifiedToken: String = ""
     private var name: String = ""
 
-    private var gender: Gender = .man
+    private var gender: Gender = .male
     private var major: Major = .sw
 
-    // MARK: - Setup
     func setupEmail(email: String) {
         self.email = email
     }
@@ -51,9 +49,7 @@ public final class AuthViewModel: BaseViewModel {
         self.major = major
     }
 
-    // MARK: - 인증번호 발송
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
-
         let param = SendAuthCodeRequest(
             email: email,
             purpose: "SIGNUP"
@@ -61,7 +57,6 @@ public final class AuthViewModel: BaseViewModel {
 
         authProvider.request(.sendAuthCode(param: param)) { response in
             switch response {
-
             case .success(let result):
                 completion((200..<300).contains(result.statusCode), result.statusCode)
 
@@ -71,27 +66,20 @@ public final class AuthViewModel: BaseViewModel {
         }
     }
 
-    // MARK: - 인증번호 확인
     func verifyAuthCode(completion: @escaping (Bool) -> Void) {
-
         authProvider.request(.verifyAuthNumber(email: email, code: authCode)) { response in
             switch response {
-
             case .success(let result):
+                guard (200..<300).contains(result.statusCode) else {
+                    completion(false)
+                    return
+                }
 
-                if (200..<300).contains(result.statusCode) {
-                    do {
-                        let data = try result.map(VerifyAuthResponse.self)
-
-                       
-                        self.verifiedToken = data.verifiedToken
-
-                        completion(true)
-                    } catch {
-                        completion(false)
-                    }
-
-                } else {
+                do {
+                    let data = try result.map(VerifyAuthResponse.self)
+                    self.verifiedToken = data.verifiedToken
+                    completion(true)
+                } catch {
                     completion(false)
                 }
 
@@ -101,8 +89,11 @@ public final class AuthViewModel: BaseViewModel {
         }
     }
 
-    // MARK: - 회원가입
     func signUp(completion: @escaping (Bool) -> Void) {
+        guard !verifiedToken.isEmpty else {
+            completion(false)
+            return
+        }
 
         let param = SignUpRequest(
             email: email,
@@ -116,7 +107,6 @@ public final class AuthViewModel: BaseViewModel {
 
         authProvider.request(.signUp(param: param)) { response in
             switch response {
-
             case .success(let result):
                 completion(result.statusCode == 201)
 
