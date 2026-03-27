@@ -33,22 +33,22 @@ extension AuthServices: TargetType {
     public var path: String {
         switch self {
         case .signUp:
-            return "/auth/signup"
+            return "/api/v3/auth/signup"
 
         case .signIn:
-            return "/auth/signin"
+            return "/api/v3/auth/signin"
 
         case .refreshToken:
-            return "/auth/"
+            return "/api/v3/auth/reissue"
 
         case .sendAuthCode:
-            return "/auth/email/send"
+            return "/api/v3/auth/email-verifications/send"
 
         case .verifyAuthNumber:
-            return "/auth/email/verify"
+            return "/api/v3/auth/email-verifications/confirm"
 
         case .logoutToken:
-            return "/"
+            return "/api/v3/auth/signout"
         }
     }
 
