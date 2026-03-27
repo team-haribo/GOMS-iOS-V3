@@ -14,7 +14,7 @@ public enum AuthServices {
     case signIn(param: SignInRequest)
     case refreshToken(refreshToken: String)
     case sendAuthCode(param: SendAuthCodeRequest)
-    case verifyAuthNumber(email: String, authCode: String)
+    case verifyAuthNumber(email: String, code: String)
     case logoutToken(refreshToken: String)
 }
 
@@ -25,7 +25,7 @@ extension AuthServices: TargetType {
             let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String,
             let url = URL(string: urlString)
         else {
-            fatalError("AuthAPIㅣURL을 불러올 수 없습니다.")
+            fatalError("AuthAPI URL을 불러올 수 없습니다.")
         }
         return url
     }
@@ -56,14 +56,12 @@ extension AuthServices: TargetType {
         switch self {
         case .signUp,
              .signIn,
-             .sendAuthCode:
+             .sendAuthCode,
+             .verifyAuthNumber:
             return .post
 
         case .refreshToken:
             return .patch
-
-        case .verifyAuthNumber:
-            return .get
 
         case .logoutToken:
             return .delete
@@ -88,20 +86,15 @@ extension AuthServices: TargetType {
         case .refreshToken:
             return .requestPlain
 
-        case let .verifyAuthNumber(email, authCode):
-            return .requestParameters(
-                parameters: [
-                    "email": email,
-                    "authCode": authCode
-                ],
-                encoding: URLEncoding.queryString
-            )
+        case let .verifyAuthNumber(email, code):
+            return .requestJSONEncodable([
+                "email": email,
+                "code": code,
+                "purpose": "SIGNUP"
+            ])
 
-        case let .logoutToken(refreshToken):
-            return .requestParameters(
-                parameters: ["refreshToken": refreshToken],
-                encoding: JSONEncoding.default
-            )
+        case .logoutToken:
+            return .requestPlain
         }
     }
 
@@ -111,7 +104,7 @@ extension AuthServices: TargetType {
              let .logoutToken(refreshToken):
             return [
                 "Content-Type": "application/json",
-                "refreshToken": refreshToken
+                "RefreshToken": "Bearer \(refreshToken)"
             ]
 
         default:
@@ -121,3 +114,4 @@ extension AuthServices: TargetType {
         }
     }
 }
+
