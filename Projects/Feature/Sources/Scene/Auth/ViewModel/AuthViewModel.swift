@@ -31,6 +31,7 @@ public final class AuthViewModel: BaseViewModel {
     private var name: String = ""
     private var gender: Gender = .male
     private var major: Major = .sw
+    private var grade: Int = 0
     private var emailStatus: String = ""
     private var passwordServe: String = ""
 
@@ -70,6 +71,10 @@ public final class AuthViewModel: BaseViewModel {
 
     func setupMajor(major: Major) {
         self.major = major
+    }
+
+    func setupGrade(grade: Int) {
+        self.grade = grade
     }
 
     func signIn(completion: @escaping (Int, String?) -> Void) {
@@ -250,8 +255,7 @@ public final class AuthViewModel: BaseViewModel {
     }
 
     // MARK: - 회원가입
-    func signUp(grade: Int,
-                completion: @escaping (Bool) -> Void) {
+    func signUp(completion: @escaping (Bool) -> Void) {
 
         guard !verifiedToken.isEmpty else {
             print("verifiedToken 없음")
@@ -264,7 +268,7 @@ public final class AuthViewModel: BaseViewModel {
             verifiedToken: verifiedToken,
             password: password,
             name: name,
-            grade: grade,
+            grade: self.grade,
             department: major,
             gender: gender
         )

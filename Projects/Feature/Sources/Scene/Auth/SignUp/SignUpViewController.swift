@@ -81,6 +81,7 @@ public final class SignUpViewController: BaseViewController {
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 10)
         }
 
         let nineAction = UIAlertAction(title: "9기", style: .default) { _ in
@@ -88,6 +89,7 @@ public final class SignUpViewController: BaseViewController {
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 9)
         }
 
         let eightAction = UIAlertAction(title: "8기", style: .default) { _ in
@@ -95,6 +97,7 @@ public final class SignUpViewController: BaseViewController {
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 8)
         }
 
         [tenAction, nineAction, eightAction].forEach { alert.addAction($0) }

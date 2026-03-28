@@ -217,28 +217,43 @@ public final class PasswordSettingViewController: BaseViewController {
 
         viewModel.setupPassword(password: passwordTextField.text ?? "")
 
-       
-        self.signUpSuccessUI()
+        loader.modalPresentationStyle = .overFullScreen
+        present(loader, animated: false)
 
-        let alert = UIAlertController(
-            title: "회원가입 완료",
-            message: "회원가입이 완료되었습니다.",
-            preferredStyle: .alert
-        )
+        viewModel.signUp { [weak self] success in
+            guard let self = self else { return }
 
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            DispatchQueue.main.async {
+                self.loader.dismiss(animated: false)
 
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
+                if success {
+                    self.signUpSuccessUI()
 
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
+                    let alert = UIAlertController(
+                        title: "회원가입 완료",
+                        message: "회원가입이 완료되었습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+                } else {
+                    print("회원가입 실패")
+                }
             }
-        })
+        }
 
-        self.present(alert, animated: true)
+        return
     }
 
     private func signUpSuccessUI() {
