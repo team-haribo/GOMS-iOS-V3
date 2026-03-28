@@ -156,6 +156,8 @@ public final class SignUpViewController: BaseViewController {
 
         nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
         emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        
+        defaultDomain.textColor = .color.sub2.color
 
         if name.isEmpty {
             nameErrorLabel.isHidden = false
@@ -188,6 +190,8 @@ public final class SignUpViewController: BaseViewController {
                     .foregroundColor: UIColor.color.gomsNegative.color
                 ]
             )
+            
+            defaultDomain.textColor = .color.gomsNegative.color
 
             view.layoutIfNeeded()
             return
@@ -204,6 +208,7 @@ public final class SignUpViewController: BaseViewController {
             return
         }
 
+        
         
         let gender = genderTextField.title(for: .normal) ?? ""
         let major = majorTextField.title(for: .normal) ?? ""
@@ -275,41 +280,43 @@ public final class SignUpViewController: BaseViewController {
         }
 
         nameTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
             $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
             $0.height.equalTo(56)
         }
 
         nameErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(nameTextField.snp.trailing)
-            $0.top.equalTo(nameTextField.snp.bottom).offset(16)
+            $0.top.equalTo(nameTextField.snp.bottom).offset(4)
             $0.height.equalTo(0)
         }
 
         emailTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(nameTextField.snp.bottom).offset(16)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(nameErrorLabel.snp.bottom).offset(12)
             $0.height.equalTo(56)
         }
 
         emailErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(emailTextField.snp.trailing)
-            $0.top.equalTo(emailTextField.snp.bottom).offset(16)
+            $0.top.equalTo(emailTextField.snp.bottom).offset(4)
             $0.height.equalTo(0)
         }
 
+
+
         genderTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(emailTextField.snp.bottom).offset(16)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(emailErrorLabel.snp.bottom).offset(12)
             $0.height.equalTo(56)
         }
 
         majorTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
             $0.top.equalTo(genderTextField.snp.bottom).offset(16)
             $0.height.equalTo(56)
         }
@@ -357,6 +364,9 @@ public final class SignUpViewController: BaseViewController {
 
         emailTextField.layer.borderWidth = 0
         emailTextField.layer.borderColor = UIColor.clear.cgColor
+        
+        defaultDomain.textColor = .color.sub2.color
+        
         emailTextField.attributedPlaceholder = NSAttributedString(
             string: "이메일을 입력해주세요",
             attributes: [
