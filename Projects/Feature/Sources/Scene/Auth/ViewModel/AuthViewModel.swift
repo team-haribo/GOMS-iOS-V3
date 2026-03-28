@@ -13,15 +13,11 @@ import Foundation
 public final class AuthViewModel: BaseViewModel {
 
     private let authProvider = MoyaProvider<AuthServices>()
-    private let accountProvider = MoyaProvider<AccountServices>()
+    private let notificationViewModel = NotificationViewModel()
 
     public override init() {}
 
-    var userData: SignInModel?
-
-    public let profileModel = ProfileViewModel()
-    public let notificationViewModel = NotificationViewModel()
-
+    // MARK: - Properties
     private var email: String = ""
     private var password: String = ""
     private var authCode: String = ""
@@ -35,10 +31,7 @@ public final class AuthViewModel: BaseViewModel {
     private var emailStatus: String = ""
     private var passwordServe: String = ""
 
-    func setupEmailStatus(emailStatus: String) {
-        self.emailStatus = emailStatus
-    }
-
+    // MARK: - Setup
     func setupEmail(email: String) {
         if email.contains("@") {
             self.email = email
@@ -53,16 +46,6 @@ public final class AuthViewModel: BaseViewModel {
 
     func setupAuthCode(authCode: String) {
         self.authCode = authCode
-    }
-
-    func setupNewPassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newPassword = newPassword
-    }
-
-    func setupNewServePassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newServePassword = newPassword
     }
 
     func setupName(name: String) {
@@ -166,7 +149,6 @@ public final class AuthViewModel: BaseViewModel {
         print("purpose:", param.purpose)
         
         authProvider.request(.sendAuthCode(param: param)) { response in
-
             switch response {
                 
             case .success(let result):
@@ -319,26 +301,6 @@ public final class AuthViewModel: BaseViewModel {
                     }
                 }
                 completion(false)
-            }
-        }
-    }
-    // MARK: - 로그인
-    func signIn(completion: @escaping (Int) -> Void) {
-
-        let param = SignInRequest(
-            email: email,
-            password: password
-        )
-
-        authProvider.request(.signIn(param: param)) { response in
-            switch response {
-
-            case .success(let result):
-                completion(result.statusCode)
-
-            case .failure(let error):
-                print("signIn error: \(error.localizedDescription)")
-                completion(0)
             }
         }
     }
