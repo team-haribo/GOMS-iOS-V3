@@ -299,32 +299,35 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             self.refreshControl.endRefreshing()
             return
         }
-
+        
         authViewModel.setupEmail(email: isLocalEmail)
         authViewModel.setupPassword(password: isLocalPass)
-
-        authViewModel.signIn { [weak self] statusCode, _ in
+        
+        
+        authViewModel.signIn { [weak self] (statusCode: Int) in
             guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 guard self.isVisible else {
                     self.refreshControl.endRefreshing()
                     return
                 }
-
+                
                 switch statusCode {
                 case 200:
                     self.profileViewModel.loadProfileInfo { [weak self] success, authority in
                         guard let self = self else { return }
+                        
                         DispatchQueue.main.async {
                             guard self.isVisible else {
                                 self.refreshControl.endRefreshing()
                                 return
                             }
-
+                            
                             if success {
                                 if let authority = self.profileViewModel.profileInfo?.authority {
                                     let currentVC = self.navigationController?.viewControllers.last
-
+                                    
                                     switch authority {
                                     case "ROLE_STUDENT_COUNCIL":
                                         if !(currentVC is AdminMainViewController) {
@@ -337,30 +340,28 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                             self.navigationController?.setViewControllers([mainVC], animated: false)
                                         }
                                     default:
-                                        print("권한이 없습니다.")
+                                        print("권한 없음")
                                     }
                                 }
                             } else {
-                                print("프로필 정보를 불러오는데 실패했습니다.")
+                                print("프로필 로드 실패")
                             }
-
+                            
                             self.refreshControl.endRefreshing()
                         }
                     }
-                case 400:
-                    print("400")
+                    
+                case 400, 404:
+                    print("클라이언트 에러")
                     self.refreshControl.endRefreshing()
-                case 404:
-                    print("404")
-                    self.refreshControl.endRefreshing()
+                    
                 default:
-                    print("error")
+                    print("서버 에러")
                     self.refreshControl.endRefreshing()
                 }
             }
         }
     }
-
     private func fetchData() {
         let group = DispatchGroup()
 

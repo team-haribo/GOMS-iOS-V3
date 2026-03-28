@@ -9,8 +9,8 @@
 import Foundation
 
 public struct SendAuthCodeRequest: Codable {
-    let email: String
-    let purpose: String
+    public let email: String
+    public let purpose: String
 
     public init(email: String, purpose: String) {
         self.email = email

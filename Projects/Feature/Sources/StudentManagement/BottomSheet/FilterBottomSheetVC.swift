@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class FilterBottomSheetVC: BaseViewController {
     
@@ -222,13 +223,13 @@ public final class FilterBottomSheetVC: BaseViewController {
             manButton.isSelected.toggle()
             womanButton.isSelected = false
             if manButton.isSelected == true {
-                viewModel.setupGender(gender: Gender.man.rawValue)
+                viewModel.setupGender(gender: Gender.male.rawValue)
             }
         case "여성":
             manButton.isSelected = false
             womanButton.isSelected.toggle()
             if womanButton.isSelected == true {
-                viewModel.setupGender(gender: Gender.woman.rawValue)
+                viewModel.setupGender(gender: Gender.female.rawValue)
             }
         default:
             break

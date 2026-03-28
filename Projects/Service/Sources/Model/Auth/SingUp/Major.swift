@@ -6,6 +6,7 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import Foundation
 
 public enum Major: String, Codable {
@@ -13,3 +14,4 @@ public enum Major: String, Codable {
     case iot = "IOT"
     case ai = "AI"
 }
+

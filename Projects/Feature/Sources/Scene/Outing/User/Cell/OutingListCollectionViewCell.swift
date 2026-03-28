@@ -11,6 +11,8 @@ import UIKit
 import SnapKit
 import Then
 import Kingfisher
+import Service
+import Service
 
 final class OutingListCollectionViewCell: UICollectionViewCell {
     

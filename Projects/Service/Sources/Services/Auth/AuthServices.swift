@@ -14,19 +14,25 @@ public enum AuthServices {
     case signIn(param: SignInRequest)
     case refreshToken(refreshToken: String)
     case sendAuthCode(param: SendAuthCodeRequest)
-    case verifyAuthNumber(email: String, code: String)
+    case verifyAuthNumber(email: String, code: String, purpose: String)
     case logoutToken(refreshToken: String)
 }
 
 extension AuthServices: TargetType {
 
     public var baseURL: URL {
-        guard
-            let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String,
-            let url = URL(string: urlString)
-        else {
-            fatalError("AuthAPI URL을 불러올 수 없습니다.")
+        guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
+            fatalError("SchoolBaseURL 찾을 수 없습니다")
         }
+
+        print("atuh baseURL string:", urlString)
+
+        guard let url = URL(string: urlString) else {
+            fatalError("auth Invalid baseURL string: \(urlString)")
+        }
+
+        print(" auth baseURL URL:", url)
+
         return url
     }
 
@@ -69,11 +75,12 @@ extension AuthServices: TargetType {
     }
 
     public var sampleData: Data {
-        "@@".data(using: .utf8)!
+        Data()
     }
 
     public var task: Task {
         switch self {
+
         case let .signUp(param):
             return .requestJSONEncodable(param)
 
@@ -86,11 +93,11 @@ extension AuthServices: TargetType {
         case .refreshToken:
             return .requestPlain
 
-        case let .verifyAuthNumber(email, code):
+        case let .verifyAuthNumber(email, code, purpose):
             return .requestJSONEncodable([
                 "email": email,
                 "code": code,
-                "purpose": "SIGNUP"
+                "purpose": purpose
             ])
 
         case .logoutToken:
@@ -100,6 +107,7 @@ extension AuthServices: TargetType {
 
     public var headers: [String: String]? {
         switch self {
+
         case let .refreshToken(refreshToken),
              let .logoutToken(refreshToken):
             return [
@@ -114,4 +122,3 @@ extension AuthServices: TargetType {
         }
     }
 }
-

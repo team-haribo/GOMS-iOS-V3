@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class NewPasswordViewController: BaseViewController {
 
@@ -103,7 +104,7 @@ public final class NewPasswordViewController: BaseViewController {
             return
         }
 
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[!@#$%^&?~])[a-zA-Z!@#$%^&?~]{6,15}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {
@@ -326,10 +327,7 @@ extension NewPasswordViewController: UITextFieldDelegate {
 
     public func textFieldDidChange(_ textField: UITextField) {
         if textField == passwordTextField {
-            viewModel.setupNewPassword(
-                newPassword: textField.text ?? "",
-                checkPassword: checkPasswordTextField.text ?? ""
-            )
+            viewModel.setupPassword(password: textField.text ?? "")
         }
     }
 

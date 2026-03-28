@@ -122,37 +122,43 @@ public final class AuthCodeViewController: BaseViewController {
         }
 
      
-        if code == "1234" {
-            authCodeTextField.layer.borderWidth = 0
-            self.authCodeSuccess()
+        viewModel.verifyAuthCode { [weak self] success in
+            guard let self = self else { return }
 
-            let alert = UIAlertController(
-                title: "인증번호 확인",
-                message: "인증이 완료되었습니다.",
-                preferredStyle: .alert
-            )
+            DispatchQueue.main.async {
+                if success {
+                    self.authCodeTextField.layer.borderWidth = 0
+                    self.authCodeSuccess()
 
-            alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-
-                if self.previousViewController is FindPasswordViewController {
-                    let newPasswordVC = NewPasswordViewController(
-                        viewModel: self.viewModel,
-                        email: self.email ?? ""
+                    let alert = UIAlertController(
+                        title: "인증번호 확인",
+                        message: "인증이 완료되었습니다.",
+                        preferredStyle: .alert
                     )
-                    self.navigationController?.pushViewController(newPasswordVC, animated: true)
 
-                } else if self.previousViewController is SignUpViewController {
-                    let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
-                    self.navigationController?.pushViewController(passwordSettingVC, animated: true)
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+
+                        if self.previousViewController is FindPasswordViewController {
+                            let newPasswordVC = NewPasswordViewController(
+                                viewModel: self.viewModel,
+                                email: self.email ?? ""
+                            )
+                            self.navigationController?.pushViewController(newPasswordVC, animated: true)
+
+                        } else if self.previousViewController is SignUpViewController {
+                            let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
+                            self.navigationController?.pushViewController(passwordSettingVC, animated: true)
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+
+                } else {
+                    self.authCodeTextField.layer.borderWidth = 1
+                    self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
+                    self.authCodeError()
                 }
-            })
-
-            self.present(alert, animated: true)
-
-        } else {
-            authCodeTextField.layer.borderWidth = 1
-            authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
-            authCodeError()
+            }
         }
     }
 
@@ -303,7 +309,7 @@ extension AuthCodeViewController: UITextFieldDelegate {
             let currentText = textField.text ?? ""
             guard let stringRange = Range(range, in: currentText) else { return false }
             let updatedText = currentText.replacingCharacters(in: stringRange, with: string)
-            return updatedText.count <= 4
+            return updatedText.count <= 6
         }
         return true
     }
