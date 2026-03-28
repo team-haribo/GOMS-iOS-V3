@@ -200,10 +200,10 @@ public final class NewPasswordViewController: BaseViewController {
         }
 
         viewModel.setupEmail(email: email)
-        // ViewModel에 비밀번호 세팅
+        
         viewModel.setupPassword(password: password)
 
-        // API 호출
+    
         viewModel.resetPassword { [weak self] success, statusCode in
             guard let self = self else { return }
 

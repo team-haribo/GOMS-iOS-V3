@@ -153,8 +153,7 @@ public final class AuthViewModel: BaseViewModel {
             print("JSON:", jsonString)
         }
         
-        print("재요청")
-        print("URL:", "https://port-0-goms-backend-v3-mmjt7nyl6f7b9e55.sel3.cloudtype.app/api/v3/auth/email-verifications/send")
+    
         print("email:", param.email)
         print("purpose:", param.purpose)
         
@@ -261,12 +260,6 @@ public final class AuthViewModel: BaseViewModel {
             return
         }
 
-        print("=== RESET DEBUG ===")
-        print("RESET email:", email)
-        print("RESET verifiedToken:", verifiedToken)
-        print("RESET password:", password)
-
-        print("=== RESET REQUEST JSON ===")
 
         let debugJSON: [String: Any] = [
             "email": email,
@@ -340,18 +333,6 @@ public final class AuthViewModel: BaseViewModel {
             gender: gender
         )
 
-        print("SIGNUP REQUEST JSON")
-        print("""
-        {
-          "email" : "\(email)",
-          "password" : "\(password)",
-          "name" : "\(name)",
-          "grade" : \(grade),
-          "department" : "\(major.rawValue)",
-          "gender" : "\(gender.rawValue)",
-          "verifiedToken" : "\(verifiedToken)"
-        }
-        """)
 
         authProvider.request(.signUp(param: param)) { response in
             switch response {
