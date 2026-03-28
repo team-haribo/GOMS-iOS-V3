@@ -261,11 +261,11 @@ public final class AuthViewModel: BaseViewModel {
             return
         }
 
-        let param: [String: Any] = [
-            "email": email,
-            "verifiedToken": verifiedToken,
-            "newPassword": password
-        ]
+        let param = ResetPasswordRequest(
+            email: email,
+            verifiedToken: verifiedToken,
+            newPassword: password
+        )
 
         authProvider.request(.resetPassword(param: param)) { response in
             switch response {

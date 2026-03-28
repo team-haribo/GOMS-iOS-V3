@@ -9,6 +9,18 @@
 import Foundation
 import Moya
 
+public struct ResetPasswordRequest: Encodable {
+    public let email: String
+    public let verifiedToken: String
+    public let newPassword: String
+
+    public init(email: String, verifiedToken: String, newPassword: String) {
+        self.email = email
+        self.verifiedToken = verifiedToken
+        self.newPassword = newPassword
+    }
+}
+
 public enum AuthServices {
     case signUp(param: SignUpRequest)
     case signIn(param: SignInRequest)
@@ -16,7 +28,7 @@ public enum AuthServices {
     case sendAuthCode(param: SendAuthCodeRequest)
     case verifyAuthNumber(email: String, code: String, purpose: String)
     case logoutToken(refreshToken: String)
-    case resetPassword(param: [String: Any])
+    case resetPassword(param: ResetPasswordRequest)
 }
 
 extension AuthServices: TargetType {
