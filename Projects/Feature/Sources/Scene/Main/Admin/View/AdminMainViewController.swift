@@ -209,7 +209,7 @@ private let profileVC = AdminProfileViewController()
         authViewModel.setupEmail(email: isLocalEmail)
         authViewModel.setupPassword(password: isLocalPass)
 
-        authViewModel.signIn { [weak self] statusCode in
+        authViewModel.signIn { [weak self] statusCode, _ in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard self.isVisible else {

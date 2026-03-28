@@ -304,7 +304,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         authViewModel.setupPassword(password: isLocalPass)
         
         
-        authViewModel.signIn { [weak self] (statusCode: Int) in
+        authViewModel.signIn { [weak self] (statusCode: Int, _) in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
