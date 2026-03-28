@@ -108,7 +108,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {
@@ -185,7 +185,7 @@ public final class PasswordSettingViewController: BaseViewController {
         }
 
         let password = passwordTextField.text ?? ""
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {

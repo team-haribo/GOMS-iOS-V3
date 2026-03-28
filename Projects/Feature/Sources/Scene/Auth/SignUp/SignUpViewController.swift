@@ -184,7 +184,6 @@ public final class SignUpViewController: BaseViewController {
     @objc private func authCodeButtonTapped() {
         let name = nameTextField.text ?? ""
         let email = emailTextField.text ?? ""
-        let fullEmail = email + "@gsm.hs.kr"
         viewModel.setupEmail(email: email)
 
         nameErrorLabel.isHidden = true
@@ -275,7 +274,6 @@ public final class SignUpViewController: BaseViewController {
         print("Controller → ViewModel 호출 직전")
         print("name:", name)
         print("email(raw):", email)
-        print("email(full):", fullEmail)
         print("gender:", gender)
         print("major:", major)
         print("grade:", grade)
@@ -290,7 +288,7 @@ public final class SignUpViewController: BaseViewController {
                     let authCodeVC = AuthCodeViewController(
                         viewModel: self.viewModel,
                         previousViewController: self,
-                        email: fullEmail
+                        email: email + "@gsm.hs.kr"
                     )
                     self.navigationController?.pushViewController(authCodeVC, animated: true)
                 } else {

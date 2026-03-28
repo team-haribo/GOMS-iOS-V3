@@ -40,7 +40,11 @@ public final class AuthViewModel: BaseViewModel {
     }
 
     func setupEmail(email: String) {
-        self.email = "\(email)@gsm.hs.kr"
+        if email.contains("@") {
+            self.email = email
+        } else {
+            self.email = "\(email)@gsm.hs.kr"
+        }
     }
 
     func setupPassword(password: String) {
@@ -149,6 +153,8 @@ public final class AuthViewModel: BaseViewModel {
             purpose: AuthPurpose.signup.rawValue
         )
         
+        print("AUTH email:", param.email)
+        
         if let jsonData = try? JSONEncoder().encode(param),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             print("JSON:", jsonString)
@@ -256,7 +262,15 @@ public final class AuthViewModel: BaseViewModel {
 
     // MARK: - 회원가입
     func signUp(completion: @escaping (Bool) -> Void) {
-
+        
+        print("grade:", self.grade)
+        print("verifiedToken:", verifiedToken)
+        print("SIGNUP email:", email)
+        print("FINAL name:", self.name)
+        print("FINAL password:", self.password)
+        print("FINAL major:", self.major)
+        print("FINAL gender:", self.gender)
+        
         guard !verifiedToken.isEmpty else {
             print("verifiedToken 없음")
             completion(false)
@@ -273,14 +287,37 @@ public final class AuthViewModel: BaseViewModel {
             gender: gender
         )
 
+        print("SIGNUP REQUEST JSON")
+        print("""
+        {
+          "email" : "\(email)",
+          "password" : "\(password)",
+          "name" : "\(name)",
+          "grade" : \(grade),
+          "department" : "\(major.rawValue)",
+          "gender" : "\(gender.rawValue)",
+          "verifiedToken" : "\(verifiedToken)"
+        }
+        """)
+
         authProvider.request(.signUp(param: param)) { response in
             switch response {
 
             case .success(let result):
-                completion(result.statusCode == 201)
+                print("statusCode:", result.statusCode)
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("response:", responseString)
+                }
+                completion((200..<300).contains(result.statusCode))
 
             case .failure(let error):
                 print("signUp error: \(error.localizedDescription)")
+                if let response = error.response {
+                    print("error statusCode:", response.statusCode)
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("error body:", responseString)
+                    }
+                }
                 completion(false)
             }
         }
