@@ -104,9 +104,9 @@ public final class NewPasswordViewController: BaseViewController {
             return
         }
 
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[!@#$%^&?~])[a-zA-Z!@#$%^&?~]{6,15}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
-
+        
         if !passwordPredicate.evaluate(with: password) {
             passwordFormatError.isHidden = false
             passwordFormatError.text = "잘못된 형식의 비밀번호입니다"
@@ -199,25 +199,50 @@ public final class NewPasswordViewController: BaseViewController {
             return
         }
 
-        let alert = UIAlertController(
-            title: "재설정 완료",
-            message: "비밀번호가 재설정되었습니다.",
-            preferredStyle: .alert
-        )
+        viewModel.setupEmail(email: email)
+        // ViewModel에 비밀번호 세팅
+        viewModel.setupPassword(password: password)
 
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+        // API 호출
+        viewModel.resetPassword { [weak self] success, statusCode in
+            guard let self = self else { return }
 
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
+            DispatchQueue.main.async {
+                if success {
 
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
+                    let alert = UIAlertController(
+                        title: "재설정 완료",
+                        message: "비밀번호가 재설정되었습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+
+                } else {
+
+                    let alert = UIAlertController(
+                        title: "오류",
+                        message: "비밀번호 재설정에 실패했습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                }
             }
-        })
-
-        self.present(alert, animated: true)
+        }
     }
 
     @objc private func onPasswordButtonTapped() {

@@ -261,6 +261,24 @@ public final class AuthViewModel: BaseViewModel {
             return
         }
 
+        print("=== RESET DEBUG ===")
+        print("RESET email:", email)
+        print("RESET verifiedToken:", verifiedToken)
+        print("RESET password:", password)
+
+        print("=== RESET REQUEST JSON ===")
+
+        let debugJSON: [String: Any] = [
+            "email": email,
+            "verifiedToken": verifiedToken,
+            "newPassword": password
+        ]
+
+        if let jsonData = try? JSONSerialization.data(withJSONObject: debugJSON, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
+        }
+
         let param = ResetPasswordRequest(
             email: email,
             verifiedToken: verifiedToken,
