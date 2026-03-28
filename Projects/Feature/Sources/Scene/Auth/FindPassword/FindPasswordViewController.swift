@@ -11,6 +11,7 @@ import UIKit
 public final class FindPasswordViewController: BaseViewController {
 
     private var viewModel: AuthViewModel
+    private var isRequesting = false
     
     private let pageTitleLabel = UILabel().then {
         $0.text = "비밀번호 찾기"
@@ -68,12 +69,17 @@ public final class FindPasswordViewController: BaseViewController {
     }
 
     @objc private func authCodeButtonTapped() {
+        if isRequesting { return }
+        isRequesting = true
+        authCodeButton.isEnabled = false
 
         let email = emailTextField.text ?? ""
 
         if email.isEmpty {
             emailErrorLabel.text = "이메일을 입력해주세요."
             showEmailError()
+            authCodeButton.isEnabled = true
+            isRequesting = false
             return
         }
 
@@ -83,20 +89,62 @@ public final class FindPasswordViewController: BaseViewController {
         if !emailPredicate.evaluate(with: email) {
             emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
             showEmailError()
+            authCodeButton.isEnabled = true
+            isRequesting = false
             return
         }
 
-        
-        successUI()
+     
+        viewModel.setupEmail(email: email)
 
-        let authCodeVC = AuthCodeViewController(
-            viewModel: self.viewModel,
-            previousViewController: self,
-            email: email
-        )
+      
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self = self else { return }
 
-        self.navigationController?.pushViewController(authCodeVC,
-                                                     animated: true)
+            DispatchQueue.main.async {
+                self.authCodeButton.isEnabled = true
+                self.isRequesting = false
+                if success {
+                    print("인증번호 요청 성공")
+
+                    self.successUI()
+
+                    let authCodeVC = AuthCodeViewController(
+                        viewModel: self.viewModel,
+                        previousViewController: self,
+                        email: email
+                    )
+                    self.navigationController?.pushViewController(authCodeVC, animated: true)
+
+                } else {
+                    print("인증번호 요청 실패 - statusCode:", statusCode)
+                 
+                    switch statusCode {
+                    case 400:
+                        self.emailErrorLabel.text = "요청 형식이 올바르지 않습니다."
+                        self.showEmailError()
+                    case 401:
+                        self.emailErrorLabel.text = "이메일 인증이 필요합니다."
+                        self.showEmailError()
+                    case 403:
+                        self.emailErrorLabel.text = "잘못된 요청입니다."
+                        self.showEmailError()
+                    case 404:
+                        self.emailErrorLabel.text = "가입되지 않은 이메일입니다."
+                        self.showEmailError()
+                    case 500:
+                        self.emailErrorLabel.text = "서버 오류가 발생했습니다."
+                        self.showEmailError()
+                    case 429:
+                        self.emailErrorLabel.text = "잠시 후 다시 시도해주세요."
+                        self.showEmailError()
+                    default:
+                        self.emailErrorLabel.text = "인증번호 요청에 실패했습니다."
+                        self.showEmailError()
+                    }
+                }
+            }
+        }
     }
 
     private func emailBlankValue() {

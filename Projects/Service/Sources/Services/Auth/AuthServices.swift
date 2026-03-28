@@ -16,6 +16,7 @@ public enum AuthServices {
     case sendAuthCode(param: SendAuthCodeRequest)
     case verifyAuthNumber(email: String, code: String, purpose: String)
     case logoutToken(refreshToken: String)
+    case resetPassword(param: [String: Any])
 }
 
 extension AuthServices: TargetType {
@@ -55,6 +56,9 @@ extension AuthServices: TargetType {
 
         case .logoutToken:
             return "/api/v3/auth/signout"
+
+        case .resetPassword:
+            return "/api/v3/auth/password"
         }
     }
 
@@ -66,7 +70,8 @@ extension AuthServices: TargetType {
              .verifyAuthNumber:
             return .post
 
-        case .refreshToken:
+        case .refreshToken,
+             .resetPassword:
             return .patch
 
         case .logoutToken:
@@ -102,6 +107,9 @@ extension AuthServices: TargetType {
 
         case .logoutToken:
             return .requestPlain
+
+        case let .resetPassword(param):
+            return .requestJSONEncodable(param)
         }
     }
 

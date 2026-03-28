@@ -143,7 +143,7 @@ public final class AuthViewModel: BaseViewModel {
         
         let param = SendAuthCodeRequest(
             email: email,
-            purpose: AuthPurpose.signup.rawValue
+            purpose: AuthPurpose.passwordChange.rawValue
         )
         
         print("AUTH email:", param.email)
@@ -221,7 +221,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: AuthPurpose.signup.rawValue
+                purpose: AuthPurpose.passwordChange.rawValue
             )
         ) { response in
 
@@ -248,6 +248,49 @@ public final class AuthViewModel: BaseViewModel {
             case .failure(let error):
                 print("verifyAuthCode network error: \(error.localizedDescription)")
                 completion(false)
+            }
+        }
+    }
+
+    // MARK: - 비밀번호 재설정
+    func resetPassword(completion: @escaping (Bool, Int) -> Void) {
+
+        guard !verifiedToken.isEmpty else {
+            print("verifiedToken 없음")
+            completion(false, 0)
+            return
+        }
+
+        let param: [String: Any] = [
+            "email": email,
+            "verifiedToken": verifiedToken,
+            "newPassword": password
+        ]
+
+        authProvider.request(.resetPassword(param: param)) { response in
+            switch response {
+
+            case .success(let result):
+                print("resetPassword statusCode:", result.statusCode)
+
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("resetPassword response:", responseString)
+                }
+
+                completion((200..<300).contains(result.statusCode), result.statusCode)
+
+            case .failure(let error):
+                print("resetPassword error:", error.localizedDescription)
+
+                if let response = error.response {
+                    print("error statusCode:", response.statusCode)
+
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("error body:", responseString)
+                    }
+                }
+
+                completion(false, 0)
             }
         }
     }

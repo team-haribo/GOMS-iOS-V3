@@ -11,4 +11,5 @@ import Foundation
 
 public enum AuthPurpose: String {
     case signup = "SIGNUP"
+    case passwordChange = "PASSWORD_CHANGE"
 }

@@ -15,9 +15,10 @@ public final class AuthCodeViewController: BaseViewController {
     var email: String?
 
     private var limitTime = 300
+    private var isRequestingAuthCode = false
 
     private let pageTitleLabel = UILabel().then {
-        $0.text = "인증 번호"
+        $0.text = "인증번호"
         $0.font = .suit(size: 28, weight: .bold)
         $0.textColor = .color.mainText.color
     }
@@ -95,13 +96,54 @@ public final class AuthCodeViewController: BaseViewController {
     }
 
     @objc private func resendButtonTapped() {
-        let alert = UIAlertController(
-            title: "재발송 완료",
-            message:  "인증번호를 다시 보냈습니다.\n이메일을 확인해주세요.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-        self.present(alert, animated: true)
+        if isRequestingAuthCode { return }
+        isRequestingAuthCode = true
+        resendButton.isEnabled = false
+
+        guard let email = self.email else { return }
+        viewModel.setupEmail(email: email)
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if statusCode == 429 {
+                    self.isRequestingAuthCode = true
+                    self.resendButton.isEnabled = false
+                    
+                    let alert = UIAlertController(
+                        title: "요청 제한",
+                        message: "잠시 후 다시 시도해주세요.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self.isRequestingAuthCode = false
+                        self.resendButton.isEnabled = true
+                    }
+                } else if success {
+                    self.isRequestingAuthCode = false
+                    self.resendButton.isEnabled = true
+                    let alert = UIAlertController(
+                        title: "재발송 완료",
+                        message: "인증번호를 다시 보냈습니다.\n이메일을 확인해주세요.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                } else {
+                    self.isRequestingAuthCode = false
+                    self.resendButton.isEnabled = true
+                    let alert = UIAlertController(
+                        title: "오류",
+                        message: "인증번호 재발송에 실패했습니다.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
     }
 
     @objc private func authButtonTapped() {
