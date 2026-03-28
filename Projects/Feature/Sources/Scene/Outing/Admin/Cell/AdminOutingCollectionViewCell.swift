@@ -10,6 +10,8 @@ import UIKit
 
 import SnapKit
 import Then
+import Service
+
 protocol AdminOutingCellDelegate: AnyObject {
     func deleteButtonTapped(cell: AdminOutingCollectionViewCell)
 }

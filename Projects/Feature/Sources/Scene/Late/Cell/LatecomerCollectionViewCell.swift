@@ -11,6 +11,7 @@ import UIKit
 import SnapKit
 import Then
 import Kingfisher
+import Service
 
 class LatecomerCollectionViewCell: UICollectionViewCell {
     

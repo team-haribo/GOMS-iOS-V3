@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class SignUpViewController: BaseViewController {
 
@@ -94,7 +95,7 @@ public final class SignUpViewController: BaseViewController {
         let menAction = UIAlertAction(title: "남성", style: .default) { _ in
             self.genderTextField.setTitle("남성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupGender(gender: Gender.man.rawValue)
+            self.viewModel.setupGender(gender: .male)
             self.genderTextField.layer.borderWidth = 0
             self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -102,7 +103,7 @@ public final class SignUpViewController: BaseViewController {
         let womanAction = UIAlertAction(title: "여성", style: .default) { _ in
             self.genderTextField.setTitle("여성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupGender(gender: Gender.man.rawValue)
+            self.viewModel.setupGender(gender: .female)
             self.genderTextField.layer.borderWidth = 0
             self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -119,7 +120,7 @@ public final class SignUpViewController: BaseViewController {
         let swAction = UIAlertAction(title: "SW개발과", style: .default) { _ in
             self.majorTextField.setTitle("SW개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.sw.rawValue)
+            self.viewModel.setupMajor(major: .sw)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -127,7 +128,7 @@ public final class SignUpViewController: BaseViewController {
         let iotAction = UIAlertAction(title: "스마트IoT과", style: .default) { _ in
             self.majorTextField.setTitle("스마트IoT과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.iot.rawValue)
+            self.viewModel.setupMajor(major: .iot)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -135,7 +136,7 @@ public final class SignUpViewController: BaseViewController {
         let aiAction = UIAlertAction(title: "AI개발과", style: .default) { _ in
             self.majorTextField.setTitle("AI개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.ai.rawValue)
+            self.viewModel.setupMajor(major: .ai)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -147,6 +148,8 @@ public final class SignUpViewController: BaseViewController {
     @objc private func authCodeButtonTapped() {
         let name = nameTextField.text ?? ""
         let email = emailTextField.text ?? ""
+        let fullEmail = email + "@gsm.hs.kr"
+        viewModel.setupEmail(email: fullEmail)
 
         nameErrorLabel.isHidden = true
         emailErrorLabel.isHidden = true
@@ -217,13 +220,35 @@ public final class SignUpViewController: BaseViewController {
             return
         }
 
-        let authCodeVC = AuthCodeViewController(
-            viewModel: self.viewModel,
-            previousViewController: self,
-            email: email
-        )
+        
+        loader.modalPresentationStyle = .overFullScreen
+        present(loader, animated: false)
 
-        self.navigationController?.pushViewController(authCodeVC, animated: true)
+        print("Controller → ViewModel 호출 직전")
+        print("name:", name)
+        print("email(raw):", email)
+        print("email(full):", fullEmail)
+        print("gender:", gender)
+        print("major:", major)
+
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
+                self.loader.dismiss(animated: false)
+
+                if success {
+                    let authCodeVC = AuthCodeViewController(
+                        viewModel: self.viewModel,
+                        previousViewController: self,
+                        email: fullEmail
+                    )
+                    self.navigationController?.pushViewController(authCodeVC, animated: true)
+                } else {
+                    print("인증번호 요청 실패: \(statusCode)")
+                }
+            }
+        }
     }
 
 

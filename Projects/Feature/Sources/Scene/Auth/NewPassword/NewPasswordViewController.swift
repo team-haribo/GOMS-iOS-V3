@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class NewPasswordViewController: BaseViewController {
 
@@ -326,10 +327,7 @@ extension NewPasswordViewController: UITextFieldDelegate {
 
     public func textFieldDidChange(_ textField: UITextField) {
         if textField == passwordTextField {
-            viewModel.setupNewPassword(
-                newPassword: textField.text ?? "",
-                checkPassword: checkPasswordTextField.text ?? ""
-            )
+            viewModel.setupPassword(password: textField.text ?? "")
         }
     }
 

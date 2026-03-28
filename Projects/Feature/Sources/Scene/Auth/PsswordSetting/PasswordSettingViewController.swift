@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class PasswordSettingViewController: BaseViewController {
 
@@ -214,10 +215,7 @@ public final class PasswordSettingViewController: BaseViewController {
             checkPasswordTextField.layer.borderWidth = 0
         }
 
-        viewModel.setupNewPassword(
-            newPassword: passwordTextField.text ?? "",
-            checkPassword: checkPasswordTextField.text ?? ""
-        )
+        viewModel.setupPassword(password: passwordTextField.text ?? "")
 
        
         self.signUpSuccessUI()
@@ -371,10 +369,7 @@ extension PasswordSettingViewController: UITextFieldDelegate {
 
     public func textFieldDidChange(_ textField: UITextField) {
         if textField == passwordTextField {
-            viewModel.setupNewPassword(
-                newPassword: textField.text ?? "",
-                checkPassword: checkPasswordTextField.text ?? ""
-            )
+            viewModel.setupPassword(password: textField.text ?? "")
         }
     }
 

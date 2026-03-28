@@ -138,25 +138,74 @@ public final class AuthViewModel: BaseViewModel {
     }
 
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
-
-        let param = SendAuthCodeRequest(email: email, emailStatus: emailStatus)
-
+        
+        let param = SendAuthCodeRequest(
+            email: email,
+            purpose: AuthPurpose.signup.rawValue
+        )
+        
+        if let jsonData = try? JSONEncoder().encode(param),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print("JSON:", jsonString)
+        }
+        
+        print("재요청")
+        print("URL:", "https://port-0-goms-backend-v3-mmjt7nyl6f7b9e55.sel3.cloudtype.app/api/v3/auth/email-verifications/send")
+        print("email:", param.email)
+        print("purpose:", param.purpose)
+        
         authProvider.request(.sendAuthCode(param: param)) { response in
 
             switch response {
-
+                
             case .success(let result):
-                let statusCode = result.statusCode
-
-                switch statusCode {
-                case 204:
-                    completion(true, statusCode)
-                default:
-                    completion(false, statusCode)
+                if let request = result.request {
+                    print("Request URL:", request.url?.absoluteString ?? "nil")
+                    print("HTTP Method:", request.httpMethod ?? "nil")
+                    if let headers = request.allHTTPHeaderFields {
+                        print("Headers:", headers)
+                    }
+                    if let body = request.httpBody,
+                       let bodyString = String(data: body, encoding: .utf8) {
+                        print("Body:", bodyString)
+                    } else {
+                        print("Body: nil")
+                    }
                 }
+                print("Final URL:", result.response?.url?.absoluteString ?? "nil")
 
+                print("코드 로킹:", result.statusCode)
+                
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("body 리스폰: ", responseString)
+                }
+                
+                completion((200..<300).contains(result.statusCode), result.statusCode)
+                
             case .failure(let error):
-                print("sendAuthCode error: \(error.localizedDescription)")
+                if let request = error.response?.request {
+                    print("Request URL(failure):", request.url?.absoluteString ?? "nil")
+                    print("HTTP Method(failure):", request.httpMethod ?? "nil")
+                    if let headers = request.allHTTPHeaderFields {
+                        print("Headers(failure):", headers)
+                    }
+                    if let body = request.httpBody,
+                       let bodyString = String(data: body, encoding: .utf8) {
+                        print("Body(failure):", bodyString)
+                    } else {
+                        print("Body(failure): nil")
+                    }
+                }
+                print("네트워크 에러: ", error.localizedDescription)
+                
+                if let response = error.response {
+                    print("X 코드에러 :", response.statusCode)
+                    
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("body 에러: ", responseString)
+                    }
+                }
+                
                 completion(false, 0)
             }
         }
@@ -169,7 +218,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: "SIGNUP"
+                purpose: AuthPurpose.signup.rawValue
             )
         ) { response in
 
@@ -229,6 +278,26 @@ public final class AuthViewModel: BaseViewModel {
             case .failure(let error):
                 print("signUp error: \(error.localizedDescription)")
                 completion(false)
+            }
+        }
+    }
+    // MARK: - 로그인
+    func signIn(completion: @escaping (Int) -> Void) {
+
+        let param = SignInRequest(
+            email: email,
+            password: password
+        )
+
+        authProvider.request(.signIn(param: param)) { response in
+            switch response {
+
+            case .success(let result):
+                completion(result.statusCode)
+
+            case .failure(let error):
+                print("signIn error: \(error.localizedDescription)")
+                completion(0)
             }
         }
     }

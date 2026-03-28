@@ -10,6 +10,7 @@ import UIKit
 import SnapKit
 import Then
 import Kingfisher
+import Service
 
 final class LateCell: UICollectionViewCell {
 
