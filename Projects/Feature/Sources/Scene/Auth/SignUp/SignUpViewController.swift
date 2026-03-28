@@ -283,27 +283,27 @@ public final class SignUpViewController: BaseViewController {
 
         nameErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(nameTextField.snp.trailing)
-            $0.top.equalTo(nameTextField.snp.bottom).offset(8)
+            $0.top.equalTo(nameTextField.snp.bottom).offset(16)
             $0.height.equalTo(0)
         }
 
         emailTextField.snp.makeConstraints {
             $0.leading.equalTo(bounds.width * 0.05)
             $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(nameErrorLabel.snp.bottom).offset(16)
+            $0.top.equalTo(nameTextField.snp.bottom).offset(16)
             $0.height.equalTo(56)
         }
 
         emailErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(emailTextField.snp.trailing)
-            $0.top.equalTo(emailTextField.snp.bottom).offset(8)
+            $0.top.equalTo(emailTextField.snp.bottom).offset(16)
             $0.height.equalTo(0)
         }
 
         genderTextField.snp.makeConstraints {
             $0.leading.equalTo(bounds.width * 0.05)
             $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(emailErrorLabel.snp.bottom).offset(16)
+            $0.top.equalTo(emailTextField.snp.bottom).offset(16)
             $0.height.equalTo(56)
         }
 
