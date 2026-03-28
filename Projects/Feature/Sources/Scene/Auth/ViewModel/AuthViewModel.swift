@@ -79,6 +79,8 @@ public final class AuthViewModel: BaseViewModel {
                 switch response {
 
                 case .success(let result):
+                    print("LOGIN RAW RESPONSE")
+                    print(String(data: result.data, encoding: .utf8) ?? "nil")
 
                     statusCode = result.statusCode
 
@@ -91,9 +93,17 @@ public final class AuthViewModel: BaseViewModel {
 
                             self.keyChain.create(key: Const.KeyChainKey.accessToken, token: signInResponse.accessToken)
                             self.keyChain.create(key: Const.KeyChainKey.refreshToken, token: signInResponse.refreshToken)
-                            self.keyChain.create(key: Const.KeyChainKey.authority, token: signInResponse.authority)
+                           
+                            let accessToken = signInResponse.accessToken
 
-                            authority = signInResponse.authority
+                            if let payload = accessToken.split(separator: ".").dropFirst().first,
+                               let data = Data(base64Encoded: String(payload) + "=="),
+                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                               let role = json["role"] as? String {
+
+                                self.keyChain.create(key: Const.KeyChainKey.authority, token: role)
+                                authority = role
+                            }
 
                             if let savedToken = UserDefaults.standard.string(forKey: "FCMToken"),
                                let accessToken = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) {
