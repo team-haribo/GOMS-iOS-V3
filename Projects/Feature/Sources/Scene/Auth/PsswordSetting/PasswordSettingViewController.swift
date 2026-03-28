@@ -147,7 +147,7 @@ public final class PasswordSettingViewController: BaseViewController {
         let password = passwordTextField.text ?? ""
         let confirm = checkPasswordTextField.text ?? ""
 
-        // 입력 없으면 초기 상태
+     
         if confirm.isEmpty {
             passwordMatchError.isHidden = true
             checkPasswordTextField.setPlaceholderColor(.color.sub2.color)
@@ -156,7 +156,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        // 비밀번호가 같으면 즉시 에러 제거
+      
         if password == confirm {
             passwordMatchError.isHidden = true
             checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
@@ -164,7 +164,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        // 다르면 에러 표시
+    
         passwordMatchError.isHidden = false
         checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
         checkPasswordTextField.layer.borderWidth = 1

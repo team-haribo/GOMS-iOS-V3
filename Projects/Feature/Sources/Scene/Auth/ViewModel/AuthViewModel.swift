@@ -143,7 +143,7 @@ public final class AuthViewModel: BaseViewModel {
         
         let param = SendAuthCodeRequest(
             email: email,
-            purpose: AuthPurpose.signup.rawValue
+            purpose: AuthPurpose.passwordChange.rawValue
         )
         
         print("AUTH email:", param.email)
@@ -153,8 +153,7 @@ public final class AuthViewModel: BaseViewModel {
             print("JSON:", jsonString)
         }
         
-        print("재요청")
-        print("URL:", "https://port-0-goms-backend-v3-mmjt7nyl6f7b9e55.sel3.cloudtype.app/api/v3/auth/email-verifications/send")
+    
         print("email:", param.email)
         print("purpose:", param.purpose)
         
@@ -221,7 +220,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: AuthPurpose.signup.rawValue
+                purpose: AuthPurpose.passwordChange.rawValue
             )
         ) { response in
 
@@ -248,6 +247,61 @@ public final class AuthViewModel: BaseViewModel {
             case .failure(let error):
                 print("verifyAuthCode network error: \(error.localizedDescription)")
                 completion(false)
+            }
+        }
+    }
+
+    // MARK: - 비밀번호 재설정
+    func resetPassword(completion: @escaping (Bool, Int) -> Void) {
+
+        guard !verifiedToken.isEmpty else {
+            print("verifiedToken 없음")
+            completion(false, 0)
+            return
+        }
+
+
+        let debugJSON: [String: Any] = [
+            "email": email,
+            "verifiedToken": verifiedToken,
+            "newPassword": password
+        ]
+
+        if let jsonData = try? JSONSerialization.data(withJSONObject: debugJSON, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
+        }
+
+        let param = ResetPasswordRequest(
+            email: email,
+            verifiedToken: verifiedToken,
+            newPassword: password
+        )
+
+        authProvider.request(.resetPassword(param: param)) { response in
+            switch response {
+
+            case .success(let result):
+                print("resetPassword statusCode:", result.statusCode)
+
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("resetPassword response:", responseString)
+                }
+
+                completion((200..<300).contains(result.statusCode), result.statusCode)
+
+            case .failure(let error):
+                print("resetPassword error:", error.localizedDescription)
+
+                if let response = error.response {
+                    print("error statusCode:", response.statusCode)
+
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("error body:", responseString)
+                    }
+                }
+
+                completion(false, 0)
             }
         }
     }
@@ -279,18 +333,6 @@ public final class AuthViewModel: BaseViewModel {
             gender: gender
         )
 
-        print("SIGNUP REQUEST JSON")
-        print("""
-        {
-          "email" : "\(email)",
-          "password" : "\(password)",
-          "name" : "\(name)",
-          "grade" : \(grade),
-          "department" : "\(major.rawValue)",
-          "gender" : "\(gender.rawValue)",
-          "verifiedToken" : "\(verifiedToken)"
-        }
-        """)
 
         authProvider.request(.signUp(param: param)) { response in
             switch response {
