@@ -15,6 +15,8 @@ public final class AuthCodeViewController: BaseViewController {
     var email: String?
 
     private var limitTime = 300
+    private var resendCooldown = 60
+    private var resendTimer: Timer?
     private var isRequestingAuthCode = false
 
     private let pageTitleLabel = UILabel().then {
@@ -68,6 +70,22 @@ public final class AuthCodeViewController: BaseViewController {
         authCodeTextField.delegate = self
         authCodeTextField.addTarget(self, action: #selector(authCodeEditingChanged(_:)), for: .editingChanged)
         getSetTime()
+        startResendCooldown()
+        requestInitialAuthCode()
+    }
+
+    private func requestInitialAuthCode() {
+        guard let email = self.email else { return }
+        viewModel.setupEmail(email: email)
+
+        viewModel.sendAuthCode { [weak self] success, _ in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if !success {
+                    print("초기 인증번호 요청 실패 또는 지연")
+                }
+            }
+        }
     }
 
     @objc private func getSetTime() {
@@ -100,30 +118,34 @@ public final class AuthCodeViewController: BaseViewController {
         isRequestingAuthCode = true
         resendButton.isEnabled = false
 
-        guard let email = self.email else { return }
+        guard let email = self.email else {
+            isRequestingAuthCode = false
+            resendButton.isEnabled = true
+            return
+        }
         viewModel.setupEmail(email: email)
         viewModel.sendAuthCode { [weak self] success, statusCode in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 if statusCode == 429 {
-                    self.isRequestingAuthCode = true
-                    self.resendButton.isEnabled = false
-                    
+                   
+                    self.startResendCooldown()
+                    self.isRequestingAuthCode = false
+
                     let alert = UIAlertController(
-                        title: "요청 제한",
-                        message: "잠시 후 다시 시도해주세요.",
+                        title: "재발송 완료",
+                        message: "잠시 후 인증번호가 도착할 수 있습니다.\n이메일을 확인해주세요.",
                         preferredStyle: .alert
                     )
                     alert.addAction(UIAlertAction(title: "확인", style: .cancel))
                     self.present(alert, animated: true)
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        self.isRequestingAuthCode = false
-                        self.resendButton.isEnabled = true
-                    }
+
+                    return
                 } else if success {
+                    self.startResendCooldown()
+                    self.limitTime = 300
                     self.isRequestingAuthCode = false
-                    self.resendButton.isEnabled = true
+                    self.getSetTime()
                     let alert = UIAlertController(
                         title: "재발송 완료",
                         message: "인증번호를 다시 보냈습니다.\n이메일을 확인해주세요.",
@@ -142,6 +164,26 @@ public final class AuthCodeViewController: BaseViewController {
                     alert.addAction(UIAlertAction(title: "확인", style: .cancel))
                     self.present(alert, animated: true)
                 }
+            }
+        }
+    }
+
+    private func startResendCooldown() {
+        resendButton.isEnabled = false
+        resendCooldown = 60
+        resendButton.setTitleColor(.color.sub2.color, for: .normal)
+
+        resendTimer?.invalidate()
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            guard let self = self else { return }
+
+            self.resendCooldown -= 1
+           
+
+            if self.resendCooldown <= 0 {
+                timer.invalidate()
+                self.resendButton.isEnabled = true
+                self.resendButton.setTitleColor(.color.gomsPrimary.color, for: .normal)
             }
         }
     }
