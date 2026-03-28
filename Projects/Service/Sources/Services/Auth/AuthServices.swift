@@ -14,7 +14,7 @@ public enum AuthServices {
     case signIn(param: SignInRequest)
     case refreshToken(refreshToken: String)
     case sendAuthCode(param: SendAuthCodeRequest)
-    case verifyAuthNumber(email: String, code: String)
+    case verifyAuthNumber(email: String, code: String, purpose: String)
     case logoutToken(refreshToken: String)
 }
 
@@ -93,11 +93,11 @@ extension AuthServices: TargetType {
         case .refreshToken:
             return .requestPlain
 
-        case let .verifyAuthNumber(email, code):
+        case let .verifyAuthNumber(email, code, purpose):
             return .requestJSONEncodable([
                 "email": email,
                 "code": code,
-                "purpose": "SIGNUP"
+                "purpose": purpose
             ])
 
         case .logoutToken:

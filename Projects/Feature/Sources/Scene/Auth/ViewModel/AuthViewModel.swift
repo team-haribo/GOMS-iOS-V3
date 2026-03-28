@@ -29,8 +29,8 @@ public final class AuthViewModel: BaseViewModel {
     private var newPassword: String = ""
     private var newServePassword: String = ""
     private var name: String = ""
-    private var gender: String = ""
-    private var major: String = ""
+    private var gender: Gender = .male
+    private var major: Major = .sw
     private var emailStatus: String = ""
     private var passwordServe: String = ""
 
@@ -64,11 +64,11 @@ public final class AuthViewModel: BaseViewModel {
         self.name = name
     }
 
-    func setupGender(gender: String) {
+    func setupGender(gender: Gender) {
         self.gender = gender
     }
 
-    func setupMajor(major: String) {
+    func setupMajor(major: Major) {
         self.major = major
     }
 
