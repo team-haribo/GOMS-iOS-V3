@@ -6,10 +6,12 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import Foundation
 
-enum Major: String {
-    case sw = "SW_DEVELOP"
-    case iot = "SMART_IOT"
+public enum Major: String, Codable {
+    case sw = "SW"
+    case iot = "IOT"
     case ai = "AI"
 }
+

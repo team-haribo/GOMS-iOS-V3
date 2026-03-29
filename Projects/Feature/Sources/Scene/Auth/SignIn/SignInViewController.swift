@@ -137,40 +137,56 @@ public final class SignInViewController: BaseViewController {
         let emailRegex = "^s[0-9]{5}$"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
 
-        // 더미 계정(admin/user)은 이메일 형식 검증 예외 처리
-        if email != "admin" && email != "user" {
-            if !emailPredicate.evaluate(with: email) {
-                emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
-                showEmailError()
-                return
-            }
+        if !emailPredicate.evaluate(with: email) {
+            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+            showEmailError()
+            return
         }
 
-        //  비밀번호 일치 여부 체크
-        if password != "1234" {
-            passwordErrorLabel.text = "비밀번호가 일치하지 않습니다."
+        if password.isEmpty {
+            passwordErrorLabel.text = "비밀번호를 입력해주세요."
             showPasswordError()
             return
         }
 
-      
-        UserDefaults.standard.set("dummyToken", forKey: "accessToken")
-        UserDefaults.standard.set("dummyRefresh", forKey: "refreshToken")
-        UserDefaults.standard.set(email, forKey: "localEmail")
-        UserDefaults.standard.set(password, forKey: "localPass")
+        // MARK: - 실제 로그인 API 호출
+        viewModel.setupEmail(email: email)
+        viewModel.setupPassword(password: password)
 
-        // 더미 계정 분기 처리
-        if email == "admin" && password == "1234" {
-            let adminVC = AdminMainViewController()
-            self.navigationController?.setViewControllers([adminVC], animated: false)
-        } else if email == "user" && password == "1234" {
-            let userVC = MainViewController()
-            self.navigationController?.setViewControllers([userVC], animated: false)
-        } else {
-            passwordErrorLabel.text = "계정을 확인해주세요."
-            showPasswordError()
+        viewModel.signIn { [weak self] statusCode, authority in
+            guard let self = self else { return }
+            print("STATUS:", statusCode)
+
+            DispatchQueue.main.async {
+                if (200..<300).contains(statusCode) {
+                    
+                    UserDefaults.standard.set(email, forKey: "localEmail")
+                    UserDefaults.standard.set(password, forKey: "localPass")
+                    
+                    if authority == "ROLE_STUDENT" {
+                        let mainVC = MainViewController()
+                        self.navigationController?.setViewControllers([mainVC], animated: true)
+                        
+                    } else if authority == "ROLE_STUDENT_COUNCIL" {
+                        let adminVC = AdminMainViewController()
+                        self.navigationController?.setViewControllers([adminVC], animated: true)
+                        
+                    } else {
+                        self.passwordErrorLabel.text = "권한 정보를 확인할 수 없습니다."
+                        self.showPasswordError()
+                    }
+
+                } else if statusCode == 400 || statusCode == 403 || statusCode == 404 {
+                    self.passwordErrorLabel.text = "이메일 또는 비밀번호를 확인해주세요."
+                    self.showPasswordError()
+                    
+                } else {
+                    self.passwordErrorLabel.text = "서버 오류가 발생했습니다."
+                    self.showPasswordError()
+                }
+                
+            }
         }
-        return
     }
 
     @objc func showPasswordButtonTapped() {
@@ -375,9 +391,6 @@ extension SignInViewController: UITextFieldDelegate {
                     $0.height.equalTo(0)
                 }
                 view.layoutIfNeeded()
-            } else if email == "admin" || email == "user" {
-                // 더미 계정은 형식 검사 통과
-                showDefaultState()
             } else if !emailPredicate.evaluate(with: email) {
                 emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
                 showEmailError()

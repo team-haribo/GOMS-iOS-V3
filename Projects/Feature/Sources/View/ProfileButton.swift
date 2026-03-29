@@ -42,7 +42,7 @@ public class ProfileButton: UIButton {
         iconImage.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.width.height.equalTo(24)
-            $0.leading.equalToSuperview().inset(16)
+            $0.leading.equalToSuperview().inset(20)
         }
         
         buttonTitle.snp.makeConstraints {
@@ -52,7 +52,7 @@ public class ProfileButton: UIButton {
         
         arrowIcon.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.trailing.equalToSuperview().inset(16)
+            $0.trailing.equalToSuperview().inset(20)
         }
     }
     

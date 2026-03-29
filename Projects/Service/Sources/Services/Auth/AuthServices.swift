@@ -9,46 +9,68 @@
 import Foundation
 import Moya
 
+public struct ResetPasswordRequest: Encodable {
+    public let email: String
+    public let verifiedToken: String
+    public let newPassword: String
+
+    public init(email: String, verifiedToken: String, newPassword: String) {
+        self.email = email
+        self.verifiedToken = verifiedToken
+        self.newPassword = newPassword
+    }
+}
+
 public enum AuthServices {
     case signUp(param: SignUpRequest)
     case signIn(param: SignInRequest)
     case refreshToken(refreshToken: String)
     case sendAuthCode(param: SendAuthCodeRequest)
-    case verifyAuthNumber(email: String, authCode: String)
+    case verifyAuthNumber(email: String, code: String, purpose: String)
     case logoutToken(refreshToken: String)
+    case resetPassword(param: ResetPasswordRequest)
 }
 
 extension AuthServices: TargetType {
 
     public var baseURL: URL {
-        guard
-            let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String,
-            let url = URL(string: urlString)
-        else {
-            fatalError("AuthAPIㅣURL을 불러올 수 없습니다.")
+        guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
+            fatalError("SchoolBaseURL 찾을 수 없습니다")
         }
+
+        print("atuh baseURL string:", urlString)
+
+        guard let url = URL(string: urlString) else {
+            fatalError("auth Invalid baseURL string: \(urlString)")
+        }
+
+        print(" auth baseURL URL:", url)
+
         return url
     }
 
     public var path: String {
         switch self {
         case .signUp:
-            return "/auth/signup"
+            return "/api/v3/auth/signup"
 
         case .signIn:
-            return "/auth/signin"
+            return "/api/v3/auth/signin"
 
         case .refreshToken:
-            return "/auth/"
+            return "/api/v3/auth/reissue"
 
         case .sendAuthCode:
-            return "/auth/email/send"
+            return "/api/v3/auth/email-verifications/send"
 
         case .verifyAuthNumber:
-            return "/auth/email/verify"
+            return "/api/v3/auth/email-verifications/confirm"
 
         case .logoutToken:
-            return "/"
+            return "/api/v3/auth/signout"
+
+        case .resetPassword:
+            return "/api/v3/auth/password"
         }
     }
 
@@ -56,14 +78,13 @@ extension AuthServices: TargetType {
         switch self {
         case .signUp,
              .signIn,
-             .sendAuthCode:
+             .sendAuthCode,
+             .verifyAuthNumber:
             return .post
 
-        case .refreshToken:
+        case .refreshToken,
+             .resetPassword:
             return .patch
-
-        case .verifyAuthNumber:
-            return .get
 
         case .logoutToken:
             return .delete
@@ -71,11 +92,12 @@ extension AuthServices: TargetType {
     }
 
     public var sampleData: Data {
-        "@@".data(using: .utf8)!
+        Data()
     }
 
     public var task: Task {
         switch self {
+
         case let .signUp(param):
             return .requestJSONEncodable(param)
 
@@ -88,30 +110,29 @@ extension AuthServices: TargetType {
         case .refreshToken:
             return .requestPlain
 
-        case let .verifyAuthNumber(email, authCode):
-            return .requestParameters(
-                parameters: [
-                    "email": email,
-                    "authCode": authCode
-                ],
-                encoding: URLEncoding.queryString
-            )
+        case let .verifyAuthNumber(email, code, purpose):
+            return .requestJSONEncodable([
+                "email": email,
+                "code": code,
+                "purpose": purpose
+            ])
 
-        case let .logoutToken(refreshToken):
-            return .requestParameters(
-                parameters: ["refreshToken": refreshToken],
-                encoding: JSONEncoding.default
-            )
+        case .logoutToken:
+            return .requestPlain
+
+        case let .resetPassword(param):
+            return .requestJSONEncodable(param)
         }
     }
 
     public var headers: [String: String]? {
         switch self {
+
         case let .refreshToken(refreshToken),
              let .logoutToken(refreshToken):
             return [
                 "Content-Type": "application/json",
-                "refreshToken": refreshToken
+                "RefreshToken": "Bearer \(refreshToken)"
             ]
 
         default:

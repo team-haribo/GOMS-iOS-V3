@@ -9,10 +9,11 @@
 import UIKit
 import SnapKit
 import Then
+import Service
 
 public final class FilterBottomSheetVC: BaseViewController {
     
-    // MARK: - Properties
+    // MARK: - Propertie
     var userList: [UserData] = []
     let viewModel = StudentManagementViewModel()
     var studentManagementVC: StudentManagementViewController
@@ -106,9 +107,22 @@ public final class FilterBottomSheetVC: BaseViewController {
     }
     
     @objc func genderButtonTapped(sender: BottomSheetButton) {
-        [manButton, womanButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
-        let gender = sender.isSelected ? (sender == manButton ? "MAN" : "WOMAN") : nil
-        viewModel.setupGender(gender: gender)
+        if sender == manButton {
+            manButton.isSelected.toggle()
+            womanButton.isSelected = false
+        } else {
+            womanButton.isSelected.toggle()
+            manButton.isSelected = false
+        }
+
+        var genderValue: String? = nil
+        if manButton.isSelected {
+            genderValue = Gender.male.rawValue
+        } else if womanButton.isSelected {
+            genderValue = Gender.female.rawValue
+        }
+
+        viewModel.setupGender(gender: genderValue)
         fetchData()
     }
 

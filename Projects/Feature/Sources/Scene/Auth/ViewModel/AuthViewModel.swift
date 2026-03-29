@@ -13,32 +13,31 @@ import Foundation
 public final class AuthViewModel: BaseViewModel {
 
     private let authProvider = MoyaProvider<AuthServices>()
-    private let accountProvider = MoyaProvider<AccountServices>()
+    private let notificationViewModel = NotificationViewModel()
 
     public override init() {}
 
-    var userData: SignInModel?
-
-    public let profileModel = ProfileViewModel()
-    public let notificationViewModel = NotificationViewModel()
-
+    // MARK: - Properties
     private var email: String = ""
     private var password: String = ""
     private var authCode: String = ""
+    private var verifiedToken: String = ""
     private var newPassword: String = ""
     private var newServePassword: String = ""
     private var name: String = ""
-    private var gender: String = ""
-    private var major: String = ""
+    private var gender: Gender = .male
+    private var major: Major = .sw
+    private var grade: Int = 0
     private var emailStatus: String = ""
     private var passwordServe: String = ""
 
-    func setupEmailStatus(emailStatus: String) {
-        self.emailStatus = emailStatus
-    }
-
+    // MARK: - Setup
     func setupEmail(email: String) {
-        self.email = "\(email)@gsm.hs.kr"
+        if email.contains("@") {
+            self.email = email
+        } else {
+            self.email = "\(email)@gsm.hs.kr"
+        }
     }
 
     func setupPassword(password: String) {
@@ -49,26 +48,20 @@ public final class AuthViewModel: BaseViewModel {
         self.authCode = authCode
     }
 
-    func setupNewPassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newPassword = newPassword
-    }
-
-    func setupNewServePassword(newPassword: String, checkPassword: String) {
-        guard newPassword == checkPassword else { return }
-        self.newServePassword = newPassword
-    }
-
     func setupName(name: String) {
         self.name = name
     }
 
-    func setupGender(gender: String) {
+    func setupGender(gender: Gender) {
         self.gender = gender
     }
 
-    func setupMajor(major: String) {
+    func setupMajor(major: Major) {
         self.major = major
+    }
+
+    func setupGrade(grade: Int) {
+        self.grade = grade
     }
 
     func signIn(completion: @escaping (Int, String?) -> Void) {
@@ -86,6 +79,8 @@ public final class AuthViewModel: BaseViewModel {
                 switch response {
 
                 case .success(let result):
+                    print("LOGIN RAW RESPONSE")
+                    print(String(data: result.data, encoding: .utf8) ?? "nil")
 
                     statusCode = result.statusCode
 
@@ -98,9 +93,17 @@ public final class AuthViewModel: BaseViewModel {
 
                             self.keyChain.create(key: Const.KeyChainKey.accessToken, token: signInResponse.accessToken)
                             self.keyChain.create(key: Const.KeyChainKey.refreshToken, token: signInResponse.refreshToken)
-                            self.keyChain.create(key: Const.KeyChainKey.authority, token: signInResponse.authority)
+                           
+                            let accessToken = signInResponse.accessToken
 
-                            authority = signInResponse.authority
+                            if let payload = accessToken.split(separator: ".").dropFirst().first,
+                               let data = Data(base64Encoded: String(payload) + "=="),
+                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                               let role = json["role"] as? String {
+
+                                self.keyChain.create(key: Const.KeyChainKey.authority, token: role)
+                                authority = role
+                            }
 
                             if let savedToken = UserDefaults.standard.string(forKey: "FCMToken"),
                                let accessToken = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) {
@@ -137,156 +140,218 @@ public final class AuthViewModel: BaseViewModel {
     }
 
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
-
-        let param = SendAuthCodeRequest(email: email, emailStatus: emailStatus)
-
+        
+        let param = SendAuthCodeRequest(
+            email: email,
+            purpose: AuthPurpose.passwordChange.rawValue
+        )
+        
+        print("AUTH email:", param.email)
+        
+        if let jsonData = try? JSONEncoder().encode(param),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print("JSON:", jsonString)
+        }
+        
+    
+        print("email:", param.email)
+        print("purpose:", param.purpose)
+        
         authProvider.request(.sendAuthCode(param: param)) { response in
-
             switch response {
-
+                
             case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 404, 429:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
+                if let request = result.request {
+                    print("Request URL:", request.url?.absoluteString ?? "nil")
+                    print("HTTP Method:", request.httpMethod ?? "nil")
+                    if let headers = request.allHTTPHeaderFields {
+                        print("Headers:", headers)
+                    }
+                    if let body = request.httpBody,
+                       let bodyString = String(data: body, encoding: .utf8) {
+                        print("Body:", bodyString)
+                    } else {
+                        print("Body: nil")
+                    }
                 }
+                print("Final URL:", result.response?.url?.absoluteString ?? "nil")
 
-            case .failure(let err):
-                print(err.localizedDescription)
+                print("코드 로킹:", result.statusCode)
+                
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("body 리스폰: ", responseString)
+                }
+                
+                completion((200..<300).contains(result.statusCode), result.statusCode)
+                
+            case .failure(let error):
+                if let request = error.response?.request {
+                    print("Request URL(failure):", request.url?.absoluteString ?? "nil")
+                    print("HTTP Method(failure):", request.httpMethod ?? "nil")
+                    if let headers = request.allHTTPHeaderFields {
+                        print("Headers(failure):", headers)
+                    }
+                    if let body = request.httpBody,
+                       let bodyString = String(data: body, encoding: .utf8) {
+                        print("Body(failure):", bodyString)
+                    } else {
+                        print("Body(failure): nil")
+                    }
+                }
+                print("네트워크 에러: ", error.localizedDescription)
+                
+                if let response = error.response {
+                    print("X 코드에러 :", response.statusCode)
+                    
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("body 에러: ", responseString)
+                    }
+                }
+                
                 completion(false, 0)
             }
         }
     }
 
+    // MARK: - 인증번호 검증
     func verifyAuthCode(completion: @escaping (Bool) -> Void) {
 
-        authProvider.request(.verifyAuthNumber(email: email, authCode: authCode)) { response in
+        authProvider.request(
+            .verifyAuthNumber(
+                email: email,
+                code: authCode,
+                purpose: AuthPurpose.passwordChange.rawValue
+            )
+        ) { response in
 
             switch response {
 
             case .success(let result):
 
-                let statusCode = result.statusCode
+                guard (200..<300).contains(result.statusCode) else {
+                    print("verifyAuthCode status error: \(result.statusCode)")
+                    completion(false)
+                    return
+                }
 
-                switch statusCode {
-
-                case 200..<300:
+                do {
+                    let data = try result.map(VerifyAuthResponse.self)
+                    self.verifiedToken = data.verifiedToken
                     completion(true)
 
-                case 401, 404, 429, 500:
-                    completion(false)
-
-                default:
+                } catch {
+                    print("verifyAuthCode decode error: \(error)")
                     completion(false)
                 }
 
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("verifyAuthCode network error: \(error.localizedDescription)")
                 completion(false)
             }
         }
     }
 
-    func newPassword(completion: @escaping (Bool, Int) -> Void) {
+    // MARK: - 비밀번호 재설정
+    func resetPassword(completion: @escaping (Bool, Int) -> Void) {
 
-        let param = NewPasswordRequest(email: email, newPassword: newServePassword)
-
-        accountProvider.request(.newPassword(param: param)) { response in
-
-            switch response {
-
-            case .success(let result):
-
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
-                }
-
-            case .failure(let err):
-                print(err.localizedDescription)
-            }
+        guard !verifiedToken.isEmpty else {
+            print("verifiedToken 없음")
+            completion(false, 0)
+            return
         }
-    }
 
-    func changNewPassword(completion: @escaping (Bool, Int) -> Void) {
 
-        let param = ChangPasswordRequest(password: password, newPassword: newPassword)
+        let debugJSON: [String: Any] = [
+            "email": email,
+            "verifiedToken": verifiedToken,
+            "newPassword": password
+        ]
 
-        accountProvider.request(.changPassword(param: param, authorization: accessToken)) { response in
+        if let jsonData = try? JSONSerialization.data(withJSONObject: debugJSON, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
+        }
 
+        let param = ResetPasswordRequest(
+            email: email,
+            verifiedToken: verifiedToken,
+            newPassword: password
+        )
+
+        authProvider.request(.resetPassword(param: param)) { response in
             switch response {
 
             case .success(let result):
+                print("resetPassword statusCode:", result.statusCode)
 
-                let statusCode = result.statusCode
-
-                switch statusCode {
-
-                case 204:
-                    completion(true, statusCode)
-
-                case 400, 404, 500:
-                    completion(false, statusCode)
-
-                default:
-                    completion(false, statusCode)
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("resetPassword response:", responseString)
                 }
 
-            case .failure(let err):
-                print(err.localizedDescription)
+                completion((200..<300).contains(result.statusCode), result.statusCode)
+
+            case .failure(let error):
+                print("resetPassword error:", error.localizedDescription)
+
+                if let response = error.response {
+                    print("error statusCode:", response.statusCode)
+
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("error body:", responseString)
+                    }
+                }
+
                 completion(false, 0)
             }
         }
     }
 
+    // MARK: - 회원가입
     func signUp(completion: @escaping (Bool) -> Void) {
+        
+        print("grade:", self.grade)
+        print("verifiedToken:", verifiedToken)
+        print("SIGNUP email:", email)
+        print("FINAL name:", self.name)
+        print("FINAL password:", self.password)
+        print("FINAL major:", self.major)
+        print("FINAL gender:", self.gender)
+        
+        guard !verifiedToken.isEmpty else {
+            print("verifiedToken 없음")
+            completion(false)
+            return
+        }
 
         let param = SignUpRequest(
             email: email,
-            password: newPassword,
+            verifiedToken: verifiedToken,
+            password: password,
             name: name,
-            gender: gender,
-            major: major
+            grade: self.grade,
+            department: major,
+            gender: gender
         )
 
-        authProvider.request(.signUp(param: param)) { response in
 
+        authProvider.request(.signUp(param: param)) { response in
             switch response {
 
             case .success(let result):
-
-                switch result.statusCode {
-
-                case 201:
-                    completion(true)
-
-                case 500:
-                    completion(false)
-
-                default:
-                    completion(false)
+                print("statusCode:", result.statusCode)
+                if let responseString = String(data: result.data, encoding: .utf8) {
+                    print("response:", responseString)
                 }
+                completion((200..<300).contains(result.statusCode))
 
-            case .failure(let err):
-                print(err.localizedDescription)
+            case .failure(let error):
+                print("signUp error: \(error.localizedDescription)")
+                if let response = error.response {
+                    print("error statusCode:", response.statusCode)
+                    if let responseString = String(data: response.data, encoding: .utf8) {
+                        print("error body:", responseString)
+                    }
+                }
                 completion(false)
             }
         }

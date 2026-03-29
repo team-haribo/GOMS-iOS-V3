@@ -69,7 +69,7 @@ public final class MapViewController: UIViewController {
         }
         
         searchBar.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(64)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }

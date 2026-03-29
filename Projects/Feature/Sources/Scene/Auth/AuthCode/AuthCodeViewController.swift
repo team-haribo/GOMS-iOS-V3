@@ -15,9 +15,12 @@ public final class AuthCodeViewController: BaseViewController {
     var email: String?
 
     private var limitTime = 300
+    private var resendCooldown = 60
+    private var resendTimer: Timer?
+    private var isRequestingAuthCode = false
 
     private let pageTitleLabel = UILabel().then {
-        $0.text = "인증 번호"
+        $0.text = "인증번호"
         $0.font = .suit(size: 28, weight: .bold)
         $0.textColor = .color.mainText.color
     }
@@ -67,6 +70,22 @@ public final class AuthCodeViewController: BaseViewController {
         authCodeTextField.delegate = self
         authCodeTextField.addTarget(self, action: #selector(authCodeEditingChanged(_:)), for: .editingChanged)
         getSetTime()
+        startResendCooldown()
+        requestInitialAuthCode()
+    }
+
+    private func requestInitialAuthCode() {
+        guard let email = self.email else { return }
+        viewModel.setupEmail(email: email)
+
+        viewModel.sendAuthCode { [weak self] success, _ in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if !success {
+                    print("초기 인증번호 요청 실패 또는 지연")
+                }
+            }
+        }
     }
 
     @objc private func getSetTime() {
@@ -95,13 +114,78 @@ public final class AuthCodeViewController: BaseViewController {
     }
 
     @objc private func resendButtonTapped() {
-        let alert = UIAlertController(
-            title: "재발송 완료",
-            message:  "인증번호를 다시 보냈습니다.\n이메일을 확인해주세요.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-        self.present(alert, animated: true)
+        if isRequestingAuthCode { return }
+        isRequestingAuthCode = true
+        resendButton.isEnabled = false
+
+        guard let email = self.email else {
+            isRequestingAuthCode = false
+            resendButton.isEnabled = true
+            return
+        }
+        viewModel.setupEmail(email: email)
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if statusCode == 429 {
+                   
+                    self.startResendCooldown()
+                    self.isRequestingAuthCode = false
+
+                    let alert = UIAlertController(
+                        title: "재발송 완료",
+                        message: "잠시 후 인증번호가 도착할 수 있습니다.\n이메일을 확인해주세요.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+
+                    return
+                } else if success {
+                    self.startResendCooldown()
+                    self.limitTime = 300
+                    self.isRequestingAuthCode = false
+                    self.getSetTime()
+                    let alert = UIAlertController(
+                        title: "재발송 완료",
+                        message: "인증번호를 다시 보냈습니다.\n이메일을 확인해주세요.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                } else {
+                    self.isRequestingAuthCode = false
+                    self.resendButton.isEnabled = true
+                    let alert = UIAlertController(
+                        title: "오류",
+                        message: "인증번호 재발송에 실패했습니다.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+
+    private func startResendCooldown() {
+        resendButton.isEnabled = false
+        resendCooldown = 60
+        resendButton.setTitleColor(.color.sub2.color, for: .normal)
+
+        resendTimer?.invalidate()
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            guard let self = self else { return }
+
+            self.resendCooldown -= 1
+           
+
+            if self.resendCooldown <= 0 {
+                timer.invalidate()
+                self.resendButton.isEnabled = true
+                self.resendButton.setTitleColor(.color.gomsPrimary.color, for: .normal)
+            }
+        }
     }
 
     @objc private func authButtonTapped() {
@@ -122,37 +206,43 @@ public final class AuthCodeViewController: BaseViewController {
         }
 
      
-        if code == "1234" {
-            authCodeTextField.layer.borderWidth = 0
-            self.authCodeSuccess()
+        viewModel.verifyAuthCode { [weak self] success in
+            guard let self = self else { return }
 
-            let alert = UIAlertController(
-                title: "인증번호 확인",
-                message: "인증이 완료되었습니다.",
-                preferredStyle: .alert
-            )
+            DispatchQueue.main.async {
+                if success {
+                    self.authCodeTextField.layer.borderWidth = 0
+                    self.authCodeSuccess()
 
-            alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-
-                if self.previousViewController is FindPasswordViewController {
-                    let newPasswordVC = NewPasswordViewController(
-                        viewModel: self.viewModel,
-                        email: self.email ?? ""
+                    let alert = UIAlertController(
+                        title: "인증번호 확인",
+                        message: "인증이 완료되었습니다.",
+                        preferredStyle: .alert
                     )
-                    self.navigationController?.pushViewController(newPasswordVC, animated: true)
 
-                } else if self.previousViewController is SignUpViewController {
-                    let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
-                    self.navigationController?.pushViewController(passwordSettingVC, animated: true)
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+
+                        if self.previousViewController is FindPasswordViewController {
+                            let newPasswordVC = NewPasswordViewController(
+                                viewModel: self.viewModel,
+                                email: self.email ?? ""
+                            )
+                            self.navigationController?.pushViewController(newPasswordVC, animated: true)
+
+                        } else if self.previousViewController is SignUpViewController {
+                            let passwordSettingVC = PasswordSettingViewController(viewModel: self.viewModel)
+                            self.navigationController?.pushViewController(passwordSettingVC, animated: true)
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+
+                } else {
+                    self.authCodeTextField.layer.borderWidth = 1
+                    self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
+                    self.authCodeError()
                 }
-            })
-
-            self.present(alert, animated: true)
-
-        } else {
-            authCodeTextField.layer.borderWidth = 1
-            authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
-            authCodeError()
+            }
         }
     }
 
@@ -303,7 +393,7 @@ extension AuthCodeViewController: UITextFieldDelegate {
             let currentText = textField.text ?? ""
             guard let stringRange = Range(range, in: currentText) else { return false }
             let updatedText = currentText.replacingCharacters(in: stringRange, with: string)
-            return updatedText.count <= 4
+            return updatedText.count <= 6
         }
         return true
     }

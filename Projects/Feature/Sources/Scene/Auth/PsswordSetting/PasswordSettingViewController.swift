@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class PasswordSettingViewController: BaseViewController {
 
@@ -107,7 +108,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {
@@ -146,7 +147,7 @@ public final class PasswordSettingViewController: BaseViewController {
         let password = passwordTextField.text ?? ""
         let confirm = checkPasswordTextField.text ?? ""
 
-        // 입력 없으면 초기 상태
+     
         if confirm.isEmpty {
             passwordMatchError.isHidden = true
             checkPasswordTextField.setPlaceholderColor(.color.sub2.color)
@@ -155,7 +156,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        // 비밀번호가 같으면 즉시 에러 제거
+      
         if password == confirm {
             passwordMatchError.isHidden = true
             checkPasswordTextField.layer.borderColor = UIColor.clear.cgColor
@@ -163,7 +164,7 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        // 다르면 에러 표시
+    
         passwordMatchError.isHidden = false
         checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
         checkPasswordTextField.layer.borderWidth = 1
@@ -184,7 +185,7 @@ public final class PasswordSettingViewController: BaseViewController {
         }
 
         let password = passwordTextField.text ?? ""
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}$"
+        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {
@@ -214,33 +215,45 @@ public final class PasswordSettingViewController: BaseViewController {
             checkPasswordTextField.layer.borderWidth = 0
         }
 
-        viewModel.setupNewPassword(
-            newPassword: passwordTextField.text ?? "",
-            checkPassword: checkPasswordTextField.text ?? ""
-        )
+        viewModel.setupPassword(password: passwordTextField.text ?? "")
 
-       
-        self.signUpSuccessUI()
+        loader.modalPresentationStyle = .overFullScreen
+        present(loader, animated: false)
 
-        let alert = UIAlertController(
-            title: "회원가입 완료",
-            message: "회원가입이 완료되었습니다.",
-            preferredStyle: .alert
-        )
+        viewModel.signUp { [weak self] success in
+            guard let self = self else { return }
 
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            DispatchQueue.main.async {
+                self.loader.dismiss(animated: false)
 
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
+                if success {
+                    self.signUpSuccessUI()
 
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
+                    let alert = UIAlertController(
+                        title: "회원가입 완료",
+                        message: "회원가입이 완료되었습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+                } else {
+                    print("회원가입 실패")
+                }
             }
-        })
+        }
 
-        self.present(alert, animated: true)
+        return
     }
 
     private func signUpSuccessUI() {
@@ -371,10 +384,7 @@ extension PasswordSettingViewController: UITextFieldDelegate {
 
     public func textFieldDidChange(_ textField: UITextField) {
         if textField == passwordTextField {
-            viewModel.setupNewPassword(
-                newPassword: textField.text ?? "",
-                checkPassword: checkPasswordTextField.text ?? ""
-            )
+            viewModel.setupPassword(password: textField.text ?? "")
         }
     }
 

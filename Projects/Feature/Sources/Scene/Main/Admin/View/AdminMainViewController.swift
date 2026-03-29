@@ -8,6 +8,7 @@
 
 import UIKit
 import Kingfisher
+import Service
 
 public class AdminMainViewController: BaseViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
@@ -29,15 +30,23 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.translatesAutoresizingMaskIntoConstraints = false
     }
 
-    var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
-        didSet {
-            updateLayout()
-        }
+var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
+    didSet {
+        basicsProfileView.isClockOn = isClockOn
+        profileView.isClockOn = isClockOn
+        updateLayout()
     }
+}
 
     let content = UIView()
 
-    private let logo = UIImageView(image: .image.gomsLightGrayLogo.image)
+    private let logo = UIImageView().then {
+        $0.image = UIImage(
+            named: "graylogo",
+            in: Bundle.module,
+            compatibleWith: nil
+        )
+    }
 
     private lazy var adminMenuButton = ExpandableButton().then {
         $0.setBackgroundImage(.image.adminMenu.image, for: .normal)
@@ -91,7 +100,12 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.backgroundColor = .clear
     }
 
-    private let tabBar = TabBar()
+private let tabBar = TabBar()
+
+private let mapContainerView = UIView()
+private let mapVC = MapViewController()
+private let profileContainerView = UIView()
+private let profileVC = AdminProfileViewController()
     
     private lazy var qrButton = AdminQRButton(
         frame: CGRect(x: 0, y: 0, width: 64, height: 64),
@@ -122,6 +136,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         super.viewWillAppear(animated)
 
         isVisible = true
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         viewModel.getLateList { [weak self] in
             self?.viewModel.getOutingList { [weak self] in
@@ -159,6 +174,18 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         refreshControl.beginRefreshing()
         fetchData()
         bindTabBar()
+        setupMapContainer()
+        setupProfileContainer()
+
+        mapContainerView.isHidden = true
+        profileContainerView.isHidden = true
+
+       
+        view.bringSubviewToFront(mapContainerView)
+        view.bringSubviewToFront(profileContainerView)
+        view.bringSubviewToFront(tabBar)
+        view.bringSubviewToFront(qrButton)
+        view.bringSubviewToFront(codeButton)
     }
 
 
@@ -322,24 +349,33 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             basicsProfileView.profileImageView.image = .image.profile.image
         }
 
-        profileView.nameLabel.text = viewModel.profileData?.name
-        basicsProfileView.nameLabel.text = viewModel.profileData?.name
-        basicsProfileView.lateCountLabel.isHidden = true
-
+        let majorText: String
         if viewModel.profileData?.major == Major.sw.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW개발"
+            majorText = "SW개발"
         } else if viewModel.profileData?.major == Major.iot.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | IoT"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"
+            majorText = "IoT"
         } else {
-            profileView.studentInformationLabel.text = "\(grade)기 | AI"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
+            majorText = "AI"
         }
 
-        basicsProfileView.myOutingStatusLabel.text = "관리자"
-        basicsProfileView.myOutingStatusLabel.textColor = .color.admin.color
+        profileView.nameLabel.text = viewModel.profileData?.name
+        profileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
+        profileView.isAdmin = true
+
+        basicsProfileView.configure(
+            name: viewModel.profileData?.name ?? "",
+            studentInfo: "\(grade)기 | \(majorText)",
+            lateCount: 0,
+            outingStatus: "관리자",
+            isAdmin: true
+        )
+
         profileView.profileStatus.text = "관리자"
+        profileView.profileStatus.textColor = .color.admin.color
+
+        profileView.lateCountLabel.isHidden = true
+        profileView.lateCountLabel.text = ""
+        profileView.isClockOn = isClockOn
     }
 
 
@@ -347,27 +383,45 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         tabBar.onTabSelected = { [weak self] tab in
             guard let self = self else { return }
 
+            self.tabBar.updateSelectedTab(tab)
+
             switch tab {
             case .home:
-               
-                let adminVC = AdminMainViewController()
-                self.navigationController?.setViewControllers([adminVC], animated: false)
+                self.mapContainerView.isHidden = true
+                self.profileContainerView.isHidden = true
+                self.scrollView.isHidden = false
+                self.qrButton.isHidden = false
+                self.codeButton.isHidden = false
             case .map:
-                let mapVC = MapViewController()
-
-                
-                let transition = CATransition()
-                transition.duration = 0.25
-                transition.type = .push
-                transition.subtype = .fromLeft
-                navigationController?.view.layer.add(transition, forKey: kCATransition)
-
-                self.navigationController?.pushViewController(mapVC, animated: false)
+                self.mapContainerView.isHidden = false
+                self.profileContainerView.isHidden = true
+                self.scrollView.isHidden = true
+                self.qrButton.isHidden = true
+                self.codeButton.isHidden = true
             case .profile:
-                let profileVC = AdminProfileViewController()
-                self.navigationController?.setViewControllers([profileVC], animated: false)
+                self.mapContainerView.isHidden = true
+                self.profileContainerView.isHidden = false
+                self.scrollView.isHidden = true
+                self.qrButton.isHidden = true
+                self.codeButton.isHidden = true
             }
         }
+    }
+
+    private func setupMapContainer() {
+        addChild(mapVC)
+        mapContainerView.addSubview(mapVC.view)
+        mapVC.view.frame = mapContainerView.bounds
+        mapVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        mapVC.didMove(toParent: self)
+    }
+
+    private func setupProfileContainer() {
+        addChild(profileVC)
+        profileContainerView.addSubview(profileVC.view)
+        profileVC.view.frame = profileContainerView.bounds
+        profileVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        profileVC.didMove(toParent: self)
     }
     // MARK: - Selector
     @objc func moreOutingStatusButtonTapped() {
@@ -435,6 +489,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
+        view.addSubview(mapContainerView)
+        view.addSubview(profileContainerView)
         view.addSubview(tabBar)
         view.addSubview(qrButton)
         view.addSubview(codeButton)
@@ -474,9 +530,9 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
         logo.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(20)
-            $0.top.equalTo(contentView.snp.top).offset(20)
-            $0.height.equalTo(24)
-            $0.width.equalTo(87)
+            $0.top.equalTo(contentView.snp.top)
+            $0.height.equalTo(56)
+            $0.width.equalTo(135)
         }
 
 
@@ -498,6 +554,18 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.leading.trailing.equalToSuperview()
             $0.top.equalTo(latecomerCollectionView.snp.bottom).offset(24)
             $0.bottom.equalTo(contentView.snp.bottom).offset(-100)
+        }
+
+        mapContainerView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
+        }
+
+        profileContainerView.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(tabBar.snp.top)
         }
 
         outingStatusLabel.snp.makeConstraints {
@@ -524,6 +592,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
         }
+
+        
     }
 
     func updateLayout() {
@@ -553,6 +623,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             basicsProfileView.isHidden = false
         }
 
+        basicsProfileView.isClockOn = isClockOn
+        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
     }
 

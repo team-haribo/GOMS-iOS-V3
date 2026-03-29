@@ -30,6 +30,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
         didSet {
+            profileView.isClockOn = isClockOn
             updateLayout()
         }
     }
@@ -137,6 +138,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         navigationController?.pushViewController(outingVC, animated: true)
     }
 
+    
     @objc func qrButtonTapped() {
         qrButton.isUserInteractionEnabled = false
 
@@ -240,6 +242,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         isVisible = true
+                isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         mainViewModel.getLateList { [weak self] in
             self?.mainViewModel.getOutingList { [weak self] in
@@ -271,6 +274,13 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         configureRefreshControl()
         updateSelectedTab()
         refreshControl.beginRefreshing()
+      
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleClockChanged),
+            name: Notification.Name("clockChanged"),
+            object: nil
+        )
     }
 
     func configureRefreshControl() {
@@ -289,32 +299,35 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             self.refreshControl.endRefreshing()
             return
         }
-
+        
         authViewModel.setupEmail(email: isLocalEmail)
         authViewModel.setupPassword(password: isLocalPass)
-
-        authViewModel.signIn { [weak self] statusCode, _ in
+        
+        
+        authViewModel.signIn { [weak self] (statusCode: Int, _) in
             guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 guard self.isVisible else {
                     self.refreshControl.endRefreshing()
                     return
                 }
-
+                
                 switch statusCode {
                 case 200:
                     self.profileViewModel.loadProfileInfo { [weak self] success, authority in
                         guard let self = self else { return }
+                        
                         DispatchQueue.main.async {
                             guard self.isVisible else {
                                 self.refreshControl.endRefreshing()
                                 return
                             }
-
+                            
                             if success {
                                 if let authority = self.profileViewModel.profileInfo?.authority {
                                     let currentVC = self.navigationController?.viewControllers.last
-
+                                    
                                     switch authority {
                                     case "ROLE_STUDENT_COUNCIL":
                                         if !(currentVC is AdminMainViewController) {
@@ -327,30 +340,28 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                             self.navigationController?.setViewControllers([mainVC], animated: false)
                                         }
                                     default:
-                                        print("권한이 없습니다.")
+                                        print("권한 없음")
                                     }
                                 }
                             } else {
-                                print("프로필 정보를 불러오는데 실패했습니다.")
+                                print("프로필 로드 실패")
                             }
-
+                            
                             self.refreshControl.endRefreshing()
                         }
                     }
-                case 400:
-                    print("400")
+                    
+                case 400, 404:
+                    print("클라이언트 에러")
                     self.refreshControl.endRefreshing()
-                case 404:
-                    print("404")
-                    self.refreshControl.endRefreshing()
+                    
                 default:
-                    print("error")
+                    print("서버 에러")
                     self.refreshControl.endRefreshing()
                 }
             }
         }
     }
-
     private func fetchData() {
         let group = DispatchGroup()
 
@@ -464,24 +475,27 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
         }
         basicsProfileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
+        profileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
 
-        if let isBlackList = mainViewModel.profileData?.isBlackList, let isOuting = mainViewModel.profileData?.isOuting {
-            if isBlackList {
-                profileView.profileStatus.text = "외출 금지"
-                profileView.profileStatus.textColor = .color.gomsNegative.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 금지"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
-            } else if isOuting {
-                profileView.profileStatus.text = "외출 중"
-                profileView.profileStatus.textColor = .color.gomsPrimary.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
-            } else {
-                profileView.profileStatus.text = "외출 대기 중"
-                profileView.profileStatus.textColor = .color.sub1.color
-                basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
-                basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
-            }
+        
+        let isBlackList = false
+        let isOuting = true
+
+        if isBlackList {
+            profileView.profileStatus.text = "외출 금지"
+            profileView.profileStatus.textColor = .color.gomsNegative.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 금지"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
+        } else if isOuting {
+            profileView.profileStatus.text = "외출 중"
+            profileView.profileStatus.textColor = .color.gomsPrimary.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.gomsPrimary.color
+        } else {
+            profileView.profileStatus.text = "외출 대기 중"
+            profileView.profileStatus.textColor = .color.sub1.color
+            basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
+            basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
         }
     }
 
@@ -646,7 +660,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.isHidden = false
         }
 
+        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
+    }
+
+    @objc private func handleClockChanged() {
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
     }
 
     // MARK: - UICollectionViewDataSource

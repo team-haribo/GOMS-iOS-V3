@@ -9,17 +9,29 @@
 import Foundation
 
 public struct SignUpRequest: Codable {
-    var email: String
-    var password: String
-    var name: String
-    var gender: String
-    var major: String
-    
-    public init(email: String, password: String, name: String, gender: String, major: String) {
+    let email: String
+    let verifiedToken: String
+    let password: String
+    let name: String
+    let grade: Int
+    let department: Major
+    let gender: Gender
+
+    public init(
+        email: String,
+        verifiedToken: String,
+        password: String,
+        name: String,
+        grade: Int,
+        department: Major,
+        gender: Gender
+    ) {
         self.email = email
+        self.verifiedToken = verifiedToken
         self.password = password
         self.name = name
+        self.grade = grade
+        self.department = department
         self.gender = gender
-        self.major = major
     }
 }

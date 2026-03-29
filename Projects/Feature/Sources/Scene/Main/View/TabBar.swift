@@ -51,6 +51,10 @@ public final class TabBar: UIView {
             updateSelectedState()
         }
     }
+
+    public func updateSelectedTab(_ tab: TabType) {
+        selectedTab = tab
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)

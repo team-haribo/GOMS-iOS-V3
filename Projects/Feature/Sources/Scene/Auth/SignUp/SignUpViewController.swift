@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Service
 
 public final class SignUpViewController: BaseViewController {
 
@@ -67,6 +68,42 @@ public final class SignUpViewController: BaseViewController {
         $0.addTarget(self, action: #selector(departmentButtonTapped), for: .touchUpInside)
     }
 
+    lazy var gradeTextField = GOMSTextFieldButton(frame: .zero, title: "기수").then {
+        $0.addTarget(self, action: #selector(gradeButtonTapped), for: .touchUpInside)
+    }
+    @objc private func gradeButtonTapped() {
+        view.endEditing(true)
+
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        let tenAction = UIAlertAction(title: "10기", style: .default) { _ in
+            self.gradeTextField.setTitle("10기", for: .normal)
+            self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
+            self.gradeTextField.layer.borderWidth = 0
+            self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 10)
+        }
+
+        let nineAction = UIAlertAction(title: "9기", style: .default) { _ in
+            self.gradeTextField.setTitle("9기", for: .normal)
+            self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
+            self.gradeTextField.layer.borderWidth = 0
+            self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 9)
+        }
+
+        let eightAction = UIAlertAction(title: "8기", style: .default) { _ in
+            self.gradeTextField.setTitle("8기", for: .normal)
+            self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
+            self.gradeTextField.layer.borderWidth = 0
+            self.gradeTextField.layer.borderColor = UIColor.clear.cgColor
+            self.viewModel.setupGrade(grade: 8)
+        }
+
+        [tenAction, nineAction, eightAction].forEach { alert.addAction($0) }
+        present(alert, animated: true)
+    }
+
     private lazy var authCodeButton = GOMSButton(frame: .zero, title: "인증번호 받기").then {
         $0.addTarget(self, action: #selector(authCodeButtonTapped), for: .touchUpInside)
         $0.isEnabled = false
@@ -94,7 +131,7 @@ public final class SignUpViewController: BaseViewController {
         let menAction = UIAlertAction(title: "남성", style: .default) { _ in
             self.genderTextField.setTitle("남성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupGender(gender: Gender.man.rawValue)
+            self.viewModel.setupGender(gender: .male)
             self.genderTextField.layer.borderWidth = 0
             self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -102,7 +139,7 @@ public final class SignUpViewController: BaseViewController {
         let womanAction = UIAlertAction(title: "여성", style: .default) { _ in
             self.genderTextField.setTitle("여성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupGender(gender: Gender.man.rawValue)
+            self.viewModel.setupGender(gender: .female)
             self.genderTextField.layer.borderWidth = 0
             self.genderTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -119,7 +156,7 @@ public final class SignUpViewController: BaseViewController {
         let swAction = UIAlertAction(title: "SW개발과", style: .default) { _ in
             self.majorTextField.setTitle("SW개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.sw.rawValue)
+            self.viewModel.setupMajor(major: .sw)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -127,7 +164,7 @@ public final class SignUpViewController: BaseViewController {
         let iotAction = UIAlertAction(title: "스마트IoT과", style: .default) { _ in
             self.majorTextField.setTitle("스마트IoT과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.iot.rawValue)
+            self.viewModel.setupMajor(major: .iot)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -135,7 +172,7 @@ public final class SignUpViewController: BaseViewController {
         let aiAction = UIAlertAction(title: "AI개발과", style: .default) { _ in
             self.majorTextField.setTitle("AI개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
-            self.viewModel.setupMajor(major: Major.ai.rawValue)
+            self.viewModel.setupMajor(major: .ai)
             self.majorTextField.layer.borderWidth = 0
             self.majorTextField.layer.borderColor = UIColor.clear.cgColor
         }
@@ -147,12 +184,15 @@ public final class SignUpViewController: BaseViewController {
     @objc private func authCodeButtonTapped() {
         let name = nameTextField.text ?? ""
         let email = emailTextField.text ?? ""
+        viewModel.setupEmail(email: email)
 
         nameErrorLabel.isHidden = true
         emailErrorLabel.isHidden = true
 
         nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
         emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        
+        defaultDomain.textColor = .color.sub2.color
 
         if name.isEmpty {
             nameErrorLabel.isHidden = false
@@ -185,6 +225,8 @@ public final class SignUpViewController: BaseViewController {
                     .foregroundColor: UIColor.color.gomsNegative.color
                 ]
             )
+            
+            defaultDomain.textColor = .color.gomsNegative.color
 
             view.layoutIfNeeded()
             return
@@ -202,8 +244,10 @@ public final class SignUpViewController: BaseViewController {
         }
 
         
+        
         let gender = genderTextField.title(for: .normal) ?? ""
         let major = majorTextField.title(for: .normal) ?? ""
+        let grade = gradeTextField.title(for: .normal) ?? ""
 
         if gender == "성별" {
             genderTextField.layer.borderWidth = 1
@@ -217,13 +261,41 @@ public final class SignUpViewController: BaseViewController {
             return
         }
 
-        let authCodeVC = AuthCodeViewController(
-            viewModel: self.viewModel,
-            previousViewController: self,
-            email: email
-        )
+        if grade == "기수" {
+            gradeTextField.layer.borderWidth = 1
+            gradeTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
+            return
+        }
 
-        self.navigationController?.pushViewController(authCodeVC, animated: true)
+        
+        loader.modalPresentationStyle = .overFullScreen
+        present(loader, animated: false)
+
+        print("Controller → ViewModel 호출 직전")
+        print("name:", name)
+        print("email(raw):", email)
+        print("gender:", gender)
+        print("major:", major)
+        print("grade:", grade)
+
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
+                self.loader.dismiss(animated: false)
+
+                if success {
+                    let authCodeVC = AuthCodeViewController(
+                        viewModel: self.viewModel,
+                        previousViewController: self,
+                        email: email + "@gsm.hs.kr"
+                    )
+                    self.navigationController?.pushViewController(authCodeVC, animated: true)
+                } else {
+                    print("인증번호 요청 실패: \(statusCode)")
+                }
+            }
+        }
     }
 
 
@@ -238,6 +310,7 @@ public final class SignUpViewController: BaseViewController {
          emailErrorLabel,
          genderTextField,
          majorTextField,
+         gradeTextField,
          authCodeButton]
             .forEach { view.addSubview($0) }
     }
@@ -250,42 +323,51 @@ public final class SignUpViewController: BaseViewController {
         }
 
         nameTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
             $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
             $0.height.equalTo(56)
         }
 
         nameErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(nameTextField.snp.trailing)
-            $0.top.equalTo(nameTextField.snp.bottom).offset(8)
+            $0.top.equalTo(nameTextField.snp.bottom).offset(4)
             $0.height.equalTo(0)
         }
 
         emailTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(nameErrorLabel.snp.bottom).offset(16)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(nameErrorLabel.snp.bottom).offset(12)
             $0.height.equalTo(56)
         }
 
         emailErrorLabel.snp.makeConstraints {
             $0.trailing.equalTo(emailTextField.snp.trailing)
-            $0.top.equalTo(emailTextField.snp.bottom).offset(8)
+            $0.top.equalTo(emailTextField.snp.bottom).offset(4)
             $0.height.equalTo(0)
         }
 
+
+
         genderTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(emailErrorLabel.snp.bottom).offset(16)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(emailErrorLabel.snp.bottom).offset(12)
             $0.height.equalTo(56)
         }
 
         majorTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
             $0.top.equalTo(genderTextField.snp.bottom).offset(16)
+            $0.height.equalTo(56)
+        }
+
+        gradeTextField.snp.makeConstraints {
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(majorTextField.snp.bottom).offset(16)
             $0.height.equalTo(56)
         }
 
@@ -332,6 +414,9 @@ public final class SignUpViewController: BaseViewController {
 
         emailTextField.layer.borderWidth = 0
         emailTextField.layer.borderColor = UIColor.clear.cgColor
+        
+        defaultDomain.textColor = .color.sub2.color
+        
         emailTextField.attributedPlaceholder = NSAttributedString(
             string: "이메일을 입력해주세요",
             attributes: [

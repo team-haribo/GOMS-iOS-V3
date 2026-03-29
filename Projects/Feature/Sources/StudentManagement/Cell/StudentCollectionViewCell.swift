@@ -10,6 +10,7 @@ import UIKit
 import SnapKit
 import Then
 import Kingfisher
+import Service
 
 public final class StudentCollectionViewCell: UICollectionViewCell {
     static let identifier = "StudentCell"

@@ -122,7 +122,7 @@ public final class MainViewModel: BaseViewModel {
     func getProfile(completion: @escaping (String?) -> Void) {
         if isTestMode {
             self.profileData = ProfileData(profileUrl: nil,
-                                           name: "테스트 사용자",
+                                           name: "김준표",
                                            grade: 3,
                                            major: "SW",
                                            authority: "ROLE_STUDENT",

@@ -79,12 +79,7 @@ public final class GOMSRefreshToken {
             key: Const.KeyChainKey.refreshToken
         )
 
-        let authorityUpdated = keychain.updateItem(
-            token: reissuanceData?.authority ?? "",
-            key: Const.KeyChainKey.authority
-        )
-
-        if accessTokenUpdated && refreshTokenUpdated && authorityUpdated {
+        if accessTokenUpdated && refreshTokenUpdated {
             print("keychain update success")
         } else {
             print("keychain update failed")
