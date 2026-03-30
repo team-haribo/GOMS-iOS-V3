@@ -14,9 +14,9 @@ public final class ReportListViewController: BaseViewController {
     
     private let viewModel = ReportListViewModel()
     
-    private lazy var backButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
@@ -30,7 +30,6 @@ public final class ReportListViewController: BaseViewController {
         $0.font = .suit(size: 26, weight: .bold)
     }
     
-    // 민선님이 만든 GOMSSearchBar 그대로 사용
     private let searchBar = GOMSSearchBar().then {
         $0.textField.attributedPlaceholder = NSAttributedString(
             string: "학생 검색",
@@ -47,12 +46,6 @@ public final class ReportListViewController: BaseViewController {
         $0.font = .suit(size: 20, weight: .bold)
     }
     
-    private lazy var filterButton = UIButton().then {
-        $0.setImage(UIImage(systemName: "line.3.horizontal.decrease"), for: .normal)
-        $0.tintColor = UIColor.color.admin.color
-        $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-    }
-    
     private lazy var reportCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
         $0.backgroundColor = .clear
         $0.showsVerticalScrollIndicator = false
@@ -67,64 +60,71 @@ public final class ReportListViewController: BaseViewController {
         $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
     }
 
+    // MARK: - LifeCycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
-        setupSearchBar()
         viewModel.loadMockData()
     }
     
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 네이티브 네비게이션 바 숨김
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // 디테일 뷰에서 사용하신 방식: BaseViewController가 추가한 height 100짜리 navView를 찾아 삭제
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
+        }
+    }
+
     private func setupCollectionView() {
         reportCollectionView.dataSource = self
         reportCollectionView.delegate = self
         reportCollectionView.register(ReportCollectionViewCell.self, forCellWithReuseIdentifier: ReportCollectionViewCell.identifier)
     }
 
-    private func setupSearchBar() {
-        searchBar.textField.addTarget(self, action: #selector(searchTextFieldDidChange), for: .editingChanged)
-    }
-    
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
     }
     
-    @objc private func searchTextFieldDidChange(_ textField: UITextField) {
-        print("입력된 이름: \(textField.text ?? "")")
-    }
-    
-    @objc private func filterButtonTapped() { }
     @objc private func createQRButtonTapped() { }
 
+    // MARK: - UI
     public override func addView() {
-        [backButton, titleLabel, searchBar, resultLabel, filterButton, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
+        [customBackButton, titleLabel, searchBar, resultLabel, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
+        
+        // 내 커스텀 버튼이 가장 앞으로 오도록 보장
+        view.bringSubviewToFront(customBackButton)
     }
     
     public override func setLayout() {
-        backButton.snp.makeConstraints {
+        customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(backButton.snp.bottom).offset(16)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().offset(24)
         }
         searchBar.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(48)
+            $0.height.equalTo(52)
         }
         resultLabel.snp.makeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(28)
             $0.leading.equalToSuperview().offset(24)
         }
-        filterButton.snp.makeConstraints {
-            $0.centerY.equalTo(resultLabel)
-            $0.trailing.equalToSuperview().inset(24)
-            $0.size.equalTo(24)
-        }
         reportCollectionView.snp.makeConstraints {
             $0.top.equalTo(resultLabel.snp.bottom).offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
         }
         createQRButton.snp.makeConstraints {
@@ -147,11 +147,16 @@ extension ReportListViewController: UICollectionViewDataSource, UICollectionView
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 69)
+        return CGSize(width: 335, height: 120)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 0
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let detailVC = ReportDetailViewController()
+        detailVC.reportData = viewModel.reports[indexPath.row]
         self.navigationController?.pushViewController(detailVC, animated: true)
     }
 }

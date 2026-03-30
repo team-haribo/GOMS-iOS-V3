@@ -12,10 +12,11 @@ import Then
 
 public final class ReportDetailViewController: BaseViewController {
     
-    // MARK: - UI Components
-    private lazy var backButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
+    public var reportData: ReportData?
+    
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
@@ -23,67 +24,162 @@ public final class ReportDetailViewController: BaseViewController {
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
 
-    // 학생 정보 섹션 (셀 스타일과 통일)
-    private let profileImageView = UIImageView().then {
-        $0.backgroundColor = UIColor.color.sub1.color.withAlphaComponent(0.2)
-        $0.layer.cornerRadius = 32
-        $0.clipsToBounds = true
+    private let titleLabel = UILabel().then {
+        $0.text = "신고 조회"
+        $0.font = .suit(size: 26, weight: .bold)
+        $0.textColor = UIColor.color.mainText.color
     }
-    
-    private let nameLabel = UILabel().then {
-        $0.text = "김민선"
+
+    private let statusLabel = UILabel().then {
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = UIColor.color.admin.color
+    }
+
+    private let reporterTitleLabel = UILabel().then {
+        $0.text = "신고자"
         $0.font = .suit(size: 20, weight: .bold)
         $0.textColor = UIColor.color.mainText.color
     }
-    
-    private let infoLabel = UILabel().then {
-        $0.text = "3기 | AI과"
-        $0.font = .suit(size: 16, weight: .medium)
-        $0.textColor = UIColor.color.sub1.color
+
+    private let reporterProfileImageView = UIImageView().then {
+        $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        $0.layer.cornerRadius = 24
+        $0.clipsToBounds = true
+        $0.backgroundColor = .lightGray
     }
 
-    // 신고 상세 섹션
+    private let reporterNameLabel = UILabel().then {
+        $0.font = .suit(size: 20, weight: .semibold)
+        $0.textColor = UIColor.color.mainText.color
+    }
+
+    private let reporterInfoLabel = UILabel().then {
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = UIColor.color.sub2.color
+    }
+
     private let contentTitleLabel = UILabel().then {
         $0.text = "신고 내용"
         $0.font = .suit(size: 18, weight: .bold)
         $0.textColor = UIColor.color.mainText.color
     }
-    
+
+    private let contentContainerView = UIView().then {
+        $0.backgroundColor = UIColor.color.surface.color
+        $0.layer.cornerRadius = 12
+    }
+
     private let contentLabel = UILabel().then {
-        $0.text = "무단 외출 후 복귀하지 않았습니다."
-        $0.font = .suit(size: 16, weight: .regular)
-        $0.textColor = UIColor.color.mainText.color
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = UIColor.color.sub1.color
         $0.numberOfLines = 0
     }
-    
-    private let locationTitleLabel = UILabel().then {
-        $0.text = "신고 장소"
-        $0.font = .suit(size: 18, weight: .bold)
-        $0.textColor = UIColor.color.mainText.color
+
+    private let contentTimeLabel = UILabel().then {
+        $0.font = .suit(size: 14, weight: .medium)
+        $0.textColor = UIColor.color.sub2.color
     }
-    
-    private let locationLabel = UILabel().then {
-        $0.text = "담소"
-        $0.font = .suit(size: 16, weight: .regular)
-        $0.textColor = UIColor.color.mainText.color
-    }
-    
-    private let timeTitleLabel = UILabel().then {
-        $0.text = "신고 시간"
-        $0.font = .suit(size: 18, weight: .bold)
-        $0.textColor = UIColor.color.mainText.color
-    }
-    
-    private let timeLabel = UILabel().then {
-        $0.text = "2026.03.29 14:30"
-        $0.font = .suit(size: 16, weight: .regular)
+
+    private let targetTitleLabel = UILabel().then {
+        $0.text = "신고 대상자"
+        $0.font = .suit(size: 20, weight: .bold)
         $0.textColor = UIColor.color.mainText.color
     }
 
-    // MARK: - Lifecycle
+    private let targetProfileImageView = UIImageView().then {
+        $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        $0.layer.cornerRadius = 24
+        $0.clipsToBounds = true
+        $0.backgroundColor = .lightGray
+    }
+
+    private let targetNameLabel = UILabel().then {
+        $0.font = .suit(size: 20, weight: .semibold)
+        $0.textColor = UIColor.color.mainText.color
+    }
+
+    private let targetInfoLabel = UILabel().then {
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = UIColor.color.sub2.color
+    }
+
+    private let reviewTitleLabel = UILabel().then {
+        $0.text = "후기 내용"
+        $0.font = .suit(size: 18, weight: .bold)
+        $0.textColor = UIColor.color.mainText.color
+    }
+
+    private let reviewContainerView = UIView().then {
+        $0.backgroundColor = UIColor.color.surface.color
+        $0.layer.cornerRadius = 12
+    }
+
+    private let reviewLabel = UILabel().then {
+        $0.font = .suit(size: 16, weight: .medium)
+        $0.textColor = UIColor.color.sub1.color
+        $0.numberOfLines = 0
+    }
+
+    private let reviewLocationAndTimeLabel = UILabel().then {
+        $0.font = .suit(size: 14, weight: .medium)
+        $0.textColor = UIColor.color.sub2.color
+        $0.textAlignment = .right
+    }
+
+    private let rejectButton = UIButton().then {
+        $0.setTitle("기각", for: .normal)
+        $0.setTitleColor(UIColor.color.sub2.color, for: .normal)
+        $0.backgroundColor = UIColor.color.surface.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .semibold)
+        $0.layer.cornerRadius = 12
+    }
+
+    private let deleteButton = UIButton().then {
+        $0.setTitle("리뷰 삭제", for: .normal)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = UIColor.color.gomsNegative.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .semibold)
+        $0.layer.cornerRadius = 12
+    }
+
     public override func viewDidLoad() {
         super.viewDidLoad()
+        updateUI()
     }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
+        }
+    }
+    
+    private func updateUI() {
+            guard let data = reportData else { return }
+            if data.reportStatus == "RECEIVED" {
+                statusLabel.text = "처리전 "
+                statusLabel.textColor = UIColor.color.admin.color
+            } else {
+                statusLabel.text = "처리완료"
+                statusLabel.textColor = UIColor.color.sub2.color
+            }
+            reporterNameLabel.text = data.reviewerName
+            reporterInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
+            contentLabel.text = data.reportContent
+            contentTimeLabel.text = data.reportCreatedAt
+            targetNameLabel.text = data.reviewerName
+            targetInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
+            reviewLabel.text = "내용이 비어있습니다."
+            reviewLocationAndTimeLabel.text = "\(data.location) | \(data.reportCreatedAt)"
+        }
     
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
@@ -91,67 +187,130 @@ public final class ReportDetailViewController: BaseViewController {
 
     public override func addView() {
         [
-            backButton, profileImageView, nameLabel, infoLabel,
-            contentTitleLabel, contentLabel,
-            locationTitleLabel, locationLabel,
-            timeTitleLabel, timeLabel
+            customBackButton, titleLabel, statusLabel,
+            reporterTitleLabel, reporterProfileImageView, reporterNameLabel, reporterInfoLabel,
+            contentTitleLabel, contentContainerView, contentTimeLabel,
+            targetTitleLabel, targetProfileImageView, targetNameLabel, targetInfoLabel,
+            reviewTitleLabel, reviewContainerView, reviewLocationAndTimeLabel,
+            rejectButton, deleteButton
         ].forEach { view.addSubview($0) }
+        
+        contentContainerView.addSubview(contentLabel)
+        reviewContainerView.addSubview(reviewLabel)
+        
+        view.bringSubviewToFront(customBackButton)
     }
 
     public override func setLayout() {
-        backButton.snp.makeConstraints {
+        customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         
-        // 프로필 중앙 배치
-        profileImageView.snp.makeConstraints {
-            $0.top.equalTo(backButton.snp.bottom).offset(40)
-            $0.centerX.equalToSuperview()
-            $0.size.equalTo(64)
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
+            $0.leading.equalToSuperview().offset(24)
         }
-        
-        nameLabel.snp.makeConstraints {
-            $0.top.equalTo(profileImageView.snp.bottom).offset(16)
-            $0.centerX.equalToSuperview()
+
+        statusLabel.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.trailing.equalToSuperview().inset(24)
         }
-        
-        infoLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
-            $0.centerX.equalToSuperview()
-        }
-        
-        // 신고 내용
-        contentTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(infoLabel.snp.bottom).offset(48)
+
+        reporterTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(32)
             $0.leading.equalToSuperview().inset(24)
         }
-        
-        contentLabel.snp.makeConstraints {
+
+        reporterProfileImageView.snp.makeConstraints {
+            $0.top.equalTo(reporterTitleLabel.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().inset(24)
+            $0.size.equalTo(48)
+        }
+
+        reporterNameLabel.snp.makeConstraints {
+            $0.top.equalTo(reporterProfileImageView).offset(2)
+            $0.leading.equalTo(reporterProfileImageView.snp.trailing).offset(12)
+        }
+
+        reporterInfoLabel.snp.makeConstraints {
+            $0.top.equalTo(reporterNameLabel.snp.bottom).offset(2)
+            $0.leading.equalTo(reporterNameLabel)
+        }
+
+        contentTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(reporterProfileImageView.snp.bottom).offset(32)
+            $0.leading.equalToSuperview().inset(24)
+        }
+
+        contentContainerView.snp.makeConstraints {
             $0.top.equalTo(contentTitleLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.greaterThanOrEqualTo(54)
         }
-        
-        // 장소
-        locationTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(contentLabel.snp.bottom).offset(32)
+
+        contentLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(16)
+        }
+
+        contentTimeLabel.snp.makeConstraints {
+            $0.top.equalTo(contentContainerView.snp.bottom).offset(8)
+            $0.trailing.equalToSuperview().inset(24)
+        }
+
+        targetTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(contentTimeLabel.snp.bottom).offset(24)
             $0.leading.equalToSuperview().inset(24)
         }
-        
-        locationLabel.snp.makeConstraints {
-            $0.top.equalTo(locationTitleLabel.snp.bottom).offset(12)
+
+        targetProfileImageView.snp.makeConstraints {
+            $0.top.equalTo(targetTitleLabel.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().inset(24)
+            $0.size.equalTo(48)
+        }
+
+        targetNameLabel.snp.makeConstraints {
+            $0.top.equalTo(targetProfileImageView).offset(2)
+            $0.leading.equalTo(targetProfileImageView.snp.trailing).offset(12)
+        }
+
+        targetInfoLabel.snp.makeConstraints {
+            $0.top.equalTo(targetNameLabel.snp.bottom).offset(2)
+            $0.leading.equalTo(targetNameLabel)
+        }
+
+        reviewTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(targetProfileImageView.snp.bottom).offset(32)
             $0.leading.equalToSuperview().inset(24)
         }
-        
-        // 시간
-        timeTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(locationLabel.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().inset(24)
+
+        reviewContainerView.snp.makeConstraints {
+            $0.top.equalTo(reviewTitleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.greaterThanOrEqualTo(54)
         }
-        
-        timeLabel.snp.makeConstraints {
-            $0.top.equalTo(timeTitleLabel.snp.bottom).offset(12)
-            $0.leading.equalToSuperview().inset(24)
+
+        reviewLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(16)
+        }
+
+        reviewLocationAndTimeLabel.snp.makeConstraints {
+            $0.top.equalTo(reviewContainerView.snp.bottom).offset(8)
+            $0.trailing.equalToSuperview().inset(24)
+        }
+
+        rejectButton.snp.makeConstraints {
+            $0.leading.equalToSuperview().inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.height.equalTo(52)
+            $0.trailing.equalTo(view.snp.centerX).offset(-2)
+        }
+
+        deleteButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.height.equalTo(52)
+            $0.leading.equalTo(view.snp.centerX).offset(2)
         }
     }
 }

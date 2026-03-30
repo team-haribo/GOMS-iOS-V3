@@ -6,32 +6,44 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
-
 import Foundation
 
-struct MockReportData {
-    let userName: String
-    let grade: Int
-    let classNum: Int
-    let reportContent: String
-    let shopName: String
-    let date: String
-    let status: String // 처리 전, 완료
+public struct ReportData {
+    public let reportId: Int
+    public let reviewId: Int
+    public let reviewerName: String
+    public let reviewerGrade: Int
+    public let reviewerDepartment: String
+    public let reportCreatedAt: String
+    public let reportStatus: String
+    public let reportContent: String
+    public let location: String
+    
+    public init(reportId: Int, reviewId: Int, reviewerName: String, reviewerGrade: Int, reviewerDepartment: String, reportCreatedAt: String, reportStatus: String, reportContent: String, location: String) {
+        self.reportId = reportId
+        self.reviewId = reviewId
+        self.reviewerName = reviewerName
+        self.reviewerGrade = reviewerGrade
+        self.reviewerDepartment = reviewerDepartment
+        self.reportCreatedAt = reportCreatedAt
+        self.reportStatus = reportStatus
+        self.reportContent = reportContent
+        self.location = location
+    }
 }
 
 public final class ReportListViewModel {
+    public var reports: [ReportData] = []
     
-    // ViewController에서 사용할 데이터 배열
-    var reports: [MockReportData] = []
+    public init() {}
     
-    // 하드코딩 데이터를 로드하는 임시 메서드
-    func loadMockData() {
+    public func loadMockData() {
         reports = [
-            MockReportData(userName: "김민솔", grade: 8, classNum: 1, reportContent: "얘 나쁜말 했어요", shopName: "짬뽕관 광주송정선운점", date: "26.02.12 18:53:32", status: "처리전"),
-            MockReportData(userName: "김민솔", grade: 8, classNum: 1, reportContent: "얘 나쁜말 했어요", shopName: "짬뽕관 광주송정선운점", date: "26.02.12 18:53:32", status: "처리 완료"),
-            MockReportData(userName: "김민솔", grade: 8, classNum: 1, reportContent: "얘 나쁜말 했어요", shopName: "짬뽕관 광주송정선운점", date: "26.02.12 18:53:32", status: "처리 완료"),
-            MockReportData(userName: "김민솔", grade: 8, classNum: 1, reportContent: "얘 나쁜말 했어요", shopName: "짬뽕관 광주송정선운점", date: "26.02.12 18:53:32", status: "처리 완료"),
-            MockReportData(userName: "김민솔", grade: 8, classNum: 1, reportContent: "얘 나쁜말 했어요", shopName: "짬뽕관 광주송정선운점", date: "26.02.12 18:53:32", status: "처리 완료")
+            ReportData(reportId: 1, reviewId: 101, reviewerName: "김민솔", reviewerGrade: 8, reviewerDepartment: "SW", reportCreatedAt: "26.02.12 18:53:32", reportStatus: "RECEIVED", reportContent: "얘 나쁜말 했어요", location: "짬뽕관 광주송정선운점"),
+            ReportData(reportId: 2, reviewId: 102, reviewerName: "김민솔", reviewerGrade: 8, reviewerDepartment: "SW", reportCreatedAt: "26.02.12 18:53:32", reportStatus: "COMPLETED", reportContent: "리뷰가 너무 공격적이에요", location: "짬뽕관 광주송정선운점"),
+            ReportData(reportId: 3, reviewId: 103, reviewerName: "김민솔", reviewerGrade: 8, reviewerDepartment: "SW", reportCreatedAt: "26.02.12 18:53:32", reportStatus: "COMPLETED", reportContent: "거짓 정보를 유포하고 있습니다", location: "짬뽕관 광주송정선운점"),
+            ReportData(reportId: 4, reviewId: 104, reviewerName: "김민솔", reviewerGrade: 8, reviewerDepartment: "SW", reportCreatedAt: "26.02.12 18:53:32", reportStatus: "COMPLETED", reportContent: "부적절한 단어 사용", location: "짬뽕관 광주송정선운점"),
+            ReportData(reportId: 5, reviewId: 105, reviewerName: "김민솔", reviewerGrade: 8, reviewerDepartment: "SW", reportCreatedAt: "26.02.12 18:53:32", reportStatus: "COMPLETED", reportContent: "도배성 리뷰", location: "짬뽕관 광주송정선운점")
         ]
     }
 }
