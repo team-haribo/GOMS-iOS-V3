@@ -17,9 +17,9 @@ public final class StudentManagementViewController: BaseViewController {
         didSet { studentCollectionView.reloadData() }
     }
     
-    private lazy var backButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        $0.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
@@ -34,7 +34,13 @@ public final class StudentManagementViewController: BaseViewController {
     }
     
     private let searchBar = GOMSSearchBar().then {
-        $0.textField.font = .suit(size: 14, weight: .medium)
+        $0.textField.attributedPlaceholder = NSAttributedString(
+            string: "학생 검색",
+            attributes: [
+                .foregroundColor: UIColor.color.sub1.color,
+                .font: UIFont.suit(size: 17, weight: .medium)
+            ]
+        )
     }
     
     private let resultLabel = UILabel().then {
@@ -69,12 +75,26 @@ public final class StudentManagementViewController: BaseViewController {
         setupCollectionView()
         setupSearchBar()
         
-        // [복구] 서버 데이터 오기 전에 보여줄 임시 데이터 로드
         self.userList = StudentMockData.students
         
         viewModel.getUserList {
             if !self.viewModel.userListDatas.isEmpty {
                 self.userList = self.viewModel.userListDatas
+            }
+        }
+    }
+    
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
             }
         }
     }
@@ -104,26 +124,31 @@ public final class StudentManagementViewController: BaseViewController {
         self.present(filterVC, animated: false)
     }
 
-    @objc private func createQRButtonTapped() { }
+    @objc private func createQRButtonTapped() {
+        let qrVC = AdminQRViewController()
+        self.navigationController?.pushViewController(qrVC, animated: true)
+    }
     
     public override func addView() {
-        [backButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
+        [customBackButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
+        view.bringSubviewToFront(customBackButton)
     }
     
     public override func setLayout() {
-        backButton.snp.makeConstraints {
+        customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(backButton.snp.bottom).offset(16)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().offset(24)
         }
         searchBar.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(48)
+            $0.height.equalTo(52)
         }
+        
         resultLabel.snp.makeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(28)
             $0.leading.equalToSuperview().offset(24)
@@ -162,7 +187,6 @@ extension StudentManagementViewController: UICollectionViewDataSource, UICollect
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self)
-        // [유지] 데이터 먼저 주입 후 호출
         authorityVC.userData = userList[indexPath.row]
         authorityVC.modalPresentationStyle = .overFullScreen
         self.present(authorityVC, animated: false)
