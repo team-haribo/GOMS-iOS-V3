@@ -59,8 +59,16 @@ public final class MainViewModel: BaseViewModel {
                 let responseData = result.data
                 let statusCode = result.statusCode
                 do {
-                    self.lateList = try JSONDecoder().decode([LatecomerResponse].self, from: responseData)
-                    self.lateListDatas = self.lateList.map { LatecomerData(profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major) }
+                    let responseModel = try JSONDecoder().decode(LatecomerModel.self, from: responseData)
+                    self.lateList = responseModel.items
+                    self.lateListDatas = self.lateList.map {
+                        LatecomerData(
+                            profileImageURL: nil,
+                            name: $0.name,
+                            grade: $0.grade,
+                            major: $0.department.rawValue
+                        )
+                    }
                     completion()
                 } catch(let err) {
                     print(String(describing: err))
