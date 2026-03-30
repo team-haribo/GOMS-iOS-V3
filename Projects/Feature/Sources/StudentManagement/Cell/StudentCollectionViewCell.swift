@@ -85,11 +85,8 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         nameLabel.text = userData.name
         let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
-        
-        // 외출 중이어도 프로필 이미지는 선명하게 유지
         profileImageView.alpha = 1.0
         
-        // 상태별 UI (이미지 가이드 반영)
         if userData.authority == "ROLE_ADMIN" {
             profileImageView.layer.borderWidth = 3
             profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
