@@ -54,11 +54,22 @@ var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
         $0.expandedTouchArea = 30
     }
 
+    private lazy var reportButton = UIButton().then {
+        let image = UIImage(named: "Warning", in: Bundle.module, compatibleWith: nil)
+        $0.setImage(image, for: .normal)
+        $0.contentHorizontalAlignment = .fill
+        $0.contentVerticalAlignment = .fill
+        $0.imageView?.contentMode = .scaleAspectFit
+        
+        $0.addTarget(self, action: #selector(reportButtonTapped), for: .touchUpInside)
+    }
+    
     private let latecomerLabel = UILabel().then {
         $0.text = "지각자 TOP 3"
         $0.setDynamicTextColor(darkModeColor: .white, lightModeColor: .black)
         $0.font = UIFont.suit(size: 18, weight: .semibold)
     }
+
 
 
     let lateNilView = LateNilView()
@@ -431,8 +442,8 @@ private let profileVC = AdminProfileViewController()
 
     @objc public func qrButtonTapped() {
         qrButton.isUserInteractionEnabled = false
-        let adminQRVC = AdminQRViewController()
-        navigationController?.pushViewController(adminQRVC, animated: true)
+        let studentManagementVC = StudentManagementViewController()
+        navigationController?.pushViewController(studentManagementVC, animated: true)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self = self else { return }
@@ -450,6 +461,16 @@ private let profileVC = AdminProfileViewController()
             self?.codeButton.isUserInteractionEnabled = true
         }
     }
+    
+    @objc func reportButtonTapped() {
+            reportButton.isUserInteractionEnabled = false
+            let reportListVC = ReportListViewController()
+            self.navigationController?.pushViewController(reportListVC, animated: true)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.reportButton.isUserInteractionEnabled = true
+            }
+        }
 
     @objc func adminMenuButtonTapped() {
         adminMenuButton.isUserInteractionEnabled = false
@@ -489,11 +510,13 @@ private let profileVC = AdminProfileViewController()
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
+        
         view.addSubview(mapContainerView)
         view.addSubview(profileContainerView)
         view.addSubview(tabBar)
         view.addSubview(qrButton)
         view.addSubview(codeButton)
+        view.addSubview(reportButton)
     }
 
     // MARK: - Layout
@@ -566,6 +589,12 @@ private let profileVC = AdminProfileViewController()
             $0.top.equalTo(view.safeAreaLayoutGuide)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
+        }
+        
+        reportButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(28)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(14)
+            $0.size.equalTo(26)
         }
 
         outingStatusLabel.snp.makeConstraints {
