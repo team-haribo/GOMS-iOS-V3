@@ -19,10 +19,10 @@ public final class GOMSSearchBar: UIView {
         $0.font = .suit(size: 16, weight: .medium)
         
         $0.attributedPlaceholder = NSAttributedString(
-            string: "학교 검색",
+            string: "학생 검색",
             attributes: [
                 .foregroundColor: UIColor.color.sub1.color,
-                .font: UIFont.suit(size: 17, weight: .medium)
+                .font: UIFont.suit(size: 18, weight: .medium)
             ]
         )
     
