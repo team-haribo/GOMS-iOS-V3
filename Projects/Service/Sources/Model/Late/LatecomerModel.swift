@@ -9,14 +9,11 @@
 import Foundation
 
 public struct LatecomerModel: Codable {
-    let data: LatecomerResponse
+    public let items: [LatecomerResponse]
 }
 
 public struct LatecomerResponse: Codable {
-    public let accountIdx: UUID
     public let name: String
-    public let major: String
     public let grade: Int
-    public let gender: String
-    public let profileUrl: String?
+    public let department: Major
 }
