@@ -103,9 +103,7 @@ public final class MainViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-
                     self.outingList = responseModel.students
-
                     self.outingListDatas = self.outingList.map {
                         OutingListData(
                             id: String($0.memberId),

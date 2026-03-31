@@ -19,14 +19,16 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         $0.contentMode = .scaleAspectFill
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 24
+        $0.layer.borderWidth = 2
+        $0.layer.borderColor = UIColor.clear.cgColor
     }
     
     private let nameLabel = UILabel().then {
-        $0.font = .suit(size: 16, weight: .semibold)
+        $0.font = .suit(size: 16, weight: .medium)
     }
     
     private let infoLabel = UILabel().then {
-        $0.textColor = .color.sub1.color
+        $0.textColor = UIColor.color.sub1.color
         $0.font = .suit(size: 14, weight: .medium)
     }
     
@@ -37,33 +39,34 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     }
 
     private let dividerView = UIView().then {
-        $0.backgroundColor = .color.sub1.color.withAlphaComponent(0.3)
+        $0.backgroundColor = UIColor.systemGray5.withAlphaComponent(0.5)
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        contentView.backgroundColor = .clear
         [profileImageView, nameLabel, infoLabel, editButton, dividerView].forEach { contentView.addSubview($0) }
         
         profileImageView.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(10)
+            $0.leading.equalToSuperview()
             $0.centerY.equalToSuperview()
             $0.width.height.equalTo(48)
         }
         
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
-            $0.bottom.equalTo(contentView.snp.centerY).offset(0)
+            $0.top.equalToSuperview().offset(16)
         }
         
         infoLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
-            $0.top.equalTo(contentView.snp.centerY).offset(0)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
         }
         
         editButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(10)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(28)
+            $0.width.height.equalTo(24)
         }
         
         dividerView.snp.makeConstraints {
@@ -85,19 +88,19 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         nameLabel.text = userData.name
         let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
-        profileImageView.alpha = 1.0
         
         if userData.authority == "ROLE_ADMIN" {
-            profileImageView.layer.borderWidth = 3
+            profileImageView.layer.borderWidth = 2
             profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
             nameLabel.textColor = UIColor.color.admin.color
         } else if userData.isBlackList {
-            profileImageView.layer.borderWidth = 3
+            profileImageView.layer.borderWidth = 2
             profileImageView.layer.borderColor = UIColor.systemRed.cgColor
             nameLabel.textColor = UIColor.systemRed
         } else {
             profileImageView.layer.borderWidth = 0
-            nameLabel.textColor = .color.mainText.color
+            profileImageView.layer.borderColor = UIColor.clear.cgColor
+            nameLabel.textColor = UIColor.color.mainText.color
         }
     }
 

@@ -30,6 +30,7 @@ public final class OutingViewModel: BaseViewModel {
     var outingSearchListDatas: [OutingListData] = []
     
     func getOutingList(completion: @escaping () -> Void) {
+<<<<<<< HEAD
         outingProvider.request(.outingList(authorization: accessToken)) { response in
             switch response {
             case .success(let result):
@@ -111,5 +112,28 @@ public final class OutingViewModel: BaseViewModel {
     func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
        
         return
+=======
+      
+        self.outingList = []
+        self.outingListDatas = []
+        completion()
+    }
+    
+    func searchStudent(searchString: String, completion: @escaping () -> Void) {
+       
+        self.outingSearchList = []
+        self.outingSearchListDatas = []
+        completion()
+    }
+    
+    func deleteOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
+        
+        completion()
+    }
+
+    func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
+     
+        completion()
+>>>>>>> 9bdc5c6 (♻️-refactor ::[#111]  Outing API 응답 구조 변경 반영 (items → students))
     }
 }
