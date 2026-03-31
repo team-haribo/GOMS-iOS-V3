@@ -2,162 +2,115 @@
 //  StudentCollectionViewCell.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 3/23/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
-
 import SnapKit
 import Then
 import Kingfisher
 import Service
 
 public final class StudentCollectionViewCell: UICollectionViewCell {
-    // MARK: - Properties
-    
     static let identifier = "StudentCell"
     
-    let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 48, height: 48))
-    
-    let nameLabel = UILabel().then {
-        $0.textColor = .color.gomsSecondary.color
-        $0.font = UIFont.suit(size: 16, weight: .semibold)
+    private let profileImageView = UIImageView().then {
+        $0.contentMode = .scaleAspectFill
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 24
     }
     
-    let studentInfoLabel = UILabel().then {
-        $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
+    private let nameLabel = UILabel().then {
+        $0.font = .suit(size: 16, weight: .semibold)
     }
     
-    private let divLine = UIView().then {
-        $0.backgroundColor = .white.withAlphaComponent(0.15)
-    }
-    
-    private let bottomView = UIView().then {
-        $0.setDynamicBackgroundColor(darkModeColor: UIColor(red: 1, green: 1, blue: 1, alpha: 0.15), lightModeColor: UIColor(red: 0, green: 0, blue: 0, alpha: 0.05))
+    private let infoLabel = UILabel().then {
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 14, weight: .medium)
     }
     
     private lazy var editButton = UIButton().then {
-        $0.setImage(.image.studentEdit.image, for: .normal)
+        let image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)
+        $0.setImage(image, for: .normal)
         $0.addTarget(self, action: #selector(editButtonTapped), for: .touchUpInside)
     }
+
+    private let dividerView = UIView().then {
+        $0.backgroundColor = .color.sub1.color.withAlphaComponent(0.3)
+    }
     
-    // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
-        configureUI()
-        addView()
-        setLayout()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    @objc func editButtonTapped() {
-        guard let parentViewController = findParentViewController() as? StudentManagementViewController else { return }
+        [profileImageView, nameLabel, infoLabel, editButton, dividerView].forEach { contentView.addSubview($0) }
         
-        guard let indexPath = parentViewController.studentCollectionView.indexPath(for: self) else {
-            return }
-        
-        let userData = parentViewController.userList[indexPath.row]
-    
-        let bottomSheetVC = AuthorityBottomSheetVC(studentManagementVC: parentViewController)
-        bottomSheetVC.userData = userData
-        bottomSheetVC.userDataIndex = indexPath.row
-        bottomSheetVC.modalPresentationStyle = .overFullScreen
-        parentViewController.present(bottomSheetVC, animated: false, completion: nil)
-    }
-
-    private func findParentViewController() -> UIViewController? {
-        var parentResponder: UIResponder? = self
-        while let responder = parentResponder {
-            if let viewController = responder as? UIViewController {
-                return viewController
-            }
-            parentResponder = responder.next
-        }
-        return nil
-    }
-    
-    // MARK: - Configure
-    func configureData(with userData: UserData) {
-        if let imageURL = userData.profileImageURL, let url = URL(string: imageURL) {
-            profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
-            profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
-        } else {
-            profileImageView.image = .image.profile.image
-        }
-        nameLabel.text = userData.name
-        
-        if userData.major == Major.sw.rawValue {
-            studentInfoLabel.text = "\(userData.grade)기 | SW개발"
-        } else if userData.major == Major.iot.rawValue {
-            studentInfoLabel.text = "\(userData.grade)기 | IoT"
-        } else {
-            studentInfoLabel.text = "\(userData.grade)기 | AI"
-        }
-        
-        if userData.authority == Authority.admin.rawValue {
-            profileImageView.layer.borderColor = UIColor(red: 0.706, green: 0.525, blue: 0.976, alpha: 1).cgColor
-        } else if userData.isBlackList == true {
-            profileImageView.layer.borderColor = UIColor(red: 0.895, green: 0.213, blue: 0.125, alpha: 1).cgColor
-        } else {
-            profileImageView.layer.borderColor = UIColor.clear.cgColor
-        }
-    }
-    
-    private func configureUI() {
-        profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
-        profileImageView.clipsToBounds = true
-        
-        profileImageView.layer.borderWidth = 4
-        profileImageView.layer.borderColor = UIColor.clear.cgColor
-    }
-    
-    // MARK: - Add View
-    private func addView() {
-        [profileImageView, nameLabel, studentInfoLabel, divLine, editButton, bottomView].forEach { contentView.addSubview($0)}
-    }
-    
-    // MARK: - Layout
-    private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.width.equalTo(48)
-            $0.leading.equalToSuperview().inset(16)
-            $0.top.bottom.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview().offset(10)
             $0.centerY.equalToSuperview()
+            $0.width.height.equalTo(48)
         }
         
         nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(12)
-            $0.height.equalTo(28)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
+            $0.bottom.equalTo(contentView.snp.centerY).offset(0)
         }
         
-        studentInfoLabel.snp.makeConstraints {
-            $0.height.equalTo(20)
-            $0.bottom.equalToSuperview().inset(12)
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
-        }
-        
-        divLine.snp.makeConstraints {
-            $0.height.equalTo(8)
-            $0.width.equalTo(1)
-            $0.bottom.equalToSuperview().inset(18)
-            $0.leading.equalTo(studentInfoLabel.snp.trailing).offset(4)
+        infoLabel.snp.makeConstraints {
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(contentView.snp.centerY).offset(0)
         }
         
         editButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(16)
-            $0.top.bottom.equalToSuperview().inset(24)
+            $0.trailing.equalToSuperview().inset(10)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(28)
         }
         
-        bottomView.snp.makeConstraints {
-            $0.bottom.equalToSuperview()
+        dividerView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(1)
-            $0.leading.trailing.equalToSuperview()
+        }
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    func configureData(with userData: UserData) {
+        let defaultImage = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        if let urlStr = userData.profileImageURL, let url = URL(string: urlStr) {
+            profileImageView.kf.setImage(with: url, placeholder: defaultImage)
+        } else {
+            profileImageView.image = defaultImage
+        }
+        
+        nameLabel.text = userData.name
+        let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
+        infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
+        profileImageView.alpha = 1.0
+        
+        if userData.authority == "ROLE_ADMIN" {
+            profileImageView.layer.borderWidth = 3
+            profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
+            nameLabel.textColor = UIColor.color.admin.color
+        } else if userData.isBlackList {
+            profileImageView.layer.borderWidth = 3
+            profileImageView.layer.borderColor = UIColor.systemRed.cgColor
+            nameLabel.textColor = UIColor.systemRed
+        } else {
+            profileImageView.layer.borderWidth = 0
+            nameLabel.textColor = .color.mainText.color
+        }
+    }
+
+    @objc private func editButtonTapped() {
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let vc = responder as? StudentManagementViewController {
+                let bottomSheet = AuthorityBottomSheetVC(studentManagementVC: vc)
+                bottomSheet.userData = vc.userList.first { $0.name == self.nameLabel.text }
+                vc.present(bottomSheet, animated: true)
+                break
+            }
+            responder = responder?.next
         }
     }
 }

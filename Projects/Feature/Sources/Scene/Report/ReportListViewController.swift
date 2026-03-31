@@ -1,8 +1,8 @@
 //
-//  StudentManagementViewController.swift
+//  ReportListViewController.swift
 //  Feature
 //
-//  Created by 김민선 on 3/23/26.
+//  Created by 김민선 on 3/29/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
@@ -10,12 +10,9 @@ import UIKit
 import SnapKit
 import Then
 
-public final class StudentManagementViewController: BaseViewController {
+public final class ReportListViewController: BaseViewController {
     
-    private let viewModel = StudentManagementViewModel()
-    var userList: [UserData] = [] {
-        didSet { studentCollectionView.reloadData() }
-    }
+    private let viewModel = ReportListViewModel()
     
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
@@ -28,7 +25,7 @@ public final class StudentManagementViewController: BaseViewController {
     }
     
     private let titleLabel = UILabel().then {
-        $0.text = "학생 관리"
+        $0.text = "신고 목록"
         $0.textColor = UIColor.color.mainText.color
         $0.font = .suit(size: 26, weight: .bold)
     }
@@ -49,14 +46,7 @@ public final class StudentManagementViewController: BaseViewController {
         $0.font = .suit(size: 20, weight: .bold)
     }
     
-    private lazy var filterButton = UIButton().then {
-        $0.setTitle("필터", for: .normal)
-        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
-        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
-        $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-    }
-    
-    lazy var studentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
+    private lazy var reportCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
         $0.backgroundColor = .clear
         $0.showsVerticalScrollIndicator = false
     }
@@ -69,28 +59,23 @@ public final class StudentManagementViewController: BaseViewController {
         $0.layer.cornerRadius = 32
         $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
     }
-    
+
+    // MARK: - LifeCycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
-        setupSearchBar()
-        
-        self.userList = StudentMockData.students
-        
-        viewModel.getUserList {
-            if !self.viewModel.userListDatas.isEmpty {
-                self.userList = self.viewModel.userListDatas
-            }
-        }
+        viewModel.loadMockData()
     }
     
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // 네이티브 네비게이션 바 숨김
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        // 디테일 뷰에서 사용하신 방식: BaseViewController가 추가한 height 100짜리 navView를 찾아 삭제
         self.view.subviews.forEach {
             if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
                 $0.isHidden = true
@@ -98,39 +83,24 @@ public final class StudentManagementViewController: BaseViewController {
             }
         }
     }
-    
+
     private func setupCollectionView() {
-        studentCollectionView.dataSource = self
-        studentCollectionView.delegate = self
-        studentCollectionView.register(StudentCollectionViewCell.self, forCellWithReuseIdentifier: StudentCollectionViewCell.identifier)
-    }
-    
-    private func setupSearchBar() {
-        searchBar.textField.addTarget(self, action: #selector(searchTextFieldDidChange), for: .editingChanged)
+        reportCollectionView.dataSource = self
+        reportCollectionView.delegate = self
+        reportCollectionView.register(ReportCollectionViewCell.self, forCellWithReuseIdentifier: ReportCollectionViewCell.identifier)
     }
 
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
     }
-
-    @objc private func searchTextFieldDidChange(_ textField: UITextField) {
-        let text = textField.text ?? ""
-        viewModel.serachStudent(searchString: text.isEmpty ? nil : text) { self.userList = $0 }
-    }
     
-    @objc private func filterButtonTapped() {
-        let filterVC = FilterBottomSheetVC(studentManagementVC: self)
-        filterVC.modalPresentationStyle = .overFullScreen
-        self.present(filterVC, animated: false)
-    }
+    @objc private func createQRButtonTapped() { }
 
-    @objc private func createQRButtonTapped() {
-        let qrVC = AdminQRViewController()
-        self.navigationController?.pushViewController(qrVC, animated: true)
-    }
-    
+    // MARK: - UI
     public override func addView() {
-        [customBackButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
+        [customBackButton, titleLabel, searchBar, resultLabel, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
+        
+        // 내 커스텀 버튼이 가장 앞으로 오도록 보장
         view.bringSubviewToFront(customBackButton)
     }
     
@@ -148,18 +118,13 @@ public final class StudentManagementViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(52)
         }
-        
         resultLabel.snp.makeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(28)
             $0.leading.equalToSuperview().offset(24)
         }
-        filterButton.snp.makeConstraints {
-            $0.centerY.equalTo(resultLabel)
-            $0.trailing.equalToSuperview().inset(24)
-        }
-        studentCollectionView.snp.makeConstraints {
+        reportCollectionView.snp.makeConstraints {
             $0.top.equalTo(resultLabel.snp.bottom).offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
         }
         createQRButton.snp.makeConstraints {
@@ -170,25 +135,28 @@ public final class StudentManagementViewController: BaseViewController {
     }
 }
 
-extension StudentManagementViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+extension ReportListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return userList.count
+        return viewModel.reports.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StudentCollectionViewCell.identifier, for: indexPath) as? StudentCollectionViewCell else { return UICollectionViewCell() }
-        cell.configureData(with: userList[indexPath.row])
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ReportCollectionViewCell.identifier, for: indexPath) as? ReportCollectionViewCell else { return UICollectionViewCell() }
+        cell.configure(with: viewModel.reports[indexPath.row])
         return cell
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 69)
+        return CGSize(width: 335, height: 120)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 0
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self)
-        authorityVC.userData = userList[indexPath.row]
-        authorityVC.modalPresentationStyle = .overFullScreen
-        self.present(authorityVC, animated: false)
+        let detailVC = ReportDetailViewController()
+        detailVC.reportData = viewModel.reports[indexPath.row]
+        self.navigationController?.pushViewController(detailVC, animated: true)
     }
 }

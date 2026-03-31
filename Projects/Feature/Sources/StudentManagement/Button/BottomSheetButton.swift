@@ -2,33 +2,47 @@
 //  BottomSheetButton.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 3/24/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import Then
 
-class BottomSheetButton: UIButton {
+public final class BottomSheetButton: UIButton {
     
     init(frame: CGRect, title: String) {
         super.init(frame: frame)
-        setButton(withTitle: title)
+        setupButton(title: title)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setButton(withTitle title: String) {
-        setTitle(title, for: .normal)
-        setTitleColor(.color.gomsSecondary.color, for: .normal)
-        setTitleColor(.color.admin.color, for: .selected)
-        titleLabel?.font = UIFont.suit(size: 16, weight: .semibold)
-        layer.masksToBounds = true
-        layer.borderWidth = 1
-        setButtonBorderColor(lightModeColor: UIColor(red: 0, green: 0, blue: 0, alpha: 0.05), darkModeColor: UIColor(red: 1, green: 1, blue: 1, alpha: 0.15))
-        layer.cornerRadius = 12
-        setBackgroundColor(.clear, for: .normal)
-        setBackgroundColor(UIColor(red: 0.71, green: 0.53, blue: 0.98, alpha: 0.25), for: .selected)
+    private func setupButton(title: String) {
+        self.setTitle(title, for: .normal)
+        self.titleLabel?.font = .suit(size: 16, weight: .semibold)
+        self.layer.cornerRadius = 12
+        self.clipsToBounds = true
+        self.layer.borderWidth = 0
+        
+        updateAppearance()
+    }
+    
+    public override var isSelected: Bool {
+        didSet {
+            updateAppearance()
+        }
+    }
+    
+    private func updateAppearance() {
+        if isSelected {
+            self.backgroundColor = .color.admin.color.withAlphaComponent(0.25)
+            self.setTitleColor(.color.admin.color, for: .normal)
+        } else {
+            self.backgroundColor = .color.button.color
+            self.setTitleColor(.color.sub2.color, for: .normal)
+        }
     }
 }

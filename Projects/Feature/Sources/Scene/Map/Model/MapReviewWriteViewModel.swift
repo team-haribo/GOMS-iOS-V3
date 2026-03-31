@@ -44,7 +44,7 @@ public final class MapReviewWriteViewModel {
         print("서버로 후기 전송 시도: \(currentText)")
         
         // API 통신이 성공했다는 가정하에 콜백 호출
-        // 실제 연동 시에는 네트워크 통신 closure 내부(success 블록)에서 호출하세요.
+        // 실제 연동 시에는 네트워크 통신 closure 내부(success 블록)에서 호출
         self.onReviewSuccess?()
     }
 }

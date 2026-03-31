@@ -2,314 +2,319 @@
 //  AuthorityBottomSheetVC.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 3/23/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import SnapKit
+import Then
+
+class CustomSwitch: UIControl {
+    private let toggleThumb = UIView().then {
+        $0.backgroundColor = UIColor.color.gomsLine.color
+        $0.layer.cornerRadius = 14
+        $0.isUserInteractionEnabled = false
+    }
+    
+    var isOn: Bool = false {
+        didSet { setupState() }
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    private func setupUI() {
+        self.snp.makeConstraints {
+            $0.width.equalTo(52)
+            $0.height.equalTo(32)
+        }
+        self.layer.cornerRadius = 16
+        self.backgroundColor = UIColor.color.gomsSwitchBg.color
+        
+        addSubview(toggleThumb)
+        toggleThumb.snp.makeConstraints {
+            $0.size.equalTo(28)
+            $0.centerY.equalToSuperview()
+            $0.leading.equalToSuperview().offset(2)
+        }
+        self.addTarget(self, action: #selector(toggle), for: .touchUpInside)
+    }
+    
+    @objc private func toggle() {
+        isOn.toggle()
+        sendActions(for: .valueChanged)
+    }
+    
+    private func setupState() {
+        let color = isOn ? UIColor.color.admin.color : UIColor.color.gomsSwitchBg.color
+        let xPosition = isOn ? 20 : 0
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+            self.backgroundColor = color
+            self.toggleThumb.transform = CGAffineTransform(translationX: CGFloat(xPosition), y: 0)
+        }
+    }
+}
 
 public final class AuthorityBottomSheetVC: BaseViewController {
 
-    // MARK: - Properties
-    var userList: [UserData] = []
-
-    var userData: UserData?
-    var userDataIndex: Int?
-
     private let viewModel = StudentManagementViewModel()
-
     var studentManagementVC: StudentManagementViewController
-
-    init(studentManagementVC: StudentManagementViewController) {
-        self.studentManagementVC = studentManagementVC
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private let dimmedView = UIView().then {
-        $0.backgroundColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).withAlphaComponent(0.6)
+    
+    var userData: UserData? {
+        didSet { if isViewLoaded { setupData() } }
     }
 
     private let bottomSheetView = UIView().then {
-        $0.setDynamicBackgroundColor(darkModeColor: UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1), lightModeColor: UIColor(red: 1, green: 1, blue: 1, alpha: 1))
-        $0.layer.cornerRadius = 12
+        $0.backgroundColor = UIColor.color.surface.color
+        $0.layer.cornerRadius = 20
         $0.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         $0.clipsToBounds = true
     }
 
     private let titleLabel = UILabel().then {
         $0.text = "유저 권한 변경"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .bold)
+        $0.textColor = UIColor.color.mainText.color
+        $0.font = .suit(size: 22, weight: .bold)
     }
 
     private lazy var closeButton = UIButton().then {
-        $0.setBackgroundImage(.image.cancelButton.image, for: .normal)
-        $0.backgroundColor = .clear
+        $0.setImage(UIImage.image.cancelButton.image, for: .normal)
         $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
     }
 
-    private let forceOutingTitle = UILabel().then {
-        $0.text = "강제외출"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 16, weight: .semibold)
+    private let outingTitleLabel = UILabel().then {
+        $0.textColor = UIColor.color.mainText.color
+        $0.font = .suit(size: 18, weight: .semibold)
+    }
+    private let outingDescLabel = UILabel().then {
+        $0.textColor = UIColor.color.sub2.color
+        $0.font = .suit(size: 14, weight: .regular)
+    }
+    private lazy var outingButton = UIButton().then {
+        $0.contentVerticalAlignment = .fill
+        $0.contentHorizontalAlignment = .fill
+        $0.addTarget(self, action: #selector(outingButtonTapped), for: .touchUpInside)
     }
 
-    private let forceOutingLabel = UILabel().then {
-        $0.text = "이 학생은 현재 외출중이에요"
-        $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
+    private let forceOutingContainer = UIView()
+    private let blackListContainer = UIView()
+    private let adminContainer = UIView()
+    private let blackListSwitch = CustomSwitch()
+    private let adminSwitch = CustomSwitch()
+
+    init(studentManagementVC: StudentManagementViewController) {
+        self.studentManagementVC = studentManagementVC
+        super.init(nibName: nil, bundle: nil)
+        self.modalPresentationStyle = .overFullScreen
     }
 
-    private let blackListTitle = UILabel().then {
-        $0.text = "외출금지"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 16, weight: .semibold)
-    }
-
-    private let blackListLabel = UILabel().then {
-        $0.text = "이 학생은 외출을 할 수 없어요"
-        $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
-    }
-
-    private lazy var forceOutingButton = UIButton().then {
-        $0.setBackgroundImage(.image.outing.image, for: .normal)
-        $0.backgroundColor = .clear
-        $0.addTarget(self, action: #selector(forceOutingTapped), for: .touchUpInside)
-    }
-
-    lazy var blackListSwitch = UISwitch().then {
-        $0.onTintColor = .color.mainText.color
-        $0.addTarget(self, action: #selector(blackListSwitchValueChanged), for: .valueChanged)
-    }
-
-    private let adminTitle = UILabel().then {
-        $0.text = "학생회 권한 부여"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 16, weight: .semibold)
-    }
-
-    private let adminLabel = UILabel().then {
-        $0.text = "이 학생은 학생회에요"
-        $0.textColor = .color.sub2.color
-        $0.font = .suit(size: 12, weight: .regular)
-    }
-
-    lazy var adminSwitch = UISwitch().then {
-        $0.onTintColor = .color.admin.color
-        $0.addTarget(self, action: #selector(authoritySwitchValueChanged(_:)), for: .valueChanged)
-    }
-
-    // MARK: - Life Cycel
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.view.backgroundColor = .clear
-    }
+    required init?(coder: NSCoder) { fatalError() }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        setupSwitch()
+        view.backgroundColor = .clear
+        setupActions()
+        setupData()
     }
 
-    public override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        self.studentManagementVC.configureRefreshControl()
-
-        viewModel.getUserList {
-            self.userList = self.viewModel.userListDatas
-        }
-    }
-
-    func setupSwitch() {
-        if let userData = userData, userData.isBlackList {
-            blackListSwitch.isOn = true
+    private func setupData() {
+        guard let data = userData else { return }
+        
+        if data.isOuting {
+            outingTitleLabel.text = "강제외출 복귀"
+            outingDescLabel.text = "학생을 강제외출 복귀 시켜요"
         } else {
-            blackListSwitch.isOn = false
+            outingTitleLabel.text = "강제외출"
+            outingDescLabel.text = "학생을 강제외출 시켜요"
         }
+        outingButton.setImage(UIImage.image.outing.image, for: .normal)
 
-        if let userData = userData, userData.authority == Authority.admin.rawValue {
-            adminSwitch.isOn = true
-        } else {
-            adminSwitch.isOn = false
-        }
+        blackListSwitch.isOn = data.isBlackList
+        adminSwitch.isOn = (data.authority == "ROLE_ADMIN")
+
+        forceOutingContainer.isHidden = data.authority == "ROLE_ADMIN" || data.isBlackList
+        blackListContainer.isHidden = data.authority == "ROLE_ADMIN"
+        
+        updateLayoutForState()
     }
 
-    func updateUserList(_ newList: [UserData]) {
-        self.studentManagementVC.userList = newList
-        DispatchQueue.main.async {
-            self.studentManagementVC.studentCollectionView.reloadData()
+    private func updateLayoutForState() {
+        let visibleViews = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }
+        
+        // 내부 요소들 간격/높이 재조정
+        forceOutingContainer.snp.updateConstraints {
+            $0.height.equalTo(forceOutingContainer.isHidden ? 0 : 72)
         }
-    }
-
-    @objc func closeButtonTapped() {
-        self.studentManagementVC.studentCollectionView.reloadData()
-        self.dismiss(animated: false, completion: nil)
-    }
-
-    @objc func forceOutingTapped() {
-        guard let userData = userData else { return }
-        if userData.isBlackList {
-            let message = "외출금지 를 해제하고\n이 학생을 외출시키겠습니까?"
-
-            let attributedMessage = NSMutableAttributedString(string: message, attributes: [
-                .font: UIFont.systemFont(ofSize: 15),
-                .foregroundColor: UIColor.color.mainText.color
-            ])
-
-            if let range = message.range(of: "외출금지") {
-                let nsRange = NSRange(range, in: message)
-                attributedMessage.addAttributes([
-                    .foregroundColor: UIColor.red,
-                    .font: UIFont.boldSystemFont(ofSize: 15)
-                ], range: nsRange)
-            }
-
-            let alertController = UIAlertController(title: "강제외출\n", message: nil, preferredStyle: .alert)
-            alertController.setValue(attributedMessage, forKey: "attributedMessage")
-
-            alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
-            alertController.addAction(UIAlertAction(title: "외출", style: .destructive, handler: { _ in
-                self.viewModel.forceOutingStudent(user: userData) { newList in
-                    self.updateUserList(newList)
-                    self.studentManagementVC.searchController.searchBar.text = ""
-                }
-
-                self.dismiss(animated: false, completion: nil)
-            }))
-
-            present(alertController, animated: true, completion: nil)
-        } else {
-            let alertController = UIAlertController(title: "강제외출", message: "이 학생을 강제로 외출시키겠습니까?", preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
-            alertController.addAction(UIAlertAction(title: "외출", style: .destructive, handler: { _ in
-                self.viewModel.forceOutingStudent(user: userData) { newList in
-                    self.updateUserList(newList)
-                    self.studentManagementVC.searchController.searchBar.text = ""
-                }
-
-                self.dismiss(animated: false, completion: nil)
-            }))
-
-            present(alertController, animated: true, completion: nil)
+        
+        blackListContainer.snp.updateConstraints {
+            $0.height.equalTo(blackListContainer.isHidden ? 0 : 72)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(forceOutingContainer.isHidden ? 28 : 104)
+        }
+        
+        let adminOffset: CGFloat = forceOutingContainer.isHidden && blackListContainer.isHidden ? 28 : (forceOutingContainer.isHidden || blackListContainer.isHidden ? 104 : 180)
+        adminContainer.snp.updateConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(adminOffset)
         }
 
-        self.studentManagementVC.studentCollectionView.reloadData()
-    }
-
-    @objc func blackListSwitchValueChanged(_ sender: UISwitch) {
-        guard let userData = userData else { return }
-
-        if sender.isOn {
-            viewModel.blackList(user: userData) { newList in
-                self.updateUserList(newList)
-                self.studentManagementVC.searchController.searchBar.text = ""
-            }
-        } else {
-            viewModel.cancelBlackList(user: userData) { newList in
-                self.updateUserList(newList)
-                self.studentManagementVC.searchController.searchBar.text = ""
-            }
-        }
-    }
-
-    @objc func authoritySwitchValueChanged(_ sender: UISwitch) {
-        guard let userData = userData else { return }
-
-        viewModel.changeAuthority(user: userData) { newList in
-            self.updateUserList(newList)
-            self.studentManagementVC.searchController.searchBar.text = ""
-        }
-    }
-
-    // MARK: - Add View
-    public override func addView() {
-        [titleLabel, closeButton, forceOutingTitle, forceOutingLabel, forceOutingButton, blackListTitle, blackListLabel, blackListSwitch, adminTitle, adminLabel, adminSwitch].forEach { self.bottomSheetView.addSubview($0) }
-        dimmedView.addSubview(bottomSheetView)
-        view.addSubview(dimmedView)
-    }
-
-    // MARK: Layout
-    public override func setLayout() {
-        dimmedView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.top.bottom.equalToSuperview()
-        }
-
+        // MARK: -  높이 조절
         bottomSheetView.snp.remakeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(bounds.height * (userData?.isOuting == true ? 0.34 : 0.43))
-            $0.bottom.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview()
+            
+            if visibleViews.count == 3 {
+                $0.height.equalToSuperview().multipliedBy(342.0 / 812.0)
+            } else if visibleViews.count == 2 {
+                $0.height.equalToSuperview().multipliedBy(266.0 / 812.0)
+            } else {
+                $0.height.equalToSuperview().multipliedBy(190.0 / 812.0)
+            }
         }
+        
+        view.layoutIfNeeded()
+    }
 
+    @objc private func outingButtonTapped() {
+        guard let data = userData else { return }
+        let isOut = data.isOuting
+        
+        GOMSAlert.show(
+            in: self,
+            title: isOut ? "강제외출 복귀" : "강제외출",
+            message: isOut ? "학생을 복귀 상태로 변경하시겠습니까?" : "이 학생을 외출 상태로 변경하시겠습니까?",
+            actionTitle: isOut ? "복귀" : "외출",
+            isNegative: true,
+            highlightKeywords: [],
+            action: { [weak self] in
+                self?.viewModel.forceOutingStudent(user: data) {
+                    self?.studentManagementVC.userList = $0
+                    self?.dismiss(animated: true)
+                }
+            }
+        )
+    }
+    
+    @objc private func blackListSwitchChanged() {
+        guard let data = userData else { return }
+        let isOn = blackListSwitch.isOn
+        
+        GOMSAlert.show(
+            in: self,
+            title: "외출금지",
+            message: isOn ? "이 학생을 외출 금지 시키겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
+            actionTitle: isOn ? "외출 금지" : "외출 해제",
+            isNegative: true,
+            highlightKeywords: isOn ? ["외출 금지"] : ["해제"],
+            action: { [weak self] in
+                if isOn {
+                    self?.viewModel.blackList(user: data) { self?.studentManagementVC.userList = $0 }
+                } else {
+                    self?.viewModel.cancelBlackList(user: data) { self?.studentManagementVC.userList = $0 }
+                }
+            },
+            cancelAction: { [weak self] in
+                self?.blackListSwitch.isOn = data.isBlackList
+            }
+        )
+    }
+
+    @objc private func adminSwitchChanged() {
+        guard let data = userData else { return }
+        viewModel.changeAuthority(user: data) { [weak self] in
+            self?.studentManagementVC.userList = $0
+            self?.dismiss(animated: true)
+        }
+    }
+
+    private func setupActions() {
+        blackListSwitch.addTarget(self, action: #selector(blackListSwitchChanged), for: .valueChanged)
+        adminSwitch.addTarget(self, action: #selector(adminSwitchChanged), for: .valueChanged)
+    }
+
+    @objc private func closeButtonTapped() { dismiss(animated: true) }
+
+    public override func addView() {
+        view.addSubview(bottomSheetView)
+        [titleLabel, closeButton, forceOutingContainer, blackListContainer, adminContainer].forEach {
+            bottomSheetView.addSubview($0)
+        }
+        
+        let outingStack = UIStackView(arrangedSubviews: [outingTitleLabel, outingDescLabel]).then {
+            $0.axis = .vertical
+            $0.spacing = 6
+        }
+        forceOutingContainer.addSubview(outingStack)
+        forceOutingContainer.addSubview(outingButton)
+        
+        outingStack.snp.makeConstraints {
+            $0.leading.centerY.equalToSuperview()
+        }
+        outingButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.centerY.equalToSuperview().offset(-4)
+            $0.size.equalTo(32)
+        }
+        
+        let bStack = createOptionStack(title: "외출금지", description: "이 학생은 외출을 할 수 없어요")
+        blackListContainer.addSubview(bStack)
+        blackListContainer.addSubview(blackListSwitch)
+        bStack.snp.makeConstraints { $0.leading.centerY.equalToSuperview() }
+        blackListSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
+        
+        let aStack = createOptionStack(title: "학생회 권한 부여", description: "이 학생은 학생회 권한을 가지게 돼요")
+        adminContainer.addSubview(aStack)
+        adminContainer.addSubview(adminSwitch)
+        aStack.snp.makeConstraints { $0.leading.centerY.equalToSuperview() }
+        adminSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
+    }
+
+    private func createOptionStack(title: String, description: String) -> UIStackView {
+        let t = UILabel().then {
+            $0.text = title
+            $0.textColor = UIColor.color.mainText.color
+            $0.font = .suit(size: 18, weight: .semibold)
+        }
+        let d = UILabel().then {
+            $0.text = description
+            $0.textColor = UIColor.color.sub2.color
+            $0.font = .suit(size: 14, weight: .regular)
+        }
+        return UIStackView(arrangedSubviews: [t, d]).then {
+            $0.axis = .vertical
+            $0.spacing = 6
+        }
+    }
+
+    public override func setLayout() {
+        bottomSheetView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(342) // 기본값
+        }
         titleLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalToSuperview().inset(16)
+            $0.top.leading.equalToSuperview().inset(24)
         }
-
         closeButton.snp.makeConstraints {
-            $0.trailing.equalTo(-bounds.width * 0.06)
-            $0.top.equalToSuperview().inset(20)
-            $0.width.height.equalTo(24)
+            $0.top.trailing.equalToSuperview().inset(24)
+            $0.size.equalTo(28)
         }
-
-        if userData?.isOuting == false {
-            forceOutingTitle.snp.makeConstraints {
-                $0.height.equalTo(28)
-                $0.leading.equalTo(bounds.width * 0.05)
-                $0.top.equalTo(titleLabel.snp.bottom).offset(32)
-            }
-
-            forceOutingLabel.snp.makeConstraints {
-                $0.leading.equalTo(bounds.width * 0.05)
-                $0.height.equalTo(20)
-                $0.top.equalTo(forceOutingTitle.snp.bottom)
-            }
-
-            forceOutingButton.snp.makeConstraints {
-                $0.trailing.equalTo(-bounds.width * 0.07)
-                $0.top.equalTo(closeButton.snp.bottom).offset(44)
-            }
+        forceOutingContainer.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(28)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(72)
         }
-
-        blackListTitle.snp.makeConstraints {
-            $0.height.equalTo(28)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.top.equalTo((userData!.isOuting ? titleLabel : forceOutingLabel).snp.bottom).offset(32)
+        blackListContainer.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(104)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(72)
         }
-
-        blackListLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(20)
-            $0.top.equalTo(blackListTitle.snp.bottom)
-        }
-
-        blackListSwitch.snp.makeConstraints {
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo((userData!.isOuting ? closeButton : forceOutingButton).snp.bottom)
-                .offset(userData!.isOuting ? 44 : 52)
-
-        }
-
-        adminTitle.snp.makeConstraints {
-            $0.height.equalTo(28)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.top.equalTo(blackListLabel.snp.bottom).offset(32)
-        }
-
-        adminLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(20)
-            $0.top.equalTo(adminTitle.snp.bottom)
-        }
-
-        adminSwitch.snp.makeConstraints {
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.top.equalTo(blackListSwitch.snp.bottom).offset(48)
+        adminContainer.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(180)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(72)
         }
     }
 }

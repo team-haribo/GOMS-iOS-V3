@@ -2,20 +2,20 @@
 //  FilterBottomSheetVC.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 3/23/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import SnapKit
+import Then
 import Service
 
 public final class FilterBottomSheetVC: BaseViewController {
     
-    // MARK: - Properties
+    // MARK: - Propertie
     var userList: [UserData] = []
-    
     let viewModel = StudentManagementViewModel()
-    
     var studentManagementVC: StudentManagementViewController
             
     init(studentManagementVC: StudentManagementViewController) {
@@ -28,12 +28,12 @@ public final class FilterBottomSheetVC: BaseViewController {
     }
     
     private let dimmedView = UIView().then {
-        $0.backgroundColor = UIColor.darkGray.withAlphaComponent(0.7)
+        $0.backgroundColor = UIColor.black.withAlphaComponent(0.4)
     }
     
     private let bottomSheetView = UIView().then {
-        $0.setDynamicBackgroundColor(darkModeColor: UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1), lightModeColor: UIColor(red: 1, green: 1, blue: 1, alpha: 1))
-        $0.layer.cornerRadius = 12
+        $0.backgroundColor = .color.surface.color
+        $0.layer.cornerRadius = 20
         $0.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         $0.clipsToBounds = true
     }
@@ -41,394 +41,164 @@ public final class FilterBottomSheetVC: BaseViewController {
     private let titleLabel = UILabel().then {
         $0.text = "필터"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 19, weight: .bold)
+        $0.font = .suit(size: 20, weight: .bold)
     }
     
     private lazy var closeButton = UIButton().then {
-        $0.setBackgroundImage(.image.cancelButton.image, for: .normal)
-        $0.backgroundColor = .clear
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        $0.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
+        $0.tintColor = .color.mainText.color
         $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
     }
     
-    private let roleLabel = UILabel().then {
-        $0.font = .suit(size: 19, weight: .semibold)
-        $0.text = "역할"
-        $0.textColor = .color.mainText.color
+    private func makeSectionLabel(title: String) -> UILabel {
+        return UILabel().then {
+            $0.font = .suit(size: 18, weight: .semibold)
+            $0.text = title
+            $0.textColor = .color.mainText.color
+        }
     }
     
-    private lazy var studentButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "학생").then {
-        $0.addTarget(self, action: #selector(roleTapped), for: .touchUpInside)
-    }
+    // 섹션 버튼들
+    private lazy var gradeLabel = makeSectionLabel(title: "학년")
+    private lazy var grade1Button = BottomSheetButton(frame: .zero, title: "1학년")
+    private lazy var grade2Button = BottomSheetButton(frame: .zero, title: "2학년")
+    private lazy var grade3Button = BottomSheetButton(frame: .zero, title: "3학년")
+
+    private lazy var roleLabel = makeSectionLabel(title: "역할")
+    private lazy var studentButton = BottomSheetButton(frame: .zero, title: "학생")
+    private lazy var adminButton = BottomSheetButton(frame: .zero, title: "학생회")
+    private lazy var blackListButton = BottomSheetButton(frame: .zero, title: "외출 금지")
     
-    private lazy var adminButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "학생회").then {
-        $0.addTarget(self, action: #selector(roleTapped), for: .touchUpInside)
-    }
+    private lazy var genderLabel = makeSectionLabel(title: "성별")
+    private lazy var manButton = BottomSheetButton(frame: .zero, title: "남성")
+    private lazy var womanButton = BottomSheetButton(frame: .zero, title: "여성")
     
-    private lazy var blackListButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "외출금지").then {
-        $0.addTarget(self, action: #selector(roleTapped), for: .touchUpInside)
-    }
-    
-    private let gradeLabel = UILabel().then {
-        $0.font = .suit(size: 19, weight: .semibold)
-        $0.text = "학년"
-        $0.textColor = .color.mainText.color
-    }
-    
-    private lazy var grade1Button = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "1학년").then {
-        $0.addTarget(self, action: #selector(gradeButtonTappped), for: .touchUpInside)
-    }
-    
-    private lazy var grade2Button = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "2학년").then {
-        $0.addTarget(self, action: #selector(gradeButtonTappped), for: .touchUpInside)
-    }
-    
-    private lazy var grade3Button = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "3학년").then {
-        $0.addTarget(self, action: #selector(gradeButtonTappped), for: .touchUpInside)
-    }
-    
-    private let genderLabel = UILabel().then {
-        $0.font = .suit(size: 19, weight: .semibold)
-        $0.text = "성별"
-        $0.textColor = .color.mainText.color
-    }
-    
-    private lazy var manButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "남성").then {
-        $0.addTarget(self, action: #selector(genderButtonTapped), for: .touchUpInside)
-    }
-    
-    private lazy var womanButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "여성").then {
-        $0.addTarget(self, action: #selector(genderButtonTapped), for: .touchUpInside)
-    }
-    
-    private let majorLabel = UILabel().then {
-        $0.font = .suit(size: 19, weight: .semibold)
-        $0.text = "학과"
-        $0.textColor = .color.mainText.color
-    }
-    
-    private lazy var swButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "SW").then {
-        $0.addTarget(self, action: #selector(majorButtonTapped), for: .touchUpInside)
-    }
-    
-    private lazy var iotButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "IoT").then {
-        $0.addTarget(self, action: #selector(majorButtonTapped), for: .touchUpInside)
-    }
-    
-    private lazy var aiButton = BottomSheetButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "AI").then {
-        $0.addTarget(self, action: #selector(majorButtonTapped), for: .touchUpInside)
-    }
+    private lazy var majorLabel = makeSectionLabel(title: "학과")
+    private lazy var swButton = BottomSheetButton(frame: .zero, title: "sw")
+    private lazy var iotButton = BottomSheetButton(frame: .zero, title: "iot")
+    private lazy var aiButton = BottomSheetButton(frame: .zero, title: "ai")
     
     private lazy var resetButton = ResetButton().then {
+        $0.setTitle("필터 초기화", for: .normal)
         $0.addTarget(self, action: #selector(resetButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - Life Cycel
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
     }
     
-    public override func viewDidLoad() {
-        super.viewDidLoad()
-    }
-    
-    func updateUserList(_ newList: [UserData]) {
-        self.studentManagementVC.userList = newList
-        DispatchQueue.main.async {
-            self.studentManagementVC.studentCollectionView.reloadData()
-        }
-    }
-    
-    // MARK: - Selectors
-    @objc func closeButtonTapped() {
-        self.dismiss(animated: false, completion: nil)
-    }
+    @objc func closeButtonTapped() { self.dismiss(animated: true) }
     
     @objc func roleTapped(sender: BottomSheetButton) {
-        guard let role = sender.title(for: .normal) else { return }
-        
-        switch role {
-        case "학생":
-            studentButton.isSelected.toggle()
-            adminButton.isSelected = false
-            blackListButton.isSelected = false
-            if studentButton.isSelected == true {
-                viewModel.setupAuthority(authority: Authority.student.rawValue)
-            }
-        case "학생회":
-            studentButton.isSelected = false
-            adminButton.isSelected.toggle()
-            blackListButton.isSelected = false
-            if adminButton.isSelected == true {
-                viewModel.setupAuthority(authority: Authority.admin.rawValue)
-            }
-        case "외출금지":
-            studentButton.isSelected = false
-            adminButton.isSelected = false
-            blackListButton.isSelected.toggle()
-            if blackListButton.isSelected == true {
-                viewModel.setupIsBlackList(isBlackList: true)
-            }
-        default:
-            break
-        }
-        
-        viewModel.serachStudent(searchString: nil) { newList in
-            DispatchQueue.main.async {
-                self.updateUserList(newList)
-            }
-        }
+        [studentButton, adminButton, blackListButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
+        let role = sender.isSelected ? (sender == studentButton ? "ROLE_STUDENT" : (sender == adminButton ? "ROLE_ADMIN" : nil)) : nil
+        viewModel.setupAuthority(authority: role)
+        if sender == blackListButton { viewModel.setupIsBlackList(isBlackList: sender.isSelected) }
+        fetchData()
     }
     
     @objc func gradeButtonTappped(sender: BottomSheetButton) {
-        guard let grade = sender.title(for: .normal) else { return }
-        
-        switch grade {
-        case "1학년":
-            grade1Button.isSelected.toggle()
-            grade2Button.isSelected = false
-            grade3Button.isSelected = false
-            if grade1Button.isSelected == true {
-                viewModel.setupGrade(grade: 9)
-            }
-            
-        case "2학년":
-            grade1Button.isSelected = false
-            grade2Button.isSelected.toggle()
-            grade3Button.isSelected = false
-            if grade2Button.isSelected == true {
-                viewModel.setupGrade(grade: 8)
-            }
-        case "3학년":
-            grade1Button.isSelected = false
-            grade2Button.isSelected = false
-            grade3Button.isSelected.toggle()
-            if grade3Button.isSelected == true {
-                viewModel.setupGrade(grade: 7)
-            }
-        default:
-            break
-        }
-        
-        viewModel.serachStudent(searchString: nil) { newList in
-            self.updateUserList(newList)
-        }
+        [grade1Button, grade2Button, grade3Button].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
+        let gradeMap: [BottomSheetButton: Int] = [grade1Button: 1, grade2Button: 2, grade3Button: 3]
+        viewModel.setupGrade(grade: sender.isSelected ? gradeMap[sender] : nil)
+        fetchData()
     }
     
     @objc func genderButtonTapped(sender: BottomSheetButton) {
-        guard let gender = sender.title(for: .normal) else { return }
-        
-        switch gender {
-        case "남성":
+        if sender == manButton {
             manButton.isSelected.toggle()
             womanButton.isSelected = false
-            if manButton.isSelected == true {
-                viewModel.setupGender(gender: Gender.male.rawValue)
-            }
-        case "여성":
-            manButton.isSelected = false
+        } else {
             womanButton.isSelected.toggle()
-            if womanButton.isSelected == true {
-                viewModel.setupGender(gender: Gender.female.rawValue)
-            }
-        default:
-            break
+            manButton.isSelected = false
         }
-        
-        viewModel.serachStudent(searchString: nil) { newList in
-            self.updateUserList(newList)
+
+        var genderValue: String? = nil
+        if manButton.isSelected {
+            genderValue = Gender.male.rawValue
+        } else if womanButton.isSelected {
+            genderValue = Gender.female.rawValue
         }
+
+        viewModel.setupGender(gender: genderValue)
+        fetchData()
     }
 
     @objc func majorButtonTapped(sender: BottomSheetButton) {
-        guard let major = sender.title(for: .normal) else { return }
-        
-        switch major {
-        case "SW":
-            swButton.isSelected.toggle()
-            iotButton.isSelected = false
-            aiButton.isSelected = false
-            if swButton.isSelected == true {
-                viewModel.setupMajor(major: Major.sw.rawValue)
-            }
-        case "IoT":
-            swButton.isSelected = false
-            iotButton.isSelected.toggle()
-            aiButton.isSelected = false
-            if iotButton.isSelected == true {
-                viewModel.setupMajor(major: Major.iot.rawValue)
-            }
-        case "AI":
-            swButton.isSelected = false
-            iotButton.isSelected = false
-            aiButton.isSelected.toggle()
-            if aiButton.isSelected == true {
-                viewModel.setupMajor(major: Major.ai.rawValue)
-            }
-        default:
-            break
-        }
-        
-        viewModel.serachStudent(searchString: nil) { newList in
-            self.updateUserList(newList)
-        }
+        [swButton, iotButton, aiButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
+        let major = sender.isSelected ? (sender == swButton ? "SW_DEVELOPMENT" : (sender == iotButton ? "EMBEDDED_SOFTWARE" : "AI_SOFTWARE")) : nil
+        viewModel.setupMajor(major: major)
+        fetchData()
+    }
+    
+    private func fetchData() {
+        viewModel.serachStudent(searchString: nil) { self.studentManagementVC.userList = $0 }
     }
     
     @objc func resetButtonTapped() {
-        let buttons: [BottomSheetButton] = [
-            studentButton, adminButton, blackListButton,
-            grade1Button, grade2Button, grade3Button,
-            manButton, womanButton, swButton,
-            iotButton, aiButton
-        ]
-
-        for button in buttons {
-            button.isSelected = false
-        }
-        
+        [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
         viewModel.resetInfo()
-        viewModel.serachStudent(searchString: nil) { newList in
-            self.updateUserList(newList)
-        }
+        fetchData()
     }
     
-    // MARK: - Add View
     public override func addView() {
-        [titleLabel, closeButton, roleLabel, studentButton, adminButton, blackListButton, gradeLabel, grade1Button, grade2Button, grade3Button, genderLabel, manButton, womanButton, majorLabel, swButton, iotButton, aiButton, resetButton].forEach { self.bottomSheetView.addSubview($0) }
-        dimmedView.addSubview(bottomSheetView)
         view.addSubview(dimmedView)
+        dimmedView.addSubview(bottomSheetView)
+        [titleLabel, closeButton, gradeLabel, grade1Button, grade2Button, grade3Button, roleLabel, studentButton, adminButton, blackListButton, genderLabel, manButton, womanButton, majorLabel, swButton, iotButton, aiButton, resetButton].forEach { bottomSheetView.addSubview($0) }
+        
+        [studentButton, adminButton, blackListButton].forEach { $0.addTarget(self, action: #selector(roleTapped), for: .touchUpInside) }
+        [grade1Button, grade2Button, grade3Button].forEach { $0.addTarget(self, action: #selector(gradeButtonTappped), for: .touchUpInside) }
+        [manButton, womanButton].forEach { $0.addTarget(self, action: #selector(genderButtonTapped), for: .touchUpInside) }
+        [swButton, iotButton, aiButton].forEach { $0.addTarget(self, action: #selector(majorButtonTapped), for: .touchUpInside) }
     }
     
-    // MARK:  - Layout
     public override func setLayout() {
-        dimmedView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.top.bottom.equalToSuperview()
-        }
-        
+        dimmedView.snp.makeConstraints { $0.edges.equalToSuperview() }
         bottomSheetView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(bounds.height * 0.8)
-            $0.bottom.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(view.frame.height * 0.73)
         }
+        titleLabel.snp.makeConstraints { $0.leading.equalToSuperview().inset(24); $0.top.equalToSuperview().inset(32) }
+        closeButton.snp.makeConstraints { $0.trailing.equalToSuperview().inset(24); $0.centerY.equalTo(titleLabel) }
         
-        titleLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalToSuperview().inset(16)
-        }
-        
-        closeButton.snp.makeConstraints {
-            $0.trailing.equalTo(-bounds.width * 0.06)
-            $0.top.equalToSuperview().inset(20)
-        }
-        
-        roleLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
-        }
-        
-        studentButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.height.equalTo(56)
-            $0.top.equalTo(roleLabel.snp.bottom).offset(8)
-        }
-        
-        adminButton.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(roleLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.centerX.equalToSuperview()
-        }
-        
-        blackListButton.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(roleLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-        }
-        
-        gradeLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalTo(studentButton.snp.bottom).offset(16)
-        }
-        
+        gradeLabel.snp.makeConstraints { $0.leading.equalToSuperview().inset(24); $0.top.equalTo(titleLabel.snp.bottom).offset(32) }
         grade1Button.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.height.equalTo(56)
-            $0.top.equalTo(gradeLabel.snp.bottom).offset(8)
+            $0.leading.equalToSuperview().inset(24)
+            $0.top.equalTo(gradeLabel.snp.bottom).offset(12)
+            $0.width.equalToSuperview().multipliedBy(0.28)
+            $0.height.equalTo(48)
         }
+        grade2Button.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.top.width.height.equalTo(grade1Button) }
+        grade3Button.snp.makeConstraints { $0.trailing.equalToSuperview().inset(24); $0.top.width.height.equalTo(grade1Button) }
         
-        grade2Button.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(gradeLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.centerX.equalToSuperview()
-        }
+        roleLabel.snp.makeConstraints { $0.leading.equalTo(gradeLabel); $0.top.equalTo(grade1Button.snp.bottom).offset(24) }
+        studentButton.snp.makeConstraints { $0.leading.width.height.equalTo(grade1Button); $0.top.equalTo(roleLabel.snp.bottom).offset(12) }
+        adminButton.snp.makeConstraints { $0.centerX.width.height.equalTo(grade2Button); $0.top.equalTo(studentButton) }
+        blackListButton.snp.makeConstraints { $0.trailing.width.height.equalTo(grade3Button); $0.top.equalTo(studentButton) }
         
-        grade3Button.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(gradeLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-        }
-        
-        genderLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalTo(grade1Button.snp.bottom).offset(16)
-        }
-        
+        genderLabel.snp.makeConstraints { $0.leading.equalTo(gradeLabel); $0.top.equalTo(studentButton.snp.bottom).offset(24) }
         manButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.top.equalTo(genderLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.width.equalTo(bounds.width * 0.42)
+            $0.leading.equalToSuperview().inset(24)
+            $0.top.equalTo(genderLabel.snp.bottom).offset(12)
+            $0.width.equalToSuperview().multipliedBy(0.43)
+            $0.height.equalTo(48)
         }
-        
         womanButton.snp.makeConstraints {
-            $0.top.equalTo(genderLabel.snp.bottom).offset(8)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.height.equalTo(56)
-            $0.width.equalTo(bounds.width * 0.42)
+            $0.trailing.equalToSuperview().inset(24)
+            $0.top.width.height.equalTo(manButton)
         }
         
-        majorLabel.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
-            $0.top.equalTo(manButton.snp.bottom).offset(16)
-        }
-        
-        swButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.height.equalTo(56)
-            $0.top.equalTo(majorLabel.snp.bottom).offset(8)
-        }
-        
-        iotButton.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(majorLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.centerX.equalToSuperview()
-        }
-        
-        aiButton.snp.makeConstraints {
-            $0.width.equalTo(bounds.width * 0.27)
-            $0.top.equalTo(majorLabel.snp.bottom).offset(8)
-            $0.height.equalTo(56)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-        }
+        majorLabel.snp.makeConstraints { $0.leading.equalTo(gradeLabel); $0.top.equalTo(manButton.snp.bottom).offset(24) }
+        swButton.snp.makeConstraints { $0.leading.width.height.equalTo(grade1Button); $0.top.equalTo(majorLabel.snp.bottom).offset(12) }
+        iotButton.snp.makeConstraints { $0.centerX.width.height.equalTo(grade2Button); $0.top.equalTo(swButton) }
+        aiButton.snp.makeConstraints { $0.trailing.width.height.equalTo(grade3Button); $0.top.equalTo(swButton) }
         
         resetButton.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
-            $0.height.equalTo(56)
-            $0.bottom.equalTo(-bounds.height * 0.07)
+            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.height.equalTo(52)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
     }
 }
