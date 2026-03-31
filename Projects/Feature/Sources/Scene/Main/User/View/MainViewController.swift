@@ -692,7 +692,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
 
             if mainViewModel.outingListDatas.isEmpty {
-                // dummy UI
+                
                 cell.configureDummy()
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
@@ -746,7 +746,7 @@ extension MainViewController {
         insetForSectionAt section: Int
     ) -> UIEdgeInsets {
         if collectionView == outingStatusCollectionView {
-            // match design spacing (same as outer layout)
+           
             return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
         }
         return .zero

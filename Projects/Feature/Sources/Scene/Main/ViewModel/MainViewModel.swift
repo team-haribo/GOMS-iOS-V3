@@ -60,13 +60,13 @@ public final class MainViewModel: BaseViewModel {
                 let statusCode = result.statusCode
                 do {
                     let responseModel = try JSONDecoder().decode(LatecomerModel.self, from: responseData)
-                    self.lateList = responseModel.items
+                    self.lateList = responseModel.students
                     self.lateListDatas = self.lateList.map {
                         LatecomerData(
                             profileImageURL: nil,
                             name: $0.name,
                             grade: $0.grade,
-                            major: $0.department.rawValue
+                            major: Major(rawValue: $0.department)?.rawValue ?? ""
                         )
                     }
                     completion()
@@ -103,7 +103,9 @@ public final class MainViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-                    self.outingList = responseModel.items
+
+                    self.outingList = responseModel.students
+
                     self.outingListDatas = self.outingList.map {
                         OutingListData(
                             id: String($0.memberId),

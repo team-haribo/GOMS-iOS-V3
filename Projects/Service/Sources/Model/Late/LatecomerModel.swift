@@ -9,11 +9,13 @@
 import Foundation
 
 public struct LatecomerModel: Codable {
-    public let items: [LatecomerResponse]
+    public let students: [LatecomerResponse]
 }
 
 public struct LatecomerResponse: Codable {
+    public let memberId: Int
     public let name: String
     public let grade: Int
-    public let department: Major
+    public let department: String
+    public let comingAt: String
 }

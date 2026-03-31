@@ -149,7 +149,7 @@ public final class SignInViewController: BaseViewController {
             return
         }
 
-        // MARK: - 실제 로그인 API 호출
+        // MARK: - 로그인 API
         viewModel.setupEmail(email: email)
         viewModel.setupPassword(password: password)
 

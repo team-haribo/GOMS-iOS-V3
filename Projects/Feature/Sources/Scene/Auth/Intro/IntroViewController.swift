@@ -119,7 +119,6 @@ public final class IntroViewController: BaseViewController {
 public override func viewDidLoad() {
     super.viewDidLoad()
 
-    // Ensure pushed view controllers do not show "돌아가기" back title
     navigationItem.backButtonDisplayMode = .minimal
 
     configureDividerViews()

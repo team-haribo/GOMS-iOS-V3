@@ -39,7 +39,7 @@ public final class OutingViewModel: BaseViewModel {
                 case 200:
                     do {
                         let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-                        self.outingList = responseModel.items
+                        self.outingList = responseModel.students
                         self.outingListDatas = self.outingList.map {
                             OutingListData(
                                 id: "\($0.name)-\($0.outingAt)",
@@ -52,17 +52,17 @@ public final class OutingViewModel: BaseViewModel {
                         }
                         completion()
                     } catch(let err) {
-                        print(String(describing: err))
+                        break
                     }
                 case 401:
                     self.gomsRefreshToken.tokenReissuance(){ success in}
                 case 404:
-                    print("외출한 사람이 없을 경우")
+                    break
                 default:
-                    print(result)
+                    break
                 }
             case .failure(let err):
-                print(err.localizedDescription)
+                break
             }
         }
     }
@@ -74,7 +74,7 @@ public final class OutingViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-                    self.outingSearchListDatas = responseModel.items.map {
+                    self.outingSearchListDatas = responseModel.students.map {
                         OutingListData(
                             id: "\($0.name)-\($0.outingAt)",
                             profileImageURL: nil,
@@ -86,66 +86,30 @@ public final class OutingViewModel: BaseViewModel {
                     }
                     completion()
                 } catch(let err) {
-                    print(String(describing: err))
+                    break
                 }
                 let statusCode = result.statusCode
                 switch statusCode {
                 case 200:
-                    print("success")
+                    break
                 case 401:
                     self.gomsRefreshToken.tokenReissuance(){ success in}
                 default:
-                    print(result)
+                    break
                 }
             case .failure(let err):
-                print(err.localizedDescription)
+                break
             }
         }
     }
     
     func deleteOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
-        guard let deleteStudent = Int(user.id) else { return }
-
-        studentCouncilProvider.request(.deleteOuting(authorization: accessToken, memberId: deleteStudent)) { response in
-            switch response {
-            case .success(let result):
-                let statusCode = result.statusCode
-                switch statusCode {
-                case 205:
-                    completion()
-                case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
-                case 403:
-                    print("학생회 계정이 아닌데 요청할 경우")
-                default:
-                    print(result)
-                }
-            case .failure(let err):
-                print("외출자 삭제 중 오류 발생: \(err.localizedDescription)")
-            }
-        }
+   
+        return
     }
 
     func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
-        guard let forceOutingStudent = Int(user.id) else { return }
-
-        studentCouncilProvider.request(.forceOuting(authorization: accessToken, memberId: forceOutingStudent)) { response in
-            switch response {
-            case .success(let result):
-                let statusCode = result.statusCode
-                switch statusCode {
-                case 205:
-                    completion()
-                case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
-                case 403:
-                    print("학생회 계정이 아닌데 요청할 경우")
-                default:
-                    print(result)
-                }
-            case .failure(let err):
-                print("외출자 외출 중 오류 발생: \(err.localizedDescription)")
-            }
-        }
+       
+        return
     }
 }
