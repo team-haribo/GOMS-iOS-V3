@@ -11,7 +11,6 @@ import Foundation
 public struct OutingListModel: Codable {
     public let items: [OutingListResponse]
 }
-
 public struct OutingListResponse: Codable {
     public let name: String
     public let grade: Int

@@ -11,7 +11,7 @@ import Service
 import Foundation
 
 struct OutingListData {
-    let id: UUID
+    let id: String
     let profileImageURL: String?
     let name: String
     let grade: Int
@@ -38,8 +38,18 @@ public final class OutingViewModel: BaseViewModel {
                 switch statusCode {
                 case 200:
                     do {
-                        self.outingList = try JSONDecoder().decode([OutingListResponse].self, from: responseData)
-                        self.outingListDatas = self.outingList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                        let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
+                        self.outingList = responseModel.items
+                        self.outingListDatas = self.outingList.map {
+                            OutingListData(
+                                id: "\($0.name)-\($0.outingAt)",
+                                profileImageURL: nil,
+                                name: $0.name,
+                                grade: $0.grade,
+                                major: $0.department,
+                                outingTime: $0.outingAt
+                            )
+                        }
                         completion()
                     } catch(let err) {
                         print(String(describing: err))
@@ -63,8 +73,17 @@ public final class OutingViewModel: BaseViewModel {
             case .success(let result):
                 let responseData = result.data
                 do {
-                    self.outingSearchList = try JSONDecoder().decode([OutingSearchResponse].self, from: responseData)
-                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                    let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
+                    self.outingSearchListDatas = responseModel.items.map {
+                        OutingListData(
+                            id: "\($0.name)-\($0.outingAt)",
+                            profileImageURL: nil,
+                            name: $0.name,
+                            grade: $0.grade,
+                            major: $0.department,
+                            outingTime: $0.outingAt
+                        )
+                    }
                     completion()
                 } catch(let err) {
                     print(String(describing: err))
@@ -85,9 +104,9 @@ public final class OutingViewModel: BaseViewModel {
     }
     
     func deleteOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
-        let deleteStudent = user.id
+        guard let deleteStudent = Int(user.id) else { return }
 
-        studentCouncilProvider.request(.deleteOuting(authorization: accessToken, accountIdx: deleteStudent)) { response in
+        studentCouncilProvider.request(.deleteOuting(authorization: accessToken, memberId: deleteStudent)) { response in
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
@@ -108,9 +127,9 @@ public final class OutingViewModel: BaseViewModel {
     }
 
     func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
-        let forceOutingStudent = user.id
+        guard let forceOutingStudent = Int(user.id) else { return }
 
-        studentCouncilProvider.request(.forceOuting(authorization: accessToken, accountIdx: forceOutingStudent)) { response in
+        studentCouncilProvider.request(.forceOuting(authorization: accessToken, memberId: forceOutingStudent)) { response in
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode

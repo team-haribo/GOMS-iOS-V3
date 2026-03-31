@@ -9,7 +9,7 @@
 import Foundation
 
 public struct ProfileModel: Decodable {
-    let date: ProfileResponse
+    let data: ProfileResponse
 }
 
 public struct ProfileResponse: Decodable {

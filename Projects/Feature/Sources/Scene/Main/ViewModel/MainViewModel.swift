@@ -106,7 +106,7 @@ public final class MainViewModel: BaseViewModel {
                     self.outingList = responseModel.items
                     self.outingListDatas = self.outingList.map {
                         OutingListData(
-                            id: UUID(),
+                            id: String($0.memberId),
                             profileImageURL: nil,
                             name: $0.name,
                             grade: $0.grade,
