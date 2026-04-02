@@ -13,8 +13,8 @@ struct MapCardModel: Identifiable {
     let name: String
     let address: String
     let category: String
-    var isFavorite: Bool // true면 GOMS_Primary 색상 하트
-    let type: CardType   // .popular, .recommended, .reviewed로 구분
+    var isFavorite: Bool
+    let type: CardType
 }
 
 enum CardType {
