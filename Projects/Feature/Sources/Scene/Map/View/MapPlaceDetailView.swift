@@ -19,6 +19,7 @@ public final class MapPlaceDetailView: UIView {
         static let buttonHeight: CGFloat = 33
     }
     
+    // MARK: - UI Components
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
         $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0)
@@ -97,7 +98,7 @@ public final class MapPlaceDetailView: UIView {
     public let reviewWriteButton = UIButton(type: .system).then {
         var config = UIButton.Configuration.plain()
         config.title = "후기 남기기"
-        let imageConfig = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 25, weight: .medium)
         config.image = UIImage(named: "Review", in: Bundle.module, compatibleWith: nil)?
             .withConfiguration(imageConfig)
             .withRenderingMode(.alwaysTemplate)
@@ -112,6 +113,28 @@ public final class MapPlaceDetailView: UIView {
         $0.separatorStyle = .singleLine
         $0.separatorColor = .color.sub2.color.withAlphaComponent(0.2)
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
+    }
+
+    private let emptyReviewStackView = UIStackView().then {
+        $0.axis = .vertical
+        $0.spacing = 12
+        $0.alignment = .center
+        $0.isHidden = true // 기본은 숨김
+    }
+
+    private let emptyIconView = UIImageView().then {
+        $0.image = UIImage(named: "Coffee", in: Bundle.module, compatibleWith: nil)?
+            .withRenderingMode(.alwaysTemplate)
+        $0.tintColor = .color.sub2.color
+        $0.contentMode = .scaleAspectFit
+    }
+
+    private let emptyLabel = UILabel().then {
+        $0.text = "아직 후기가 없어요!\n첫 후기를 작성해봐요!"
+        $0.numberOfLines = 2
+        $0.textAlignment = .center
+        $0.font = .suit(size: 18, weight: .medium)
+        $0.textColor = .color.sub2.color
     }
 
     public var onHeartToggled: ((Bool) -> Void)?
@@ -130,7 +153,12 @@ public final class MapPlaceDetailView: UIView {
         categoryLabel.text = data.category
         addressLabel.text = data.address
         infoLabel.text = "\(data.distance) | \(data.time)"
-        updateReviewCount(data.reviewCount)
+        
+        let hasReviews = !data.reviews.isEmpty
+        tableView.isHidden = !hasReviews
+        emptyReviewStackView.isHidden = hasReviews
+        
+        updateReviewCount(data.reviews.count)
         tableView.reloadData()
     }
 
@@ -147,6 +175,10 @@ public final class MapPlaceDetailView: UIView {
         attributedString.addAttribute(.font, value: font, range: NSRange(location: 0, length: fullText.count))
         
         reviewHeaderLabel.attributedText = attributedString
+        
+        let hasReviews = count > 0
+        tableView.isHidden = !hasReviews
+        emptyReviewStackView.isHidden = hasReviews
     }
 
     private func setupView() {
@@ -158,9 +190,11 @@ public final class MapPlaceDetailView: UIView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
         
+        [emptyIconView, emptyLabel].forEach { emptyReviewStackView.addArrangedSubview($0) }
+        
         [titleLabel, categoryLabel, heartButton, closeButton,
          addressLabel, infoLabel, reviewCountLabel, arriveButton, startRouteButton,
-         reviewHeaderLabel, reviewWriteButton, tableView].forEach { contentView.addSubview($0) }
+         reviewHeaderLabel, reviewWriteButton, tableView, emptyReviewStackView].forEach { contentView.addSubview($0) }
     }
     
     private func setLayout() {
@@ -243,6 +277,15 @@ public final class MapPlaceDetailView: UIView {
             $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().offset(-20)
+        }
+
+        emptyReviewStackView.snp.makeConstraints {
+            $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(50)
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-60)
+        }
+        emptyIconView.snp.makeConstraints {
+            $0.width.height.equalTo(110)
         }
     }
 
