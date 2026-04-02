@@ -39,7 +39,7 @@ public final class OutingViewModel: BaseViewModel {
                 case 200:
                     do {
                         self.outingList = try JSONDecoder().decode([OutingListResponse].self, from: responseData)
-                        self.outingListDatas = self.outingList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                        self.outingListDatas = self.outingList.map { OutingListData(id: name: $0.name, grade: $0.grade, major: $0.major, outingTime: ) }
                         completion()
                     } catch(let err) {
                         print(String(describing: err))

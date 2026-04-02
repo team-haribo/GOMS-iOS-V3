@@ -107,13 +107,7 @@ public final class FilterBottomSheetVC: BaseViewController {
     }
     
     @objc func genderButtonTapped(sender: BottomSheetButton) {
-        if sender == manButton {
-            manButton.isSelected.toggle()
-            womanButton.isSelected = false
-        } else {
-            womanButton.isSelected.toggle()
-            manButton.isSelected = false
-        }
+        [manButton, womanButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
 
         var genderValue: String? = nil
         if manButton.isSelected {
@@ -132,11 +126,9 @@ public final class FilterBottomSheetVC: BaseViewController {
         viewModel.setupMajor(major: major)
         fetchData()
     }
-    
     private func fetchData() {
         viewModel.serachStudent(searchString: nil) { self.studentManagementVC.userList = $0 }
     }
-    
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
         viewModel.resetInfo()
@@ -202,3 +194,4 @@ public final class FilterBottomSheetVC: BaseViewController {
         }
     }
 }
+ 
