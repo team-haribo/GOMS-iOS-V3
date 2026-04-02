@@ -43,14 +43,14 @@ extension LateService: TargetType {
     public var task: Task {
         switch self {
         case .lateRank:
-            return.requestPlain
+            return .requestPlain
         }
     }
     
     public var headers: [String : String]? {
         switch self {
         case .lateRank(let authorization):
-            return ["Content-Type": "application/json", "Authorization": authorization]
+            return ["Content-Type": "application/json", "Authorization": "Bearer \(authorization)"]
         default:
             return ["Content-Type": "application/json"]
         }
