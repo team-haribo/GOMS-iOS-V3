@@ -11,11 +11,11 @@ import Service
 import Foundation
 
 struct OutingListData {
-    let id: UUID
+    let id: Int
     let profileImageURL: String?
     let name: String
     let grade: Int
-    let major: String
+    let major: Major
     let outingTime: String
 }
 
@@ -38,8 +38,18 @@ public final class OutingViewModel: BaseViewModel {
                 switch statusCode {
                 case 200:
                     do {
-                        self.outingList = try JSONDecoder().decode([OutingListResponse].self, from: responseData)
-                        self.outingListDatas = self.outingList.map { OutingListData(id: name: $0.name, grade: $0.grade, major: $0.major, outingTime: ) }
+                        let decoded = try JSONDecoder().decode(OutingListModel.self, from: responseData)
+                        self.outingList = decoded.students
+                        self.outingListDatas = self.outingList.map {
+                            OutingListData(
+                                id: $0.memberId,
+                                profileImageURL: nil,
+                                name: $0.name,
+                                grade: $0.grade,
+                                major: Major(rawValue: $0.department) ?? .sw,
+                                outingTime: $0.outingAt
+                            )
+                        }
                         completion()
                     } catch(let err) {
                         print(String(describing: err))
@@ -64,7 +74,7 @@ public final class OutingViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     self.outingSearchList = try JSONDecoder().decode([OutingSearchResponse].self, from: responseData)
-                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: Major(rawValue: $0.major) ?? .sw, outingTime: $0.createdTime) }
                     completion()
                 } catch(let err) {
                     print(String(describing: err))
