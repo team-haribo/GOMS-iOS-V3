@@ -74,7 +74,7 @@ public final class OutingViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     self.outingSearchList = try JSONDecoder().decode([OutingSearchResponse].self, from: responseData)
-                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: Major(rawValue: $0.major) ?? .sw, outingTime: $0.createdTime) }
+                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: Major(rawValue: $0.department) ?? .sw, outingTime: $0.createdTime) }
                     completion()
                 } catch(let err) {
                     print(String(describing: err))

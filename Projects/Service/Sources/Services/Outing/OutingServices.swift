@@ -10,10 +10,12 @@ import Foundation
 import Moya
 
 public enum OutingServices {
-    case outing(outingUUID: UUID, authorization: String)
+    case outingStatus(authorization: String)
     case outingList(authorization: String)
-    case outingSearch(name: String?, authorization: String)
-    case outingValidation(authorization: String)
+    case outingSearch(name: String, authorization: String)
+    case outingCount(authorization: String)
+    case outingOut(uuid: String, exp: Int, authorization: String)
+    case outingIn(uuid: String, exp: Int, authorization: String)
 }
 
 extension OutingServices: TargetType {
@@ -27,24 +29,30 @@ extension OutingServices: TargetType {
 
     public var path: String {
         switch self {
-        case .outing(let outingUUID, _):
-            return "/outing/\(outingUUID)"
+        case .outingStatus:
+            return "/outing/status"
         case .outingList:
-            return "/outing/"
+            return "/outing/list"
         case .outingSearch:
             return "/outing/search"
-        case .outingValidation:
-            return "/outing/validation"
+        case .outingCount:
+            return "/outing/count"
+        case .outingOut:
+            return "/outing/out"
+        case .outingIn:
+            return "/outing/in"
         }
     }
     
     public var method: Moya.Method {
         switch self {
-        case .outingList,
+        case .outingStatus,
+             .outingList,
              .outingSearch,
-             .outingValidation:
+             .outingCount:
             return .get
-        case .outing:
+        case .outingOut,
+             .outingIn:
             return .post
         }
     }
@@ -55,27 +63,41 @@ extension OutingServices: TargetType {
     
     public var task: Task {
         switch self {
-        case .outing:
+        case .outingStatus,
+             .outingList,
+             .outingCount:
             return .requestPlain
-        case .outingList:
-            return .requestPlain
+
         case .outingSearch(let name, _):
-            return .requestParameters(parameters: ["name": name ?? ""], encoding: URLEncoding.queryString)
-        case .outingValidation:
-            return .requestPlain
+            return .requestParameters(
+                parameters: ["name": name],
+                encoding: URLEncoding.queryString
+            )
+
+        case .outingOut(let uuid, let exp, _),
+             .outingIn(let uuid, let exp, _):
+            return .requestParameters(
+                parameters: [
+                    "uuid": uuid,
+                    "exp": exp
+                ],
+                encoding: JSONEncoding.default
+            )
         }
     }
     
     public var headers: [String : String]? {
         switch self {
-        case .outingList(let authorization),
-             .outing(_, let authorization),
-             .outingValidation(let authorization):
-            return ["Content-Type": "application/json", "Authorization": authorization]
-        default:
-            return ["Content-Type": "application/json"]
+        case .outingStatus(let authorization),
+             .outingList(let authorization),
+             .outingSearch(_, let authorization),
+             .outingCount(let authorization),
+             .outingOut(_, _, let authorization),
+             .outingIn(_, _, let authorization):
+            return [
+                "Content-Type": "application/json",
+                "Authorization": "Bearer \(authorization)"
+            ]
         }
     }
 }
-
-
