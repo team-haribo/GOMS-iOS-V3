@@ -15,7 +15,17 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     var outingList: [OutingListData] = []
     
-    let refreshControl = UIRefreshControl()
+let refreshControl = UIRefreshControl()
+
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.tintColor = UIColor.color.admin.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
     
     private lazy var searchTextField = GOMSTextField(
         frame: CGRect(x: 0, y: 0, width: 0, height: 0),
@@ -84,13 +94,18 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
             }
         }
     }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.navigationBar.tintColor = .color.admin.color
+    }
     
     // MARK: - Setting
     public override func configNavigation() {
         self.navigationController?.navigationBar.isHidden = false
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
-        navigationController?.navigationBar.tintColor = .color.gomsPrimary.color
+        navigationController?.navigationBar.tintColor = .color.admin.color
         self.navigationItem.hidesSearchBarWhenScrolling = false
     
     }
@@ -169,6 +184,10 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
         }
     }
     
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
+    }
+
     // MARK: - Configure UI
     public override func configureUI() {
         view.backgroundColor = .color.background.color
@@ -176,14 +195,19 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     // MARK: - Add View
     public override func addView() {
-        [searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
+        [customBackButton, searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
     }
         
     // MARK: - Layout
     public override func setLayout() {
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+
         searchTitle.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.top.equalToSuperview().inset(100)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
         }
         
@@ -216,6 +240,16 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
         outingNilLabel.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
+        }
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
         }
     }
 }
