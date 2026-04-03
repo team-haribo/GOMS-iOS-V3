@@ -47,7 +47,7 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
     }
     
     private lazy var deleteButton = UIButton().then {
-        $0.setImage(.image.trash.image, for: .normal)
+        $0.setImage(.image.grayouting.image, for: .normal)
         $0.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
     }
     
