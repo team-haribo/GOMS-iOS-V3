@@ -43,7 +43,7 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
     }
 
     // MARK: - Configure
-    func configure(with data: OutingListData) {
+    func configure(with data: OutingListData, showTime: Bool = false) {
         setupData(with: data)
     }
 
@@ -62,7 +62,7 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
         }
         nameLabel.text = outingData.name
         if outingData.department == Major.sw.rawValue {
-            studentInfoLabel.text = "\(outingData.grade)기 | sw"
+            studentInfoLabel.text = "\(outingData.grade)기 | SW"
         } else if outingData.department == Major.iot.rawValue {
             studentInfoLabel.text = "\(outingData.grade)기 | IoT"
         } else {

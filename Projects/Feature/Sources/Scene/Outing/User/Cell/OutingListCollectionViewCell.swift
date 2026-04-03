@@ -71,7 +71,7 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
     }
     
     // MARK: - Configure
-    func configureData(with outingData: OutingListData) {
+    func configureData(with outingData: OutingListData, showTime: Bool = true) {
         if let imageURL = outingData.profileImageURL, let url = URL(string: imageURL) {
             profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
             profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
@@ -86,8 +86,17 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
         } else {
             studentInfoLabel.text = "\(outingData.grade)기 | AI"
         }
-        outingTime.text = "\(outingData.outingTime)에 외출"
+
+        if showTime {
+            let fullTime = outingData.outingTime
+            let timeOnly = fullTime.split(separator: "T").last?.prefix(5) ?? ""
+            outingTime.isHidden = false
+            outingTime.text = "\(timeOnly)에 외출"
+        } else {
+            outingTime.isHidden = true
+        }
     }
+    
     
     func configureUI() {
         profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2

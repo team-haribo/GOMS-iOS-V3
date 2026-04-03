@@ -706,7 +706,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 cell.configureDummy()
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
-                cell.configure(with: data)
+                cell.configure(with: data, showTime: false)
             }
 
             return cell
