@@ -30,17 +30,17 @@ extension OutingServices: TargetType {
     public var path: String {
         switch self {
         case .outingStatus:
-            return "/outing/status"
+            return "/api/v3/outing/status"
         case .outingList:
-            return "/outing/list"
+            return "/api/v3/outing/list"
         case .outingSearch:
-            return "/outing/search"
+            return "/api/v3/outing/search"
         case .outingCount:
-            return "/outing/count"
+            return "/api/v3/outing/count"
         case .outingOut:
-            return "/outing/out"
+            return "/api/v3/outing/out"
         case .outingIn:
-            return "/outing/in"
+            return "/api/v3/outing/in"
         }
     }
     
@@ -93,14 +93,14 @@ extension OutingServices: TargetType {
              .outingSearch(_, let authorization),
              .outingCount(let authorization):
             return [
-                "Authorization": "Bearer \(authorization)"
+                "Authorization": authorization
             ]
 
         case .outingOut(_, _, let authorization),
              .outingIn(_, _, let authorization):
             return [
                 "Content-Type": "application/json",
-                "Authorization": "Bearer \(authorization)"
+                "Authorization": authorization
             ]
         }
     }

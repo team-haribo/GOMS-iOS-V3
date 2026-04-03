@@ -132,7 +132,7 @@ extension AuthServices: TargetType {
              let .logoutToken(refreshToken):
             return [
                 "Content-Type": "application/json",
-                "RefreshToken": "Bearer \(refreshToken)"
+                "RefreshToken": refreshToken
             ]
 
         default:

@@ -19,25 +19,20 @@ public struct MyRoleResponse: Decodable {
     public let role: String
 }
 
-public final class ProfileViewModel: ObservableObject {
+public final class ProfileViewModel: BaseViewModel, ObservableObject {
     @Published public var errorMessage = ""
     @Published public var isDataLoaded = false
     @Published public var profileInfo: ProfileResponse?
 
-    public init() {}
+    public override init() {
+        super.init()
+    }
 
     let providerAuccount = MoyaProvider<AccountServices>(plugins: [NetworkLoggerPlugin()])
     let providerMember = MoyaProvider<MemberServices>(plugins: [NetworkLoggerPlugin()])
     let providerAuth = MoyaProvider<AuthServices>(plugins: [NetworkLoggerPlugin()])
     let providerOuting = MoyaProvider<OutingServices>(plugins: [NetworkLoggerPlugin()])
     let providerProfile = MoyaProvider<ProfileServices>(plugins: [NetworkLoggerPlugin()])
-    let keyChain = KeyChain()
-
-    public var accessToken: String {
-        "Bearer " + (keyChain.read(key: Const.KeyChainKey.accessToken) ?? "")
-    }
-
-    private lazy var refreshToken = "Bearer " + (keyChain.read(key: Const.KeyChainKey.refreshToken) ?? "")
 
     private var password: String = ""
     private var rePassword: String = ""
@@ -60,7 +55,7 @@ public final class ProfileViewModel: ObservableObject {
         var department: String = ""
         var lateCount: Int = 0
 
-        // 1. myrole
+        
         group.enter()
         providerMember.request(.myRole(authorization: accessToken)) { result in
             switch result {
@@ -155,6 +150,10 @@ public final class ProfileViewModel: ObservableObject {
         }
     }
 
+    private var refreshToken: String {
+        keyChain.read(key: Const.KeyChainKey.refreshToken) ?? ""
+    }
+    
     func profileLogout(completion: @escaping (Bool) -> Void) {
         providerAuth.request(.logoutToken(refreshToken: refreshToken)) { [weak self] result in
             switch result {

@@ -258,7 +258,7 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
 
         alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
-            // 🔥 더미 상태일 때 (데이터 없음)
+            
             if self.isInitialState && self.outingList.isEmpty {
                 guard self.dummyCount > 0 else { return }
                 
@@ -272,7 +272,7 @@ extension AdminOutingViewController: UICollectionViewDelegate {
                 return
             }
 
-            // 🔥 실제 데이터일 때
+            
             guard index < self.outingList.count else { return }
 
             self.outingList.remove(at: index)

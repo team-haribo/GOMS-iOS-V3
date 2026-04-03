@@ -15,7 +15,7 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     let viewModel = QRCodeViewModel()
 
     let captureSession = AVCaptureSession()
-    var previewLayer: AVCaptureVideoPreviewLayer!
+    var previewLayer: AVCaptureVideoPreviewLayer?
 
     let metadataObjectTypes: [AVMetadataObject.ObjectType] = [.qr]
 
@@ -65,7 +65,7 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     // MARK: - Layout
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        previewLayer.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
+        previewLayer?.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
     }
 
     public override func setLayout() {
@@ -122,9 +122,10 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
         captureSession.addOutput(output)
 
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(previewLayer)
-        [gomsLogo, closeButton, qrFrame].forEach { self.view.addSubview($0) }
+        previewLayer?.videoGravity = .resizeAspectFill
+        if let previewLayer = previewLayer {
+            view.layer.addSublayer(previewLayer)
+        }
 
         DispatchQueue.global().async {
             self.captureSession.startRunning()

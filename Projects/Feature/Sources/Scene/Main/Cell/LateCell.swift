@@ -63,9 +63,9 @@ final class LateCell: UICollectionViewCell {
             profileImageView.image = .image.profile.image
         }
         nameLabel.text = lateData.name
-        if lateData.major == Major.sw.rawValue {
+        if lateData.department == Major.sw.rawValue {
             studentInfoLabel.text = "\(lateData.grade)기 | SW개발"
-        } else if lateData.major == Major.iot.rawValue {
+        } else if lateData.department == Major.iot.rawValue {
             studentInfoLabel.text = "\(lateData.grade)기 | IoT"
         } else {
             studentInfoLabel.text = "\(lateData.grade)기 | AI"
