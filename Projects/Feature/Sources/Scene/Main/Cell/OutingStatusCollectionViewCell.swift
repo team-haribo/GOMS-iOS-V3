@@ -62,7 +62,7 @@ final class OutingStatusCollectionViewCell: UICollectionViewCell {
         }
         nameLabel.text = outingData.name
         if outingData.department == Major.sw.rawValue {
-            studentInfoLabel.text = "\(outingData.grade)기 | SW개발"
+            studentInfoLabel.text = "\(outingData.grade)기 | sw"
         } else if outingData.department == Major.iot.rawValue {
             studentInfoLabel.text = "\(outingData.grade)기 | IoT"
         } else {

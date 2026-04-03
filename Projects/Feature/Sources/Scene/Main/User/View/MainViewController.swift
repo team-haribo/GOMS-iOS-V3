@@ -472,8 +472,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         profileView.nameLabel.text = name
 
         if department == Major.sw.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW개발"
+            profileView.studentInformationLabel.text = "\(grade)기 | SW"
+            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW"
         } else if department == Major.iot.rawValue {
             profileView.studentInformationLabel.text = "\(grade)기 | IoT"
             basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"

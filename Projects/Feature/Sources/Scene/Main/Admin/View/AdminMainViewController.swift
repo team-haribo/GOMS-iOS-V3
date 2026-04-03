@@ -362,7 +362,7 @@ private let profileVC = AdminProfileViewController()
 
         let majorText: String
         if viewModel.profileData?.department == Major.sw.rawValue {
-            majorText = "SW개발"
+            majorText = "SW"
         } else if viewModel.profileData?.department == Major.iot.rawValue {
             majorText = "IoT"
         } else {

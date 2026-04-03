@@ -66,7 +66,7 @@ class LatecomerCollectionViewCell: UICollectionViewCell {
         
         nameLabel.text = lateData.name
         if lateData.department == Major.sw.rawValue {
-            studentInfoLabel.text = "\(lateData.grade)기 | SW개발"
+            studentInfoLabel.text = "\(lateData.grade)기 | SW"
         } else if lateData.department == Major.iot.rawValue {
             studentInfoLabel.text = "\(lateData.grade)기 | IoT"
         } else {
