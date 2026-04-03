@@ -58,7 +58,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         $0.font = UIFont.suit(size: 18, weight: .semibold)
     }
 
-    lazy var lateNilView = LateNilView()
+    lazy var lateNilView = LateNilView().then {
+        $0.isHidden = true
+    }
 
     private lazy var latecomerCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout.init()).then {
         $0.isScrollEnabled = false
@@ -251,9 +253,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         fetchData()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            print("⏱ 1초 후 profileData:", self.mainViewModel.profileData as Any)
-        }
+        
         self.navigationController?.navigationBar.prefersLargeTitles = false
         self.navigationItem.hidesBackButton = true
         self.navigationController?.setNavigationBarHidden(true, animated: false)
@@ -296,7 +296,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         fetchData()
         guard let isLocalEmail = UserDefaults.standard.string(forKey: "localEmail"),
               let isLocalPass = UserDefaults.standard.string(forKey: "localPass") else {
-            print("localEmail 또는 localPass 값이 없습니다.")
             let introVC = IntroViewController()
             self.navigationController?.setViewControllers([introVC], animated: false)
             self.refreshControl.endRefreshing()
@@ -348,7 +347,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                     }
                                 }
                             } else {
-                                print("프로필 로드 실패")
+                                // Removed debug print for profile load failure
                             }
                             
                             self.refreshControl.endRefreshing()
@@ -356,11 +355,11 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                     }
                     
                 case 400, 404:
-                    print("클라이언트 에러")
+                    
                     self.refreshControl.endRefreshing()
                     
                 default:
-                    print("서버 에러")
+                    
                     self.refreshControl.endRefreshing()
                 }
             }
@@ -369,11 +368,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     private func fetchData() {
         let group = DispatchGroup()
 
-        print("🚀🚀🚀 fetchData 시작")
-
+      
         group.enter()
         mainViewModel.getLateList {
-            print("🔥 getLateList 완료:", self.mainViewModel.lateListDatas)
+            
             group.leave()
         }
 
@@ -384,13 +382,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         group.enter()
         mainViewModel.getOutingList {
-            print("🔥 getOutingList 완료:", self.mainViewModel.outingListDatas)
+          
             group.leave()
         }
 
         group.notify(queue: .main) { [weak self] in
             guard let self = self else { return }
-
 
             self.setupProfileView()
             self.setupViewComponents()
@@ -426,7 +423,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 return
             }
             
-            print("프로필 데이터:", self.mainViewModel.profileData)
+            // Removed debug print for profile data
             self.setupProfileView()
             self.setupViewComponents()
             self.latecomerCollectionView.reloadData()
@@ -450,12 +447,11 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     // MARK: - Setting
     func setup() {
-       
-        if self.mainViewModel.lateListDatas.isEmpty {
-            lateNilView.isHidden = true
-        } else {
-            lateNilView.isHidden = false
-        }
+        let isEmpty = self.mainViewModel.lateListDatas.isEmpty
+
+        lateNilView.isHidden = !isEmpty
+        latecomerCollectionView.isHidden = isEmpty
+
         self.setCollectionView()
         self.setupCountLable()
     }
