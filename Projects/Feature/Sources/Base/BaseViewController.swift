@@ -76,6 +76,10 @@ public class BaseViewController: UIViewController {
 
     func configNavigation() { }
 
+    func navigationTintColor() -> UIColor {
+        return .color.gomsPrimary.color
+    }
+
     // MARK: Navigation Setup
 
     private func setupCustomNavigation() {
@@ -99,7 +103,7 @@ public class BaseViewController: UIViewController {
         let backLabel = UILabel()
         backLabel.text = "돌아가기"
         backLabel.font = .suit(size: 16, weight: .medium)
-        backLabel.textColor = .color.gomsPrimary.color
+        backLabel.textColor = navigationTintColor()
 
         let backStack = UIStackView(arrangedSubviews: [backImageView, backLabel])
         backStack.axis = .horizontal
