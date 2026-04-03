@@ -13,8 +13,6 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     // MARK: - Properties
     private let viewModel = OutingViewModel()
     
-private var isInitialState = true
-private var dummyCount = 5
     var outingList: [OutingListData] = []
     
     let refreshControl = UIRefreshControl()
@@ -78,12 +76,12 @@ private var dummyCount = 5
         setLayout()
         configureUI()
 
-        setup()
-
         viewModel.getOutingList {
-            self.isInitialState = false
             self.outingList = self.viewModel.outingListDatas
-            self.setup()
+            DispatchQueue.main.async {
+                self.outingListCollectionView.reloadData()
+                self.setup()
+            }
         }
     }
     
@@ -92,6 +90,7 @@ private var dummyCount = 5
         self.navigationController?.navigationBar.isHidden = false
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
+        navigationController?.navigationBar.tintColor = .color.gomsPrimary.color
         self.navigationItem.hidesSearchBarWhenScrolling = false
     
     }
@@ -224,7 +223,7 @@ private var dummyCount = 5
 // MARK: - Extension
 extension AdminOutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return isInitialState && outingList.isEmpty ? dummyCount : outingList.count
+        return outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -233,12 +232,8 @@ extension AdminOutingViewController: UICollectionViewDataSource {
         cell.delegate = self
         cell.tag = indexPath.item
 
-        if isInitialState && outingList.isEmpty {
-            cell.configureDummy()
-        } else {
-            let outingData = outingList[indexPath.row]
-            cell.configureData(with: outingData)
-        }
+        let outingData = outingList[indexPath.row]
+        cell.configureData(with: outingData)
 
         return cell
     }
@@ -258,27 +253,16 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
 
         alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
-            // 🔥 더미 상태일 때 (데이터 없음)
-            if self.isInitialState && self.outingList.isEmpty {
-                guard self.dummyCount > 0 else { return }
-                
-                self.dummyCount -= 1
-
-                DispatchQueue.main.async {
-                    self.outingListCollectionView.performBatchUpdates({
-                        self.outingListCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
-                    }, completion: nil)
-                }
-                return
-            }
-
-            // 🔥 실제 데이터일 때
             guard index < self.outingList.count else { return }
 
-            self.outingList.remove(at: index)
-
-            DispatchQueue.main.async {
-                self.outingListCollectionView.reloadData()
+            let target = self.outingList[index]
+            self.viewModel.forceOutingStudent(user: target) {
+                DispatchQueue.main.async {
+                    self.viewModel.getOutingList {
+                        self.outingList = self.viewModel.outingListDatas
+                        self.outingListCollectionView.reloadData()
+                    }
+                }
             }
         }))
 

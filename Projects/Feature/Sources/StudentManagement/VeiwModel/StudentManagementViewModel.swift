@@ -11,7 +11,7 @@ import Moya
 import Service
 
 public struct UserData {
-    let id: UUID
+    let id: Int
     let name: String
     let profileImageURL: String?
     let gender: String
@@ -25,7 +25,7 @@ public struct UserData {
 public final class StudentManagementViewModel: BaseViewModel {
     private let studentCouncilProvider = MoyaProvider<StudentCouncilServices>()
     
-    var userList: [StudentListResponse] = []
+    var userList: [Student] = []
     var userListDatas: [UserData] = []
     
     private var grade: Int?
@@ -50,15 +50,15 @@ public final class StudentManagementViewModel: BaseViewModel {
     private func mapToUserData() {
         self.userListDatas = self.userList.map {
             UserData(
-                id: $0.accountIdx,
+                id: $0.memberId,
                 name: $0.name,
-                profileImageURL: $0.profileUrl,
-                gender: $0.gender,
+                profileImageURL: nil,
+                gender: "",
                 grade: $0.grade,
-                major: $0.major,
-                authority: $0.authority,
-                isBlackList: $0.isBlackList,
-                isOuting: $0.isOuting
+                major: $0.department,
+                authority: "",
+                isBlackList: false,
+                isOuting: false
             )
         }
     }
@@ -67,7 +67,7 @@ public final class StudentManagementViewModel: BaseViewModel {
         studentCouncilProvider.request(.studentList(authorization: accessToken)) { response in
             if case let .success(result) = response, result.statusCode == 200 {
                 do {
-                    self.userList = try JSONDecoder().decode([StudentListResponse].self, from: result.data)
+                    self.userList = try JSONDecoder().decode(StudentListModel.self, from: result.data).students
                     self.mapToUserData()
                     completion()
                 } catch { print(error) }
@@ -77,50 +77,89 @@ public final class StudentManagementViewModel: BaseViewModel {
         }
     }
     
+    // TODO: 임시 로컬 (서버통신 아직X)
     func changeAuthority(user: UserData, completion: @escaping ([UserData]) -> Void) {
-        let newAuthority = user.authority == Authority.student.rawValue ? Authority.admin.rawValue : Authority.student.rawValue
-        let param = AuthorityRequest(accountIdx: user.id, authority: newAuthority)
-        studentCouncilProvider.request(.editAuthority(authorization: self.accessToken, param: param)) { response in
-            if case let .success(result) = response, result.statusCode == 205 {
-                self.getUserList { completion(self.userListDatas) }
-            }
+        self.userListDatas = self.userListDatas.map {
+            guard $0.id == user.id else { return $0 }
+            return UserData(
+                id: $0.id,
+                name: $0.name,
+                profileImageURL: $0.profileImageURL,
+                gender: $0.gender,
+                grade: $0.grade,
+                major: $0.major,
+                authority: $0.authority == Authority.student.rawValue ? Authority.admin.rawValue : Authority.student.rawValue,
+                isBlackList: $0.isBlackList,
+                isOuting: $0.isOuting
+            )
         }
+        completion(self.userListDatas)
     }
     
     func blackList(user: UserData, completion: @escaping ([UserData]) -> Void) {
-        studentCouncilProvider.request(.changeBlackList(authorization: self.accessToken, accountIdx: user.id)) { response in
-            if case let .success(result) = response, result.statusCode == 201 {
-                self.getUserList { completion(self.userListDatas) }
-            }
+        self.userListDatas = self.userListDatas.map {
+            guard $0.id == user.id else { return $0 }
+            return UserData(
+                id: $0.id,
+                name: $0.name,
+                profileImageURL: $0.profileImageURL,
+                gender: $0.gender,
+                grade: $0.grade,
+                major: $0.major,
+                authority: $0.authority,
+                isBlackList: true,
+                isOuting: $0.isOuting
+            )
         }
+        completion(self.userListDatas)
     }
     
     func cancelBlackList(user: UserData, completion: @escaping ([UserData]) -> Void) {
-        studentCouncilProvider.request(.cancelBlackList(authorization: self.accessToken, accountIdx: user.id)) { response in
-            if case let .success(result) = response, result.statusCode == 205 {
-                self.getUserList { completion(self.userListDatas) }
-            }
+        self.userListDatas = self.userListDatas.map {
+            guard $0.id == user.id else { return $0 }
+            return UserData(
+                id: $0.id,
+                name: $0.name,
+                profileImageURL: $0.profileImageURL,
+                gender: $0.gender,
+                grade: $0.grade,
+                major: $0.major,
+                authority: $0.authority,
+                isBlackList: false,
+                isOuting: $0.isOuting
+            )
         }
+        completion(self.userListDatas)
     }
 
     func forceOutingStudent(user: UserData, completion: @escaping ([UserData]) -> Void) {
-        studentCouncilProvider.request(.forceOuting(authorization: self.accessToken, accountIdx: user.id)) { response in
-            if case let .success(result) = response, result.statusCode == 205 {
-                self.getUserList { completion(self.userListDatas) }
-            }
+        self.userListDatas = self.userListDatas.map {
+            guard $0.id == user.id else { return $0 }
+            return UserData(
+                id: $0.id,
+                name: $0.name,
+                profileImageURL: $0.profileImageURL,
+                gender: $0.gender,
+                grade: $0.grade,
+                major: $0.major,
+                authority: $0.authority,
+                isBlackList: $0.isBlackList,
+                isOuting: true
+            )
         }
+        completion(self.userListDatas)
     }
 
     func serachStudent(searchString: String?, completion: @escaping ([UserData]) -> Void) {
-        let parm = SearchStudentRequest(grade: self.grade, gender: self.gender, name: searchString, isBlackList: self.isBlackList, authority: self.authority, major: self.major)
-        studentCouncilProvider.request(.searchStudent(authorization: self.accessToken, parm: parm)) { response in
-            if case let .success(result) = response, result.statusCode == 200 {
-                do {
-                    self.userList = try JSONDecoder().decode([StudentListResponse].self, from: result.data)
-                    self.mapToUserData()
-                    completion(self.userListDatas)
-                } catch { print(error) }
-            }
+        let keyword = searchString?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        let filtered = self.userListDatas.filter { user in
+            let matchesName = keyword.isEmpty || user.name.localizedCaseInsensitiveContains(keyword)
+            let matchesGrade = self.grade == nil || user.grade == self.grade
+            let matchesMajor = self.major == nil || self.major?.isEmpty == true || user.major == self.major
+            return matchesName && matchesGrade && matchesMajor
         }
+
+        completion(filtered)
     }
 }

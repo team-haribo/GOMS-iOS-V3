@@ -178,6 +178,8 @@ private let profileVC = AdminProfileViewController()
         navigationItem.setHidesBackButton(true, animated: false)
         navigationController?.navigationBar.topItem?.hidesBackButton = true
         navigationController?.setNavigationBarHidden(true, animated: false)
+        self.navigationItem.backButtonTitle = ""
+        self.navigationItem.hidesBackButton = true
 
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
@@ -191,7 +193,6 @@ private let profileVC = AdminProfileViewController()
         mapContainerView.isHidden = true
         profileContainerView.isHidden = true
 
-       
         view.bringSubviewToFront(mapContainerView)
         view.bringSubviewToFront(profileContainerView)
         view.bringSubviewToFront(tabBar)
@@ -316,11 +317,10 @@ private let profileVC = AdminProfileViewController()
 
     // MARK: - Setting
     func setup() {
-        if self.viewModel.lateListDatas.isEmpty {
-            lateNilView.isHidden = true
-        } else {
-            lateNilView.isHidden = false
-        }
+        let isEmpty = self.viewModel.lateListDatas.isEmpty
+
+        lateNilView.isHidden = !isEmpty
+        latecomerCollectionView.isHidden = isEmpty
 
         self.setCollectionView()
         self.setupCountLable()
@@ -361,9 +361,9 @@ private let profileVC = AdminProfileViewController()
         }
 
         let majorText: String
-        if viewModel.profileData?.major == Major.sw.rawValue {
-            majorText = "SW개발"
-        } else if viewModel.profileData?.major == Major.iot.rawValue {
+        if viewModel.profileData?.department == Major.sw.rawValue {
+            majorText = "SW"
+        } else if viewModel.profileData?.department == Major.iot.rawValue {
             majorText = "IoT"
         } else {
             majorText = "AI"
@@ -509,7 +509,7 @@ private let profileVC = AdminProfileViewController()
         scrollView.addSubview(contentView)
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
-        [logo, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
+        [logo, profileView, basicsProfileView, latecomerLabel, latecomerCollectionView, lateNilView, outingView].forEach { self.contentView.addSubview($0) }
         
         view.addSubview(mapContainerView)
         view.addSubview(profileContainerView)

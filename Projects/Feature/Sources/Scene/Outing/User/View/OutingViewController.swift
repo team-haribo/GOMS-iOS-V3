@@ -246,19 +246,15 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
 extension OutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
       
-        return outingList.isEmpty ? 5 : outingList.count
+        return outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = outingListCollectionView.dequeueReusableCell(withReuseIdentifier: OutingListCollectionViewCell.identifier, for: indexPath) as! OutingListCollectionViewCell
 
        
-        if outingList.isEmpty {
-            cell.configureDummy()
-        } else {
-            let outingData = outingList[indexPath.row]
-            cell.configureData(with: outingData)
-        }
+        let outingData = outingList[indexPath.row]
+        cell.configureData(with: outingData)
 
         
         return cell

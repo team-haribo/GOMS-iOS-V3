@@ -447,7 +447,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
                 self?.perceptionNum.text = String(describing: profileInfo.lateCount)
                 
                 let majorText: String
-                switch profileInfo.major {
+                switch profileInfo.department {
                 case Major.sw.rawValue:
                     majorText = "SW"
                 case Major.iot.rawValue:
@@ -457,25 +457,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
                 }
                 
                 let finalText = "\(profileInfo.grade)기ㅣ\(majorText)"
-                let profileUrlString = profileInfo.profileUrl ?? ""
-                
-                if let profileUrl = URL(string: profileUrlString) {
-                    URLSession.shared.dataTask(with: profileUrl) { data, response, error in
-                        if let error = error {
-                            print("이미지 데이터를 가져오는 중 에러 발생: \(error)")
-                            return
-                        }
-                        
-                        if let imageData = data, let profileImage = UIImage(data: imageData) {
-                            DispatchQueue.main.async {
-                                self?.userProfile.image = profileImage
-                            }
-                        }
-                    }
-                    .resume()
-                }
-                
-                let uploadimage = profileInfo.profileUrl
+                self?.userProfile.image = UIImage.image.gomsBasicProfile.image
                 self?.userGradeDepartment.text = finalText
             }
         }

@@ -83,7 +83,7 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         }
         
         nameLabel.text = userData.name
-        let displayMajor = userData.major == "SW" ? "SW개발" : userData.major
+        let displayMajor = userData.major == "SW" ? "SW" : userData.major
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
         profileImageView.alpha = 1.0
         

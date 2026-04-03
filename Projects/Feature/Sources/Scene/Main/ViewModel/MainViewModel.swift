@@ -14,24 +14,25 @@ struct LatecomerData {
     let profileImageURL: String?
     let name: String
     let grade: Int
-    let major: String
+    let department: String
 }
 
 struct ProfileData {
     let profileUrl: String?
     let name: String
     let grade: Int
-    let major: String
+    let department: String
     let authority: String
-    let isOuting: Bool
-    let isBlackList: Bool
+    let status: String
+    let lateCount: Int
 }
 
 public final class MainViewModel: BaseViewModel {
-    private let isTestMode = true
+    private let isTestMode = false
     private let lateProvider = MoyaProvider<LateService>()
     private let outingProvider = MoyaProvider<OutingServices>()
     private let profileProvider = MoyaProvider<ProfileServices>()
+    private let providerMember = MoyaProvider<MemberServices>()
     
     var lateList: [LatecomerResponse] = []
     var lateListDatas: [LatecomerData] = []
@@ -39,20 +40,13 @@ public final class MainViewModel: BaseViewModel {
     var outingList: [OutingListResponse] = []
     var outingListDatas: [OutingListData] = []
     
-    var profile: ProfileResponse?
     var profileData: ProfileData?
         
     override init() {
-        self.profile = nil
         self.profileData = nil
     }
     
     func getLateList(completion: @escaping () -> Void) {
-        if isTestMode {
-            self.lateListDatas = []
-            completion()
-            return
-        }
         lateProvider.request(.lateRank(authorization: accessToken)) { response in
             switch response {
             case .success(let result):
@@ -60,13 +54,13 @@ public final class MainViewModel: BaseViewModel {
                 let statusCode = result.statusCode
                 do {
                     let responseModel = try JSONDecoder().decode(LatecomerModel.self, from: responseData)
-                    self.lateList = responseModel.items
+                    self.lateList = responseModel.students
                     self.lateListDatas = self.lateList.map {
                         LatecomerData(
                             profileImageURL: nil,
                             name: $0.name,
                             grade: $0.grade,
-                            major: $0.department.rawValue
+                            department: $0.department
                         )
                     }
                     completion()
@@ -92,25 +86,20 @@ public final class MainViewModel: BaseViewModel {
     }
     
     func getOutingList(completion: @escaping () -> Void) {
-        if isTestMode {
-            self.outingListDatas = []
-            completion()
-            return
-        }
         outingProvider.request(.outingList(authorization: accessToken)) { response in
             switch response {
             case .success(let result):
                 let responseData = result.data
                 do {
                     let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-                    self.outingList = responseModel.items
+                    self.outingList = responseModel.students
                     self.outingListDatas = self.outingList.map {
                         OutingListData(
-                            id: UUID(),
+                            id: $0.memberId,
                             profileImageURL: nil,
                             name: $0.name,
                             grade: $0.grade,
-                            major: Major(rawValue: $0.department)?.rawValue ?? "",
+                            department: $0.department,
                             outingTime: $0.outingAt
                         )
                     }
@@ -138,49 +127,74 @@ public final class MainViewModel: BaseViewModel {
     }
     
     func getProfile(completion: @escaping (String?) -> Void) {
-        if isTestMode {
-            self.profileData = ProfileData(profileUrl: nil,
-                                           name: "김준표",
-                                           grade: 3,
-                                           major: "SW",
-                                           authority: "ROLE_STUDENT",
-                                           isOuting: false,
-                                           isBlackList: false)
-            completion("ROLE_STUDENT")
-            return
-        }
-        profileProvider.request(.getProfile(authorization: accessToken)) { response in
-            switch response {
-            case .success(let result):
-                let statusCode = result.statusCode
-                let responseData = result.data
-                switch statusCode {
+        let group = DispatchGroup()
+
+        var name: String = ""
+        var grade: Int = 0
+        var department: String = ""
+        var authority: String = ""
+        var status: String = ""
+        var lateCount: Int = 0
+
+        
+        group.enter()
+        self.providerMember.request(.myRole(authorization: accessToken)) { result in
+            switch result {
+            case .success(let response):
+                switch response.statusCode {
                 case 200:
-                    do {
-                        self.profile = try JSONDecoder().decode(ProfileResponse.self, from: responseData)
-                        self.profileData = ProfileData(profileUrl: self.profile?.profileUrl,
-                                                       name: self.profile?.name ?? "",
-                                                       grade: self.profile?.grade ?? 0,
-                                                       major: self.profile?.major ?? "",
-                                                       authority: self.profile?.authority ?? "",
-                                                       isOuting: self.profile?.isOuting ?? false,
-                                                       isBlackList: self.profile?.isBlackList ?? false)
-                        completion(self.profileData?.authority)
-                    } catch {
-                        print(error.localizedDescription)
-                        completion(nil)
+                    if let data = try? JSONDecoder().decode(MyRoleResponse.self, from: response.data) {
+                        name = data.name
+                        authority = data.role
                     }
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
-                    completion(nil)
+                    self.gomsRefreshToken.tokenReissuance() { _ in }
                 default:
-                    print(result)
-                    completion(nil)
+                    print(response)
                 }
-            case .failure(let err):
-                print(err.localizedDescription)
-                completion(nil)
+            case .failure(let error):
+                print(error.localizedDescription)
             }
+            group.leave()
+        }
+
+      
+        group.enter()
+        self.outingProvider.request(.outingStatus(authorization: accessToken)) { result in
+            switch result {
+            case .success(let response):
+                switch response.statusCode {
+                case 200:
+                    if let data = try? JSONDecoder().decode(OutingStatusResponse.self, from: response.data) {
+                        status = data.status
+                        grade = data.grade
+                        department = data.department
+                        lateCount = data.lateCount
+                    }
+                case 401:
+                    self.gomsRefreshToken.tokenReissuance() { _ in }
+                case 500:
+                    print("SERVER ERROR")
+                default:
+                    print(response)
+                }
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+            group.leave()
+        }
+
+        group.notify(queue: .main) {
+            self.profileData = ProfileData(
+                profileUrl: nil,
+                name: name,
+                grade: grade,
+                department: department,
+                authority: authority,
+                status: status,
+                lateCount: lateCount
+            )
+            completion(authority)
         }
     }
 }

@@ -58,7 +58,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         $0.font = UIFont.suit(size: 18, weight: .semibold)
     }
 
-    lazy var lateNilView = LateNilView()
+    lazy var lateNilView = LateNilView().then {
+        $0.isHidden = true
+    }
 
     private lazy var latecomerCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout.init()).then {
         $0.isScrollEnabled = false
@@ -242,15 +244,16 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         isVisible = true
-                isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
+        isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
         mainViewModel.getLateList { [weak self] in
             self?.mainViewModel.getOutingList { [weak self] in
                 self?.setup()
             }
         }
-        
+
         fetchData()
+        
         self.navigationController?.navigationBar.prefersLargeTitles = false
         self.navigationItem.hidesBackButton = true
         self.navigationController?.setNavigationBarHidden(true, animated: false)
@@ -293,7 +296,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         fetchData()
         guard let isLocalEmail = UserDefaults.standard.string(forKey: "localEmail"),
               let isLocalPass = UserDefaults.standard.string(forKey: "localPass") else {
-            print("localEmail 또는 localPass 값이 없습니다.")
             let introVC = IntroViewController()
             self.navigationController?.setViewControllers([introVC], animated: false)
             self.refreshControl.endRefreshing()
@@ -340,11 +342,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                             self.navigationController?.setViewControllers([mainVC], animated: false)
                                         }
                                     default:
-                                        print("권한 없음")
+                                      let introVC = IntroViewController()
+                                      self.navigationController?.setViewControllers([introVC], animated: false)
                                     }
                                 }
                             } else {
-                                print("프로필 로드 실패")
+                                // Removed debug print for profile load failure
                             }
                             
                             self.refreshControl.endRefreshing()
@@ -352,11 +355,11 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                     }
                     
                 case 400, 404:
-                    print("클라이언트 에러")
+                    
                     self.refreshControl.endRefreshing()
                     
                 default:
-                    print("서버 에러")
+                    
                     self.refreshControl.endRefreshing()
                 }
             }
@@ -365,18 +368,21 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     private func fetchData() {
         let group = DispatchGroup()
 
+      
         group.enter()
-        mainViewModel.getLateList { [weak self] in
+        mainViewModel.getLateList {
+            
             group.leave()
         }
 
         group.enter()
-        mainViewModel.getProfile { [weak self] _ in
+        mainViewModel.getProfile { result in
             group.leave()
         }
 
         group.enter()
-        mainViewModel.getOutingList { [weak self] in
+        mainViewModel.getOutingList {
+          
             group.leave()
         }
 
@@ -419,6 +425,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 self?.refreshControl.endRefreshing()
                 return
             }
+            
+            // Removed debug print for profile data
             self.setupProfileView()
             self.setupViewComponents()
             self.latecomerCollectionView.reloadData()
@@ -442,51 +450,53 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     // MARK: - Setting
     func setup() {
-       
-        if self.mainViewModel.lateListDatas.isEmpty {
-            lateNilView.isHidden = true
-        } else {
-            lateNilView.isHidden = false
-        }
+        let isEmpty = self.mainViewModel.lateListDatas.isEmpty
+
+        lateNilView.isHidden = !isEmpty
+        latecomerCollectionView.isHidden = isEmpty
+
         self.setCollectionView()
         self.setupCountLable()
     }
 
     func setupProfileView() {
-        guard let grade = mainViewModel.profileData?.grade else { return }
-
-        if let imageURL = mainViewModel.profileData?.profileUrl, let url = URL(string: imageURL) {
-            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
-            basicsProfileView.profileImageView.layer.cornerRadius = basicsProfileView.profileImageView.frame.width / 2
-        } else {
-            basicsProfileView.profileImageView.image = .image.profile.image
-        }
-
-        basicsProfileView.nameLabel.text = mainViewModel.profileData?.name
-        profileView.nameLabel.text = mainViewModel.profileData?.name
-        if mainViewModel.profileData?.major == Major.sw.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | SW개발"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW개발"
-        } else if mainViewModel.profileData?.major == Major.iot.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | IoT"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"
-        } else {
-            profileView.studentInformationLabel.text = "\(grade)기 | AI"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
-        }
-        basicsProfileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
-        profileView.lateCountLabel.text = "지각 횟수: \(mainViewModel.lateListDatas.count)회"
+        let profile = mainViewModel.profileData
 
         
-        let isBlackList = false
-        let isOuting = true
+        let grade = profile?.grade ?? 0
+        let name = profile?.name ?? "이름 없음"
+        let department = profile?.department ?? "정보 없음"
+        let lateCount = profile?.lateCount ?? 0
+        let status = profile?.status ?? "UNKNOWN"
 
-        if isBlackList {
+        basicsProfileView.profileImageView.image = .image.profile.image
+
+        basicsProfileView.nameLabel.text = name
+        profileView.nameLabel.text = name
+
+        if department == Major.sw.rawValue {
+            profileView.studentInformationLabel.text = "\(grade)기 | SW"
+            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW"
+        } else if department == Major.iot.rawValue {
+            profileView.studentInformationLabel.text = "\(grade)기 | IoT"
+            basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"
+        } else if department == Major.ai.rawValue {
+            profileView.studentInformationLabel.text = "\(grade)기 | AI"
+            basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
+        } else {
+            profileView.studentInformationLabel.text = "\(grade)기"
+            basicsProfileView.studentInformationLabel.text = "\(grade)기"
+        }
+
+        basicsProfileView.lateCountLabel.text = "지각 횟수: \(lateCount)회"
+        profileView.lateCountLabel.text = "지각 횟수: \(lateCount)회"
+
+        if status == "CANNOT_OUTING" {
             profileView.profileStatus.text = "외출 금지"
             profileView.profileStatus.textColor = .color.gomsNegative.color
             basicsProfileView.myOutingStatusLabel.text = "외출 금지"
             basicsProfileView.myOutingStatusLabel.textColor = .color.gomsNegative.color
-        } else if isOuting {
+        } else if status == "OUTING" {
             profileView.profileStatus.text = "외출 중"
             profileView.profileStatus.textColor = .color.gomsPrimary.color
             basicsProfileView.myOutingStatusLabel.text = "외출 중"
@@ -692,7 +702,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
 
             if mainViewModel.outingListDatas.isEmpty {
-                // dummy UI
+                
                 cell.configureDummy()
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
@@ -746,7 +756,7 @@ extension MainViewController {
         insetForSectionAt section: Int
     ) -> UIEdgeInsets {
         if collectionView == outingStatusCollectionView {
-            // match design spacing (same as outer layout)
+          
             return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
         }
         return .zero

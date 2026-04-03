@@ -27,7 +27,7 @@ public final class QRCodeViewModel: BaseViewModel {
         }
         
         isRequesting = true
-        outingProvider.request(.outing(outingUUID: outingUUID, authorization: accessToken)) { response in
+        outingProvider.request(.outingOut(uuid: outingUUID.uuidString, exp: 0, authorization: accessToken)) { response in
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
@@ -51,12 +51,8 @@ public final class QRCodeViewModel: BaseViewModel {
                 case 400:
                     self.profileViewModel.loadProfileInfo { success, authority in
                         if success {
-                            if let profileInfo = self.profileViewModel.profileInfo {
-                                if profileInfo.isBlackList == true {
-                                    completion("blackList")
-                                } else {
-                                    completion("uuidError")
-                                 }
+                            if let _ = self.profileViewModel.profileInfo {
+                                completion("blackList")
                             } else {
                                 print("Profile info is nil")
                             }
@@ -114,4 +110,3 @@ public final class QRCodeViewModel: BaseViewModel {
         }
     }
 }
-

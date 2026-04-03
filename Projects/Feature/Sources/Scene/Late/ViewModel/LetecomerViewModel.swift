@@ -11,11 +11,11 @@ import Moya
 import Service
 
 struct LatecomerListData {
-    let id: UUID
+    let id: Int
     let profileImageURL: String?
     let name: String
     let grade: Int
-    let major: String
+    let department: String
 }
 
 public final class LetecomerViewModel: BaseViewModel {
@@ -46,7 +46,13 @@ public final class LetecomerViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     self.latecomerList = try JSONDecoder().decode([LatecomerListResponse].self, from: responseData)
-                    self.latecomerListDatas = self.latecomerList.map { LatecomerListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major) }
+                    self.latecomerListDatas = self.latecomerList.map { LatecomerListData(
+                        id: $0.memberid,
+                        profileImageURL: $0.profileUrl,
+                        name: $0.name,
+                        grade: $0.grade,
+                        department: $0.major
+                    ) }
                     completion(self.latecomerListDatas)
                 } catch(let err) {
                     print(String(describing: err))

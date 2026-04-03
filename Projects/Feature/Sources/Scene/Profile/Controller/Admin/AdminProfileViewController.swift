@@ -354,7 +354,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
                 self.perceptionNum.text = "\(profileInfo.lateCount)"
 
                 let majorText: String
-                switch profileInfo.major {
+                switch profileInfo.department {
                 case Major.sw.rawValue:
                     majorText = "SW"
                 case Major.iot.rawValue:
@@ -365,12 +365,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
                 self.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
 
-                if let url = URL(string: profileInfo.profileUrl ?? "") {
-                    self.userProfile.kf.setImage(
-                        with: url,
-                        placeholder: UIImage.image.gomsBasicProfile.image
-                    )
-                }
+                self.userProfile.image = UIImage.image.gomsBasicProfile.image
             }
             .store(in: &cancellables)
     }

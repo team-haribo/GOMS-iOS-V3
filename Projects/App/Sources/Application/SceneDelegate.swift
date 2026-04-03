@@ -39,7 +39,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 if success {
                     if let savedToken = UserDefaults.standard.string(forKey: "FCMToken") {
                         notificationViewModel.setupFcmToken(fcmToken: savedToken)
-                        notificationViewModel.setupaccessToken(accessToken: accessToken)
+                        notificationViewModel.setupaccessToken(accessToken: "Bearer \(accessToken)")
                         notificationViewModel.postFcmToken { success in
                             if success {
                                 print("FCM 토큰 전송 성공")
