@@ -145,7 +145,7 @@ public final class OutingViewModel: BaseViewModel {
         let forceOutingStudent = user.id
 
         studentCouncilProvider.request(
-            .statusOut(authorization: accessToken, memberId: forceOutingStudent)
+            .statusIn(authorization: accessToken, memberId: forceOutingStudent)
         ) { response in
             switch response {
             case .success(let result):
