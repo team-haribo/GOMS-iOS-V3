@@ -387,7 +387,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         group.notify(queue: .main) { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, self.isVisible else {
+                self?.refreshControl.endRefreshing()
+                return
+            }
 
             self.setupProfileView()
             self.setupViewComponents()
