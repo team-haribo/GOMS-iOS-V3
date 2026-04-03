@@ -91,8 +91,12 @@ extension OutingServices: TargetType {
         case .outingStatus(let authorization),
              .outingList(let authorization),
              .outingSearch(_, let authorization),
-             .outingCount(let authorization),
-             .outingOut(_, _, let authorization),
+             .outingCount(let authorization):
+            return [
+                "Authorization": "Bearer \(authorization)"
+            ]
+
+        case .outingOut(_, _, let authorization),
              .outingIn(_, _, let authorization):
             return [
                 "Content-Type": "application/json",
