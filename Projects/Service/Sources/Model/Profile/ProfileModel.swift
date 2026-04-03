@@ -8,18 +8,27 @@
 
 import Foundation
 
-public struct ProfileModel: Decodable {
-    let date: ProfileResponse
-}
-
-public struct ProfileResponse: Decodable {
+public struct ProfileResponse {
     public let name: String
     public let grade: Int
-    public let major: String
-    public let gender: String
+    public let department: String
     public let authority: String
-    public let profileUrl: String?
     public let lateCount: Int
     public let isOuting: Bool
-    public let isBlackList: Bool
+
+    public init(
+        name: String,
+        grade: Int,
+        department: String,
+        authority: String,
+        lateCount: Int,
+        isOuting: Bool
+    ) {
+        self.name = name
+        self.grade = grade
+        self.department = department
+        self.authority = authority
+        self.lateCount = lateCount
+        self.isOuting = isOuting
+    }
 }

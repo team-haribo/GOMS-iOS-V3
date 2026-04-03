@@ -12,6 +12,13 @@ import Moya
 import Combine
 import UIKit
 
+public struct MyRoleResponse: Decodable {
+    public let memberId: Int
+    public let email: String
+    public let name: String
+    public let role: String
+}
+
 public final class ProfileViewModel: ObservableObject {
     @Published public var errorMessage = ""
     @Published public var isDataLoaded = false
@@ -19,9 +26,11 @@ public final class ProfileViewModel: ObservableObject {
 
     public init() {}
 
-    public let providerProfile = MoyaProvider<ProfileServices>(plugins: [NetworkLoggerPlugin()])
     let providerAuccount = MoyaProvider<AccountServices>(plugins: [NetworkLoggerPlugin()])
+    let providerMember = MoyaProvider<MemberServices>(plugins: [NetworkLoggerPlugin()])
     let providerAuth = MoyaProvider<AuthServices>(plugins: [NetworkLoggerPlugin()])
+    let providerOuting = MoyaProvider<OutingServices>(plugins: [NetworkLoggerPlugin()])
+    let providerProfile = MoyaProvider<ProfileServices>(plugins: [NetworkLoggerPlugin()])
     let keyChain = KeyChain()
 
     public var accessToken: String {
@@ -42,27 +51,70 @@ public final class ProfileViewModel: ObservableObject {
     }
 
     public func loadProfileInfo(completion: @escaping (Bool, String?) -> Void) {
-        providerProfile.request(.getProfile(authorization: accessToken)) { result in
-            switch result {
-            case let .success(response):
-                do {
-                    let decoder = JSONDecoder()
-                    let profileModel = try decoder.decode(ProfileResponse.self, from: response.data)
-                    self.profileInfo = profileModel
-                    self.isDataLoaded = true
+        let group = DispatchGroup()
 
-                    completion(true, profileModel.authority)
+        var name: String = ""
+        var authority: String = ""
+        var isOuting: Bool = false
+        var grade: Int = 0
+        var department: String = ""
+        var lateCount: Int = 0
+
+        // 1. myrole
+        group.enter()
+        providerMember.request(.myRole(authorization: accessToken)) { result in
+            switch result {
+            case .success(let response):
+                do {
+                    let data = try JSONDecoder().decode(MyRoleResponse.self, from: response.data)
+                    name = data.name
+                    authority = data.role
                 } catch {
-                    self.errorMessage = "Failed to decode JSON response"
-                    completion(false, nil)
+                    print("myRole decode error: \(error)")
                 }
-            case let .failure(err):
-                self.errorMessage = "Network request failed: \(err.localizedDescription)"
-                print("Network request failed: \(err)")
-                completion(false, nil)
+            case .failure(let err):
+                print("myRole error: \(err.localizedDescription)")
             }
+            group.leave()
         }
+
+        // 2. outing status
+        group.enter()
+        providerOuting.request(.outingStatus(authorization: accessToken)) { result in
+            switch result {
+            case .success(let response):
+                do {
+                    let data = try JSONDecoder().decode(OutingStatusResponse.self, from: response.data)
+                    isOuting = data.status == "OUTING"
+                    grade = data.grade
+                    department = data.department
+                    lateCount = data.lateCount
+                } catch {
+                    print("outingStatus decode error: \(error)")
+                }
+            case .failure(let err):
+                print("outingStatus error: \(err.localizedDescription)")
+            }
+            group.leave()
+        }
+
+        group.notify(queue: .main, execute: {
+            self.isDataLoaded = true
+
+           
+            self.profileInfo = ProfileResponse(
+                name: name,
+                grade: grade,
+                department: department,
+                authority: authority,
+                lateCount: lateCount,
+                isOuting: isOuting
+            )
+
+            completion(true, authority)
+        })
     }
+    
 
     func submitProfileImage(imageData: Data) -> Future<Void, Error> {
         Future { promise in

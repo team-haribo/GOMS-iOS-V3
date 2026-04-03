@@ -14,7 +14,7 @@ public enum StudentCouncilServices {
     case statusOut(authorization: String, memberId: Int)
     case statusIn(authorization: String, memberId: Int)
     case studentList(authorization: String)
-    case editAuthority(authorization: String, param: AuthorityRequest)
+    case editAuthority(authorization: String, memberId: Int, param: AuthorityRequest)
     case changeBlackList(authorization: String, memberId: Int)
     case cancelBlackList(authorization: String, memberId: Int)
     case searchStudent(authorization: String, parm: SearchStudentRequest)
@@ -33,42 +33,44 @@ extension StudentCouncilServices: TargetType {
     public var path: String {
         switch self {
         case .makeQRCode:
-            return "/student-council/outing"
+            return "/api/v3/student-council/qr"
         case .statusOut(_, let memberId):
-            return "/student-council/status/out/\(memberId)"
+            return "/api/v3/student-council/status/out/\(memberId)"
         case .statusIn(_, let memberId):
-            return "/student-council/status/in/\(memberId)"
+            return "/api/v3/student-council/status/in/\(memberId)"
         case .studentList:
-            return "/student-council/accounts"
-        case .editAuthority:
-            return "/student-council/authority"
+            return "/api/v3/student-council/member"
+        case .editAuthority(_, let memberId, _):
+            return "/api/v3/student-council/role/\(memberId)"
         case .changeBlackList(_, let memberId):
-            return "/student-council/black-list/\(memberId)"
+            return "/api/v3/student-council/outing-allowed/\(memberId)"
         case .cancelBlackList(_, let memberId):
-            return "/student-council/black-list/\(memberId)"
+            return "/api/v3/student-council/outing-allowed/\(memberId)"
         case .searchStudent:
-            return "/student-council/search"
+            return "/api/v3/student-council/search"
         case .lateList:
-            return "/student-council/late"
+            return "/api/v3/student-council/late"
         }
     }
     
     public var method: Moya.Method {
         switch self {
         case .makeQRCode,
-             .changeBlackList,
              .statusOut,
              .statusIn:
             return .post
-        case .cancelBlackList:
-            return .delete
+
+        case .changeBlackList,
+             .cancelBlackList:
+            return .patch
+
         case .studentList,
-             .searchStudent:
+             .searchStudent,
+             .lateList:
             return .get
+
         case .editAuthority:
             return .patch
-        case .lateList:
-            return .get
         }
     }
     
@@ -85,7 +87,7 @@ extension StudentCouncilServices: TargetType {
              .statusOut,
              .statusIn:
             return .requestPlain
-        case .editAuthority(_, let param):
+        case .editAuthority(_, _, let param):
             return .requestJSONEncodable(param)
         case .searchStudent(_, let param):
             var parameters: [String: Any] = [:]
@@ -106,7 +108,7 @@ extension StudentCouncilServices: TargetType {
         case .makeQRCode(let authorization),
              .studentList(let authorization):
             return ["Content-Type" :"application/json", "Authorization" : authorization]
-        case .editAuthority(let authorization, _),
+        case .editAuthority(let authorization, _, _),
              .changeBlackList(let authorization, _),
              .cancelBlackList(let authorization, _),
              .searchStudent(let authorization, _),
