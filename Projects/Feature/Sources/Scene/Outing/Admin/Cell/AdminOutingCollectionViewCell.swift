@@ -82,23 +82,15 @@ final class AdminOutingCollectionViewCell: UICollectionViewCell {
         } else {
             studentInfoLabel.text = "\(outingData.grade)기 | AI"
         }
-        outingTime.text = "\(outingData.outingTime)에 외출"
+        let fullTime = outingData.outingTime
+        let timeOnly = fullTime.split(separator: "T").last?.prefix(5) ?? ""
+        outingTime.text = "\(timeOnly)에 외출"
         nameLabel.textColor = .color.mainText.color
         studentInfoLabel.textColor = .color.sub2.color
         outingTime.textColor = .color.sub2.color
         deleteButton.isHidden = false
     }
 
-    func configureDummy() {
-        profileImageView.image = .image.profile.image
-        nameLabel.text = "김준표"
-        nameLabel.textColor = .color.mainText.color
-        studentInfoLabel.text = "9기 | iOS"
-        studentInfoLabel.textColor = .color.sub2.color
-        outingTime.text = "5:21에 외출"
-        outingTime.textColor = .color.sub2.color
-        deleteButton.isHidden = false
-    }
     
     // MARK: - Configure UI
     private func configureUI() {
