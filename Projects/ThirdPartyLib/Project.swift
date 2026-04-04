@@ -29,6 +29,9 @@ let project = Project.makeModule(
         .remote(url: "https://github.com/yannickl/QRCodeReader.swift.git",
                 requirement: .upToNextMajor(from: "10.1.0")),
         
+        // 카카오맵 패키지 주소 추가
+        .remote(url: "https://github.com/kakao-maps-sdk/KakaoMapsSDK-SPM.git",
+                requirement: .upToNextMajor(from: "2.10.0")),
         
         .remote(url: "https://github.com/firebase/firebase-ios-sdk.git",
                 requirement: .upToNextMajor(from: "11.6.0"))
@@ -43,6 +46,8 @@ let project = Project.makeModule(
         .package(product: "QRCode"),
         .package(product: "QRCodeReader"),
         
+        // 카카오맵 의존성 추가
+        .package(product: "KakaoMapsSDK"),
       
         .package(product: "FirebaseCore"),
         .package(product: "FirebaseMessaging")
