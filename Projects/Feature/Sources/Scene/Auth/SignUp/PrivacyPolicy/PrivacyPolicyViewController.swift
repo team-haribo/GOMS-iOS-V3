@@ -15,26 +15,32 @@ final class PrivacyPolicyViewController: UIViewController {
     var onAgreeCompletion: (() -> Void)?
     
     // MARK: - UI Components
+
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonDidTap), for: .touchUpInside)
+    }
+
     private let titleLabel = UILabel().then {
         $0.text = "개인정보 처리방침"
-        $0.font = UIFont.systemFont(ofSize: 20, weight: .bold)
-        $0.textColor = .white
+        $0.font = .suit(size: 24, weight: .bold)
+        $0.textColor = .color.mainText.color
     }
-    
-    private let backButton = UIButton().then {
-        $0.setTitle("< 돌아가기", for: .normal)
-        $0.setTitleColor(.orange, for: .normal)
-        $0.titleLabel?.font = UIFont.systemFont(ofSize: 14)
-    }
-    
+
     private let textView = UITextView().then {
         $0.text = """
         1. 개인정보 수집 항목 및 방법
         Goms는 회원가입, 서비스 이용 등을 위해 아래와 같은 개인정보를 수집하고 있습니다.
+        
         [수집항목]
         - 회원 가입시 필수 항목: 이메일, 비밀번호
-        - 선택 항목: 없음
         - 서비스 이용과정에서 아래와 같은 정보들이 자동으로 생성되어 수집될 수 있습니다: IP 주소, 쿠키, 접속 브라우저, 서비스 이용기록, 회원조치이력
+        
         [개인정보 수집방법]
         - 회원가입, 회원정보 수정
 
@@ -49,8 +55,10 @@ final class PrivacyPolicyViewController: UIViewController {
 
         4. 개인정보의 파기절차 및 방법
         원칙적으로 개인정보 수집 및 이용목적이 달성된 후에는 해당 정보를 지체없이 파기합니다.
+        
         [파기절차]
         회원이 입력하신 정보는 목적 달성 후 내부 방침 및 관련 법령에 따라 일정 기간 저장된 후 파기됩니다. 법령에 의한 경우를 제외하고는 보유 목적 이외의 다른 목적으로 이용되지 않습니다.
+        
         [파기방법]
         전자적 파일형태로 저장된 개인정보는 기록을 재생할 수 없는 기술적 방법을 사용하여 삭제합니다.
 
@@ -70,71 +78,72 @@ final class PrivacyPolicyViewController: UIViewController {
         Goms는 개인정보가 분실, 도난, 유출, 변조 또는 훼손되지 않도록 다음과 같은 대책을 강구하고 있습니다.
         - 비밀번호 암호화: 중요 정보는 암호화하여 보관합니다.
         - 기술적 대책: 해킹이나 바이러스 방지를 위해 외부 접근 통제 구역에 시스템을 설치하고 24시간 감시하며 백신 프로그램을 운영합니다.
-        - 관리 대책: 이용자 본인의 주의도 필요합니다. 아이디와 비밀번호가 유출되지 않도록 각별히 주의해 주시기 바랍니다.
+        - 관리 대책: 아이디와 비밀번호가 유출되지 않도록 각별히 주의해 주시기 바랍니다.
 
         10. 개인정보에 관한 민원서비스
         이용자는 모든 개인정보보호 관련 민원을 개인정보 관리책임자에게 신고하실 수 있습니다.
+        
         [개인정보관리책임자]
         성명 : 모태환 / 직책 : PM / 연락처 : s24023@gsm.hs.kr
+        
         기타 신고 기관: 개인정보침해신고센터(118), 대검찰청 사이버수사과(1301), 경찰청 사이버안전국(182)
 
         11. 부칙
-        이 개인정보처리방침은 2024년 3월 27일부터 적용되며, 법령, 정책 또는 보안기술의 변경에 따라 내용의 추가, 삭제 및 수정이 있을시에는 변경사항의 시행일의 7일 전부터 전체메일발송을 통하여 고지할 것입니다.
+        이 개인정보처리방침은 2024년 3월 27일부터 적용되며, 법령, 정책 또는 보안기술의 변경에 따라 내용의 추가, 삭제 및 수정이 있을 시에는 변경사항의 시행일의 7일 전부터 전체메일발송을 통하여 고지할 것입니다.
         """
         $0.isEditable = false
         $0.backgroundColor = .clear
-        $0.textColor = .white
-        $0.font = UIFont.systemFont(ofSize: 14)
-        $0.showsVerticalScrollIndicator = true // 내용이 길어서 스크롤 바 추가!
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 15, weight: .regular)
+        $0.showsVerticalScrollIndicator = true
     }
     
     private let agreeButton = UIButton().then {
         $0.setTitle("개인정보 수집 동의", for: .normal)
-        $0.backgroundColor = .orange
+        $0.backgroundColor = .color.gomsPrimary.color
         $0.setTitleColor(.white, for: .normal)
-        $0.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        $0.titleLabel?.font = .suit(size: 16, weight: .bold)
         $0.layer.cornerRadius = 8
     }
 
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = .color.background.color 
         addView()
         setLayout()
         bindAction()
     }
     
     private func addView() {
-        [backButton, titleLabel, textView, agreeButton].forEach { view.addSubview($0) }
+        [customBackButton, titleLabel, textView, agreeButton].forEach { view.addSubview($0) }
     }
     
     private func setLayout() {
-        backButton.snp.makeConstraints {
+        customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(backButton.snp.bottom).offset(20)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(24)
             $0.leading.equalToSuperview().offset(20)
         }
         
         textView.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(agreeButton.snp.top).offset(-20)
+            $0.bottom.equalTo(agreeButton.snp.top).offset(-24)
         }
         
         agreeButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(50)
+            $0.height.equalTo(52)
         }
     }
     
     private func bindAction() {
-        backButton.addTarget(self, action: #selector(backButtonDidTap), for: .touchUpInside)
         agreeButton.addTarget(self, action: #selector(agreeButtonDidTap), for: .touchUpInside)
     }
     
@@ -143,9 +152,7 @@ final class PrivacyPolicyViewController: UIViewController {
     }
     
     @objc private func agreeButtonDidTap() {
-        // 1. 클로저 실행 (나 동의했어! 라고 신호 보냄)
         onAgreeCompletion?()
-        // 2. 화면 닫기
         dismiss(animated: true)
     }
 }
