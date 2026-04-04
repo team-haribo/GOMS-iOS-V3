@@ -154,9 +154,6 @@ public final class MapPlaceDetailView: UIView {
         addressLabel.text = data.address
         infoLabel.text = "\(data.distance) | \(data.time)"
         
-        let hasReviews = !data.reviews.isEmpty
-        tableView.isHidden = !hasReviews
-        emptyReviewStackView.isHidden = hasReviews
         
         updateReviewCount(data.reviews.count)
         tableView.reloadData()
