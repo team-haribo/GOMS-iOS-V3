@@ -29,7 +29,7 @@ public final class MapReviewWriteViewModel {
     
     // MARK: - Closures (VC와 연결용)
     public var onNextButtonStateChanged: ((Bool) -> Void)?
-    public var onReviewSuccess: (() -> Void)? // 등록 성공 알림용
+    public var onReviewSuccess: (() -> Void)?
     
     // MARK: - Methods
     public func updateText(_ text: String) {
@@ -38,9 +38,8 @@ public final class MapReviewWriteViewModel {
         }
     }
     
-    // 실제 서버에 후기를 등록하는 함수
     public func postReview() {
-        // [TODO]: 나중에 여기에 Moya/네트워킹 코드를 작성
+        
         print("서버로 후기 전송 시도: \(currentText)")
         
         // API 통신이 성공했다는 가정하에 콜백 호출

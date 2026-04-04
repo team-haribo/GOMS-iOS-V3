@@ -28,8 +28,6 @@ let project = Project.makeModule(
                 requirement: .upToNextMajor(from: "1.0.0")),
         .remote(url: "https://github.com/yannickl/QRCodeReader.swift.git",
                 requirement: .upToNextMajor(from: "10.1.0")),
-        
-        
         .remote(url: "https://github.com/firebase/firebase-ios-sdk.git",
                 requirement: .upToNextMajor(from: "11.6.0"))
     ],
@@ -42,8 +40,7 @@ let project = Project.makeModule(
         .package(product: "GAuthSignin"),
         .package(product: "QRCode"),
         .package(product: "QRCodeReader"),
-        
-      
+        .xcframework(path: "KakaoMapsSDK.xcframework"),
         .package(product: "FirebaseCore"),
         .package(product: "FirebaseMessaging")
     ]

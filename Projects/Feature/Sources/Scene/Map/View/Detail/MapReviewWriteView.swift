@@ -177,8 +177,7 @@ public final class MapReviewWriteView: UIView {
             $0.height.equalTo(52)
         }
     }
-    
-    // 외부에서 데이터 주입하는 함수
+
     public func configure(with data: MapPlaceDetailData) {
         placeNameLabel.text = data.title
         categoryLabel.text = data.category
