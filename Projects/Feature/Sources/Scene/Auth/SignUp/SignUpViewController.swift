@@ -59,6 +59,24 @@ public final class SignUpViewController: BaseViewController {
         $0.textAlignment = .right
         $0.isHidden = true
     }
+    
+    private let privacyCheckbox = UIButton().then {
+            $0.setImage(UIImage(systemName: "square"), for: .normal)
+            $0.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
+            $0.tintColor = .color.sub2.color // sub2 색상 적용
+            $0.addTarget(self, action: #selector(privacyCheckboxTapped), for: .touchUpInside)
+        }
+
+        // 2. 라벨 설정 (텍스트 수정, SUIT-SemiBold, 텍스트 컬러 메인)
+        private let privacyLabel = UILabel().then {
+            $0.text = "개인정보 수집 및 처리방침"
+            $0.font = .suit(size: 15, weight: .semibold ) // SemiBold 적용
+            $0.textColor = .color.gomsPrimary.color // GOMS_Primary(메인텍스트) 색상
+            $0.isUserInteractionEnabled = true
+            
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(presentPrivacyPolicy))
+            $0.addGestureRecognizer(tapGesture)
+        }
 
     lazy var genderTextField = GOMSTextFieldButton(frame: .zero, title: "성별").then {
         $0.addTarget(self, action: #selector(genderButtonTapped), for: .touchUpInside)
@@ -147,7 +165,29 @@ public final class SignUpViewController: BaseViewController {
         [menAction, womanAction].forEach { alert.addAction($0) }
         present(alert, animated: true)
     }
+    
+    // 체크박스 클릭 시: 체크되어 있으면 해제만, 해제되어 있으면 화면 이동
+    @objc private func privacyCheckboxTapped() {
+            if privacyCheckbox.isSelected {
+                // 이미 체크된 상태라면 -> 체크만 해제하고 버튼 비활성화
+                privacyCheckbox.isSelected = false
+                authCodeButton.isEnabled = false
+            } else {
+                // 체크 안 된 상태라면 -> 방침 화면 보여주기
+                presentPrivacyPolicy()
+            }
+    }
 
+    @objc private func presentPrivacyPolicy() {
+            let privacyVC = PrivacyPolicyViewController()
+            privacyVC.onAgreeCompletion = { [weak self] in
+                self?.privacyCheckbox.isSelected = true
+                self?.authCodeButton.isEnabled = true
+            }
+            privacyVC.modalPresentationStyle = .fullScreen
+            self.present(privacyVC, animated: true)
+    }
+    
     @objc private func departmentButtonTapped() {
         view.endEditing(true)
 
@@ -313,6 +353,31 @@ public final class SignUpViewController: BaseViewController {
          gradeTextField,
          authCodeButton]
             .forEach { view.addSubview($0) }
+        
+        // addView() 안에 추가
+        [privacyCheckbox, privacyLabel].forEach { view.addSubview($0) }
+
+        privacyLabel.snp.makeConstraints {
+            // 위쪽 텍스트 필드(예: 기수/departmentTextField)와의 간격
+            $0.top.equalTo(gradeTextField.snp.bottom).offset(32)
+            // 전체 입력창의 왼쪽 시작점(Leading)에 맞춤
+            $0.leading.equalToSuperview().offset(20)
+        }
+
+        // 2. 체크박스 (버튼) 설정: 오른쪽 끝으로
+        privacyCheckbox.snp.makeConstraints {
+            $0.centerY.equalTo(privacyLabel) // 라벨과 높이 맞춤
+            // 전체 입력창의 오른쪽 끝점(Trailing)에 맞춤
+            $0.trailing.equalToSuperview().inset(20)
+            $0.width.height.equalTo(24) // 적절한 크기 설정
+        }
+                
+                // authCodeButton 위치 재조정 (privacyCheckbox 아래로)
+        authCodeButton.snp.remakeConstraints {
+                    $0.height.equalTo(48)
+                    $0.leading.trailing.equalToSuperview().inset(24)
+                    $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
     }
 
     public override func setLayout() {
