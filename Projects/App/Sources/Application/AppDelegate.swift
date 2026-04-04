@@ -17,9 +17,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
 
+        SDKInitializer.InitSDK(appKey: "7fe97f25eb228b1f07f0d982272290d1")
+
         return true
     }
-}
 
     // MARK: UISceneSession Lifecycle
 
@@ -35,3 +36,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didDiscardSceneSessions sceneSessions: Set<UISceneSession>
     ) {}
+}
