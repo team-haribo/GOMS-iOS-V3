@@ -11,11 +11,11 @@ import Service
 import Foundation
 
 struct OutingListData {
-    let id: UUID
+    let id: Int
     let profileImageURL: String?
     let name: String
     let grade: Int
-    let major: String
+    let department: String
     let outingTime: String
 }
 
@@ -38,8 +38,18 @@ public final class OutingViewModel: BaseViewModel {
                 switch statusCode {
                 case 200:
                     do {
-                        self.outingList = try JSONDecoder().decode([OutingListResponse].self, from: responseData)
-                        self.outingListDatas = self.outingList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                        let decoded = try JSONDecoder().decode(OutingListModel.self, from: responseData)
+                        self.outingList = decoded.students
+                        self.outingListDatas = self.outingList.map {
+                            OutingListData(
+                                id: $0.memberId,
+                                profileImageURL: nil,
+                                name: $0.name,
+                                grade: $0.grade,
+                                department: $0.department,
+                                outingTime: $0.outingAt
+                            )
+                        }
                         completion()
                     } catch(let err) {
                         print(String(describing: err))
@@ -63,8 +73,18 @@ public final class OutingViewModel: BaseViewModel {
             case .success(let result):
                 let responseData = result.data
                 do {
-                    self.outingSearchList = try JSONDecoder().decode([OutingSearchResponse].self, from: responseData)
-                    self.outingSearchListDatas = self.outingSearchList.map { OutingListData(id: $0.accountIdx, profileImageURL: $0.profileUrl, name: $0.name, grade: $0.grade, major: $0.major, outingTime: $0.createdTime) }
+                    let decoded = try JSONDecoder().decode(OutingSearchModel.self, from: responseData)
+                    self.outingSearchList = decoded.students
+                    self.outingSearchListDatas = self.outingSearchList.map {
+                        OutingListData(
+                            id: $0.memberId,
+                            profileImageURL: nil,
+                            name: $0.name,
+                            grade: $0.grade,
+                            department: $0.department,
+                            outingTime: $0.outingAt
+                        )
+                    }
                     completion()
                 } catch(let err) {
                     print(String(describing: err))
@@ -87,19 +107,33 @@ public final class OutingViewModel: BaseViewModel {
     func deleteOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
         let deleteStudent = user.id
 
-        studentCouncilProvider.request(.deleteOuting(authorization: accessToken, accountIdx: deleteStudent)) { response in
+        studentCouncilProvider.request(
+            .statusIn(authorization: accessToken, memberId: deleteStudent)
+        ) { response in
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
                 switch statusCode {
-                case 205:
+                case 200, 205:
                     completion()
+
+                case 400:
+                    print("잘못된 요청")
+
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance(){ _ in }
+
                 case 403:
-                    print("학생회 계정이 아닌데 요청할 경우")
+                    print("권한 없음 / 외출 불가 상태")
+
+                case 409:
+                    print("이미 외출 중이 아님")
+
+                case 500:
+                    print("서버 내부 에러")
+
                 default:
-                    print(result)
+                    print("알 수 없는 응답: \(statusCode)")
                 }
             case .failure(let err):
                 print("외출자 삭제 중 오류 발생: \(err.localizedDescription)")
@@ -110,19 +144,33 @@ public final class OutingViewModel: BaseViewModel {
     func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
         let forceOutingStudent = user.id
 
-        studentCouncilProvider.request(.forceOuting(authorization: accessToken, accountIdx: forceOutingStudent)) { response in
+        studentCouncilProvider.request(
+            .statusIn(authorization: accessToken, memberId: forceOutingStudent)
+        ) { response in
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
                 switch statusCode {
-                case 205:
+                case 200, 205:
                     completion()
+
+                case 400:
+                    print("QR 만료 또는 요청 값 오류")
+
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance(){ _ in }
+
                 case 403:
-                    print("학생회 계정이 아닌데 요청할 경우")
+                    print("외출 불가 상태 (CANNOT_OUTING)")
+
+                case 409:
+                    print("이미 외출 중")
+
+                case 500:
+                    print("서버 내부 에러")
+
                 default:
-                    print(result)
+                    print("알 수 없는 응답: \(statusCode)")
                 }
             case .failure(let err):
                 print("외출자 외출 중 오류 발생: \(err.localizedDescription)")

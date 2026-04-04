@@ -107,36 +107,37 @@ public final class FilterBottomSheetVC: BaseViewController {
     }
     
     @objc func genderButtonTapped(sender: BottomSheetButton) {
-        if sender == manButton {
-            manButton.isSelected.toggle()
-            womanButton.isSelected = false
-        } else {
-            womanButton.isSelected.toggle()
-            manButton.isSelected = false
-        }
+        [manButton, womanButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
 
-        var genderValue: String? = nil
+        var genderValue: Gender? = nil
         if manButton.isSelected {
-            genderValue = Gender.male.rawValue
+            genderValue = .male
         } else if womanButton.isSelected {
-            genderValue = Gender.female.rawValue
+            genderValue = .female
         }
 
-        viewModel.setupGender(gender: genderValue)
+        viewModel.setupGender(gender: genderValue?.rawValue)
         fetchData()
     }
 
     @objc func majorButtonTapped(sender: BottomSheetButton) {
         [swButton, iotButton, aiButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
-        let major = sender.isSelected ? (sender == swButton ? "SW_DEVELOPMENT" : (sender == iotButton ? "EMBEDDED_SOFTWARE" : "AI_SOFTWARE")) : nil
-        viewModel.setupMajor(major: major)
+        var majorValue: Major? = nil
+        if sender.isSelected {
+            if sender == swButton {
+                majorValue = .sw
+            } else if sender == iotButton {
+                majorValue = .iot
+            } else {
+                majorValue = .ai
+            }
+        }
+        viewModel.setupMajor(major: majorValue?.rawValue)
         fetchData()
     }
-    
     private func fetchData() {
         viewModel.serachStudent(searchString: nil) { self.studentManagementVC.userList = $0 }
     }
-    
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
         viewModel.resetInfo()
@@ -202,3 +203,4 @@ public final class FilterBottomSheetVC: BaseViewController {
         }
     }
 }
+ 

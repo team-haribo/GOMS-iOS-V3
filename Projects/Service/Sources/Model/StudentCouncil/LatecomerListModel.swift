@@ -13,7 +13,7 @@ public struct LatecomerListModel: Codable {
 }
 
 public struct LatecomerListResponse: Codable {
-    public let accountIdx: UUID
+    public let memberid: Int
     public let name: String
     public let grade: Int
     public let gender: String

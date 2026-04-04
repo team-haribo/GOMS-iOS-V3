@@ -15,9 +15,21 @@ public class BaseViewModel {
     
     public let keyChain = KeyChain()
     let gomsRefreshToken = GOMSRefreshToken.shared
-    public lazy var accessToken = "Bearer " + (keyChain.read(key: Const.KeyChainKey.accessToken) ?? "")
+    
+   
+    public var accessToken: String {
+        guard let token = keyChain.read(key: Const.KeyChainKey.accessToken),
+              !token.isEmpty else {
+            return ""
+        }
+        return "Bearer \(token)"
+    }
+    
     public var isLogin: Bool {
-        return accessToken != nil
+        guard let token = keyChain.read(key: Const.KeyChainKey.accessToken) else {
+            return false
+        }
+        return !token.isEmpty
     }
     
     public init() {}

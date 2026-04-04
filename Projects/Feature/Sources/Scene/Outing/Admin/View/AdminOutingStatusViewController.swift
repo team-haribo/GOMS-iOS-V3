@@ -13,11 +13,19 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     // MARK: - Properties
     private let viewModel = OutingViewModel()
     
-private var isInitialState = true
-private var dummyCount = 5
     var outingList: [OutingListData] = []
     
-    let refreshControl = UIRefreshControl()
+let refreshControl = UIRefreshControl()
+
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.tintColor = UIColor.color.admin.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
     
     private lazy var searchTextField = GOMSTextField(
         frame: CGRect(x: 0, y: 0, width: 0, height: 0),
@@ -78,13 +86,18 @@ private var dummyCount = 5
         setLayout()
         configureUI()
 
-        setup()
-
         viewModel.getOutingList {
-            self.isInitialState = false
             self.outingList = self.viewModel.outingListDatas
-            self.setup()
+            DispatchQueue.main.async {
+                self.outingListCollectionView.reloadData()
+                self.setup()
+            }
         }
+    }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.navigationBar.tintColor = .color.admin.color
     }
     
     // MARK: - Setting
@@ -92,6 +105,7 @@ private var dummyCount = 5
         self.navigationController?.navigationBar.isHidden = false
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
+        navigationController?.navigationBar.tintColor = .color.admin.color
         self.navigationItem.hidesSearchBarWhenScrolling = false
     
     }
@@ -170,6 +184,10 @@ private var dummyCount = 5
         }
     }
     
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
+    }
+
     // MARK: - Configure UI
     public override func configureUI() {
         view.backgroundColor = .color.background.color
@@ -177,14 +195,19 @@ private var dummyCount = 5
     
     // MARK: - Add View
     public override func addView() {
-        [searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
+        [customBackButton, searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
     }
         
     // MARK: - Layout
     public override func setLayout() {
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+
         searchTitle.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.top.equalToSuperview().inset(100)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
         }
         
@@ -219,12 +242,22 @@ private var dummyCount = 5
             $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
         }
     }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
+        }
+    }
 }
 
 // MARK: - Extension
 extension AdminOutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return isInitialState && outingList.isEmpty ? dummyCount : outingList.count
+        return outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -233,12 +266,8 @@ extension AdminOutingViewController: UICollectionViewDataSource {
         cell.delegate = self
         cell.tag = indexPath.item
 
-        if isInitialState && outingList.isEmpty {
-            cell.configureDummy()
-        } else {
-            let outingData = outingList[indexPath.row]
-            cell.configureData(with: outingData)
-        }
+        let outingData = outingList[indexPath.row]
+        cell.configureData(with: outingData)
 
         return cell
     }
@@ -258,27 +287,16 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
 
         alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
-            // 🔥 더미 상태일 때 (데이터 없음)
-            if self.isInitialState && self.outingList.isEmpty {
-                guard self.dummyCount > 0 else { return }
-                
-                self.dummyCount -= 1
-
-                DispatchQueue.main.async {
-                    self.outingListCollectionView.performBatchUpdates({
-                        self.outingListCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
-                    }, completion: nil)
-                }
-                return
-            }
-
-            // 🔥 실제 데이터일 때
             guard index < self.outingList.count else { return }
 
-            self.outingList.remove(at: index)
-
-            DispatchQueue.main.async {
-                self.outingListCollectionView.reloadData()
+            let target = self.outingList[index]
+            self.viewModel.forceOutingStudent(user: target) {
+                DispatchQueue.main.async {
+                    self.viewModel.getOutingList {
+                        self.outingList = self.viewModel.outingListDatas
+                        self.outingListCollectionView.reloadData()
+                    }
+                }
             }
         }))
 

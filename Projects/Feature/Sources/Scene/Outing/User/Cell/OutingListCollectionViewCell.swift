@@ -71,7 +71,7 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
     }
     
     // MARK: - Configure
-    func configureData(with outingData: OutingListData) {
+    func configureData(with outingData: OutingListData, showTime: Bool = true) {
         if let imageURL = outingData.profileImageURL, let url = URL(string: imageURL) {
             profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
             profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
@@ -79,15 +79,24 @@ final class OutingListCollectionViewCell: UICollectionViewCell {
             profileImageView.image = .image.profile.image
         }
         nameLabel.text = outingData.name
-        if outingData.major == Major.sw.rawValue {
-            studentInfoLabel.text = "\(outingData.grade)기 | SW개발"
-        } else if outingData.major == Major.iot.rawValue {
+        if outingData.department == Major.sw.rawValue {
+            studentInfoLabel.text = "\(outingData.grade)기 | SW"
+        } else if outingData.department == Major.iot.rawValue {
             studentInfoLabel.text = "\(outingData.grade)기 | IoT"
         } else {
             studentInfoLabel.text = "\(outingData.grade)기 | AI"
         }
-        outingTime.text = "\(outingData.outingTime)에 외출"
+
+        if showTime {
+            let fullTime = outingData.outingTime
+            let timeOnly = fullTime.split(separator: "T").last?.prefix(5) ?? ""
+            outingTime.isHidden = false
+            outingTime.text = "\(timeOnly)에 외출"
+        } else {
+            outingTime.isHidden = true
+        }
     }
+    
     
     func configureUI() {
         profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
