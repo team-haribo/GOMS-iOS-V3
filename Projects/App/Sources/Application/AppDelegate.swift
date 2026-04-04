@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
 
         SDKInitializer.InitSDK(appKey: "7fe97f25eb228b1f07f0d982272290d1")
-
+        
         return true
     }
 

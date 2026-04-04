@@ -11,7 +11,7 @@ import SnapKit
 import Then
 
 public final class MapReviewCell: UITableViewCell {
-    static let identifier = "MapReviewCell"
+    public static let identifier = "MapReviewCell"
     
     public var onDeleteTap: (() -> Void)?
     public var onReportTap: (() -> Void)?

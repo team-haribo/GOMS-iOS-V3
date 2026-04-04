@@ -12,7 +12,7 @@ import ProjectDescriptionHelpers
 let project = Project.makeModule(
     name: "Feature",
     platform: .iOS,
-    product: .staticFramework,
+    product: .framework, 
     organizationName: "HARIBO",
     deploymentTargets: .iOS("16.0"),
     dependencies: [

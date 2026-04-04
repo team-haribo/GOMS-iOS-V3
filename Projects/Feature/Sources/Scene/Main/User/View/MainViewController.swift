@@ -10,6 +10,7 @@ import UIKit
 import Kingfisher
 import Service
 
+
 public final class MainViewController: BaseViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     // MARK: - Properties
     private let mainViewModel = MainViewModel()
@@ -109,6 +110,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     private enum TabType {
         case home
         case map
+        case profile
     }
 
     private let mapContainerView = UIView().then {
@@ -124,6 +126,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     private var isVisible: Bool = false
     private var profileVC: UserProfileViewController?
+    private var mapVC: MapViewController?
 
     // MARK: - Selectors
     @objc func settingButtonTapped() {
@@ -189,6 +192,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     func selectMapTab() {
         hideProfileOverlay()
         selectedTab = .map
+
+        setupMap()
     }
 
     private func updateSelectedTab() {
@@ -228,7 +233,13 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     private func setupMap() {
+        if let existingMapVC = mapVC {
+         
+            return
+        }
+
         let mapVC = MapViewController()
+        self.mapVC = mapVC
 
         addChild(mapVC)
         mapContainerView.addSubview(mapVC.view)
@@ -272,7 +283,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
         bindTabBar()
-        setupMap()
         handleRefreshControl()
         configureRefreshControl()
         updateSelectedTab()
@@ -284,6 +294,11 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             name: Notification.Name("clockChanged"),
             object: nil
         )
+    }
+
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
     }
 
     func configureRefreshControl() {
@@ -347,7 +362,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                     }
                                 }
                             } else {
-                                // Removed debug print for profile load failure
+                               
                             }
                             
                             self.refreshControl.endRefreshing()

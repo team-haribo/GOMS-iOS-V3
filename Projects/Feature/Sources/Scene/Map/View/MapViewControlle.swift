@@ -8,8 +8,15 @@
 import UIKit
 import SnapKit
 import Then
+import KakaoMapsSDK
+import Feature
 
 public final class MapViewController: UIViewController {
+    
+    private var mapContainer: KMViewContainer?
+    private var mapController: KMController?
+    private var isMapInitialized = false
+    private let mapWrapperView = UIView()
     
     private var dummyRecentSearches = MapMockData.recentSearches
     
@@ -20,6 +27,7 @@ public final class MapViewController: UIViewController {
         }
     }
     
+    
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
     
@@ -28,7 +36,7 @@ public final class MapViewController: UIViewController {
         $0.backgroundColor = .color.background.color
         $0.tableView.backgroundColor = .color.background.color
     }
-    
+
     private let bottomSheetView = MapBottomSheetView()
     
     private let placeDetailView = MapPlaceDetailView().then {
@@ -52,14 +60,58 @@ public final class MapViewController: UIViewController {
         setupReviewWriteAction()
     }
 
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        guard !isMapInitialized else { return }
+        isMapInitialized = true
+
+        mapWrapperView.layoutIfNeeded()
+
+        let container = KMViewContainer(frame: mapWrapperView.bounds)
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        mapWrapperView.addSubview(container)
+        self.mapContainer = container
+
+        let controller = KMController(viewContainer: container)
+        self.mapController = controller
+
+        controller.prepareEngine()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            controller.activateEngine()
+
+    
+            let defaultPosition = MapPoint(longitude: 127.0326, latitude: 37.4980)
+            let mapviewInfo = MapviewInfo(
+                viewName: "mapview",
+                viewInfoName: "map",
+                defaultPosition: defaultPosition,
+                defaultLevel: 15
+            )
+
+            controller.addView(mapviewInfo)
+        }
+    }
+
+
+
+
     private func setupView() {
         view.backgroundColor = .color.background.color
+
+        view.addSubview(mapWrapperView)
+
         [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach {
             view.addSubview($0)
         }
     }
+
     
     private func setupLayout() {
+        mapWrapperView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
         routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         routeSelectionView.recommendationStackView.snp.remakeConstraints {
@@ -229,6 +281,26 @@ public final class MapViewController: UIViewController {
         searchBar.isHidden = false
         detailSheetHeight?.update(offset: detailMinHeight)
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
+    }
+    
+    private func setupMap() {
+   
+    }
+    deinit {
+        mapController?.pauseEngine()
+        mapController?.resetEngine()
+        mapController = nil
+    }
+
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        mapController?.pauseEngine()
+        mapController?.resetEngine()
+        mapController = nil
+
+        mapContainer?.removeFromSuperview()
+        mapContainer = nil
     }
 }
 

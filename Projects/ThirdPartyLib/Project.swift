@@ -10,7 +10,7 @@ import ProjectDescriptionHelpers
 
 let project = Project.makeModule(
     name: "ThirdPartyLib",
-    product: .staticFramework,
+    product: .framework,
     packages: [
         .remote(url: "https://github.com/ReactiveX/RxSwift.git",
                 requirement: .upToNextMajor(from: "6.5.0")),
@@ -29,7 +29,8 @@ let project = Project.makeModule(
         .remote(url: "https://github.com/yannickl/QRCodeReader.swift.git",
                 requirement: .upToNextMajor(from: "10.1.0")),
         .remote(url: "https://github.com/firebase/firebase-ios-sdk.git",
-                requirement: .upToNextMajor(from: "11.6.0"))
+                requirement: .upToNextMajor(from: "11.6.0")),
+
     ],
     dependencies: [
         .package(product: "RxSwift"),
@@ -40,8 +41,8 @@ let project = Project.makeModule(
         .package(product: "GAuthSignin"),
         .package(product: "QRCode"),
         .package(product: "QRCodeReader"),
-        .xcframework(path: "KakaoMapsSDK.xcframework"),
+
         .package(product: "FirebaseCore"),
         .package(product: "FirebaseMessaging")
     ]
-)
+    )
