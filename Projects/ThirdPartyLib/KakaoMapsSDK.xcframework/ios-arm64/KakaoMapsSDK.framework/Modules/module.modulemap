@@ -1,0 +1,11 @@
+framework module KakaoMapsSDK {
+  umbrella header "KakaoMapsSDK.h"
+  export *
+
+  module * { export * }
+}
+
+module KakaoMapsSDK.Swift {
+  header "KakaoMapsSDK-Swift.h"
+  requires objc
+}

@@ -1,12 +1,13 @@
 //
 //  AppDelegate.swift
-//  GOMS-iOS-V2
+//  GOMS-iOS-V3
 //
-//  Created by 새미 on 1/10/24.
-//  Copyright © 2024 HARIBO. All rights reserved.
+//  Created by 준표 on 4/4/26.
+//  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import KakaoMapsSDK
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,8 +16,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+
         return true
     }
+}
 
     // MARK: UISceneSession Lifecycle
 
@@ -32,4 +35,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didDiscardSceneSessions sceneSessions: Set<UISceneSession>
     ) {}
-}
