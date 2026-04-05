@@ -26,7 +26,9 @@ public extension Project {
             name: name,
             destinations: [.iPhone, .iPad],
             product: product,
-            bundleId: "\(organizationName).\(name)",
+            bundleId: product == .app
+                ? "HARIBO.GOMS-iOS-V2"
+                : "HARIBO.\(name)",
             deploymentTargets: deploymentTargets,
             infoPlist: infoPlist,
             sources: sources,

@@ -63,24 +63,34 @@ public final class MainViewModel: BaseViewModel {
                             department: $0.department
                         )
                     }
-                    completion()
+                    DispatchQueue.main.async { completion() }
                 } catch(let err) {
-                    print(String(describing: err))
+                    DispatchQueue.main.async { completion() }
                 }
                 switch statusCode {
                 case 200:
-                    print("OK")
+                    break
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance(){ [weak self] success in
+                        guard let self = self else { return }
+                        if success {
+                            self.getLateList(completion: completion)
+                        } else {
+                            DispatchQueue.main.async { completion() }
+                        }
+                    }
                 case 404:
-                    print("지각자 없음")
+                    break
                 case 500:
-                    print("SERVER ERROR")
+                    break
                 default:
-                    print(result)
+                    DispatchQueue.main.async { completion() }
+                }
+                if statusCode != 200 {
+                    DispatchQueue.main.async { completion() }
                 }
             case .failure(let err):
-                print(err.localizedDescription)
+                DispatchQueue.main.async { completion() }
             }
         }
     }
@@ -103,25 +113,35 @@ public final class MainViewModel: BaseViewModel {
                             outingTime: $0.outingAt
                         )
                     }
-                    completion()
+                    DispatchQueue.main.async { completion() }
                 } catch(let err) {
-                    print(String(describing: err))
+                    DispatchQueue.main.async { completion() }
                 }
                 let statusCode = result.statusCode
                 switch statusCode {
                 case 200:
-                    print("OK")
+                    break
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance(){ [weak self] success in
+                        guard let self = self else { return }
+                        if success {
+                            self.getOutingList(completion: completion)
+                        } else {
+                            DispatchQueue.main.async { completion() }
+                        }
+                    }
                 case 404:
-                    print("외출한 사람이 없을 경우")
+                    break
                 case 500:
-                    print("SERVER ERROR")
+                    break
                 default:
-                    print(result)
+                    DispatchQueue.main.async { completion() }
+                }
+                if statusCode != 200 {
+                    DispatchQueue.main.async { completion() }
                 }
             case .failure(let err):
-                print(err.localizedDescription)
+                DispatchQueue.main.async { completion() }
             }
         }
     }
@@ -150,10 +170,10 @@ public final class MainViewModel: BaseViewModel {
                 case 401:
                     self.gomsRefreshToken.tokenReissuance() { _ in }
                 default:
-                    print(response)
+                    break
                 }
             case .failure(let error):
-                print(error.localizedDescription)
+                break
             }
             group.leave()
         }
@@ -174,12 +194,12 @@ public final class MainViewModel: BaseViewModel {
                 case 401:
                     self.gomsRefreshToken.tokenReissuance() { _ in }
                 case 500:
-                    print("SERVER ERROR")
+                    break
                 default:
-                    print(response)
+                    break
                 }
             case .failure(let error):
-                print(error.localizedDescription)
+                break
             }
             group.leave()
         }
@@ -194,7 +214,9 @@ public final class MainViewModel: BaseViewModel {
                 status: status,
                 lateCount: lateCount
             )
-            completion(authority)
+            DispatchQueue.main.async {
+                completion(authority)
+            }
         }
     }
 }

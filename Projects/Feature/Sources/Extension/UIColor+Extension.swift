@@ -8,6 +8,6 @@
 
 import UIKit
 
-extension UIColor {
+public extension UIColor {
     static let color = FeatureAsset.Colors.self
 }

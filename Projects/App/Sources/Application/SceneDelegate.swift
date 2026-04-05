@@ -2,11 +2,12 @@
 //  SceneDelegate.swift
 //  ProjectDescriptionHelpers
 //
-//  Created by 새미 on 1/10/24.
+//  Created by 준표 on 4/4/26.
 //
 
 import UIKit
 import Feature
+import KakaoMapsSDK
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -22,6 +23,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let isSwitchOn = defaults.bool(forKey: "isSwitchOn")
         let adminIsSwitchOn = defaults.bool(forKey: "isSwitchMakeOn")
 
+        #if !DEBUG
         checkForUpdates { needsUpdate in
             if needsUpdate {
                 print("업데이트 필요")
@@ -30,6 +32,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 print("최신 버전입니다")
             }
         }
+        #endif
 
         applySavedTheme()
 
@@ -79,7 +82,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             } else if authority == "ROLE_STUDENT" {
                 if isSwitchOn {
                     print("Student Screen: StudentQRViewController")
-                    self.window?.rootViewController = UINavigationController(rootViewController: StudentQRViewController())
+                    self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
                 } else {
                     print("Student Screen: MainViewController")
                     self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
@@ -164,6 +167,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidDisconnect(_ scene: UIScene) {}
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        #if !DEBUG
         checkForUpdates { needsUpdate in
             if needsUpdate {
                 DispatchQueue.main.async {
@@ -171,6 +175,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 }
             }
         }
+        #endif
     }
 
     func sceneWillResignActive(_ scene: UIScene) {}
