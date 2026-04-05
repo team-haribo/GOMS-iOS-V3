@@ -80,13 +80,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     print("Admin Screen: AdminMainViewController")
                 }
             } else if authority == "ROLE_STUDENT" {
-                if isSwitchOn {
-                    print("Student Screen: StudentQRViewController")
-                    self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
-                } else {
-                    print("Student Screen: MainViewController")
-                    self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
-                }
+                print("Student Screen: MainViewController")
+                self.window?.rootViewController =
+                    UINavigationController(rootViewController: MainViewController())
             } else {
                 self.showLoginScreen()
             }
