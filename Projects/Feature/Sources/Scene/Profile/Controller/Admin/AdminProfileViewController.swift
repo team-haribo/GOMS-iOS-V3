@@ -289,14 +289,23 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         alertController.addAction(cancelAction)
 
         let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
+            guard let self = self else { return }
 
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
+            self.profileViewModel.profileLogout { success in
+                DispatchQueue.main.async {
+                    if success {
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    } else {
+                        print("로그아웃 실패")
+                    }
+                }
             }
         }
 
@@ -412,14 +421,21 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }))
         actionSheet.addAction(UIAlertAction(title: "기본 프로필 사용", style: .default, handler: { [weak self] (ACTION:UIAlertAction) in
             self?.userProfile.image = .image.gomsBasicProfile.image
-            let viewModel = ProfileViewModel()
-            viewModel.deleteProfileImage()
+            self?.profileViewModel.deleteProfileImage()
+                .sink { completion in
+                    switch completion {
+                    case .finished:
+                        print("기본 프로필 삭제 완료")
+                    case .failure(let error):
+                        print("삭제 실패: \(error)")
+                    }
+                } receiveValue: { _ in }
+                .store(in: &self!.cancellables)
         }))
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel, handler: { [weak self] _ in
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-        
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
