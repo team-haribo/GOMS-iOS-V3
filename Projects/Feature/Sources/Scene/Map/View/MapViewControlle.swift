@@ -77,12 +77,11 @@ public final class MapViewController: UIViewController {
         self.mapController = controller
 
         controller.prepareEngine()
+        controller.activateEngine()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            controller.activateEngine()
-
-    
+        DispatchQueue.main.async {
             let defaultPosition = MapPoint(longitude: 127.0326, latitude: 37.4980)
+
             let mapviewInfo = MapviewInfo(
                 viewName: "mapview",
                 viewInfoName: "map",

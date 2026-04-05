@@ -45,6 +45,58 @@ public final class MainViewModel: BaseViewModel {
     override init() {
         self.profileData = nil
     }
+
+    func getLateList(completion: @escaping () -> Void) {
+        lateProvider.request(.lateRank(authorization: accessToken)) { response in
+            switch response {
+
+            case .success(let result):
+                let statusCode = result.statusCode
+                let responseData = result.data
+
+                switch statusCode {
+
+                case 200:
+                    do {
+                        let model = try JSONDecoder().decode(LatecomerModel.self, from: responseData)
+                        self.lateList = model.students
+                        self.lateListDatas = self.lateList.map {
+                            LatecomerData(
+                                profileImageURL: nil,
+                                name: $0.name,
+                                grade: $0.grade,
+                                department: $0.department
+                            )
+                        }
+                    } catch {
+                        // 디코딩 실패 무시
+                    }
+
+                    DispatchQueue.main.async { completion() }
+
+                case 401:
+                    self.gomsRefreshToken.tokenReissuance { [weak self] success in
+                        guard let self = self else { return }
+
+                        if success {
+                            self.getLateList(completion: completion)
+                        } else {
+                            DispatchQueue.main.async { completion() }
+                        }
+                    }
+
+                case 404, 500:
+                    DispatchQueue.main.async { completion() }
+
+                default:
+                    DispatchQueue.main.async { completion() }
+                }
+
+            case .failure:
+                DispatchQueue.main.async { completion() }
+            }
+        }
+    }
     
     func getOutingList(completion: @escaping () -> Void) {
         outingProvider.request(.outingList(authorization: accessToken)) { response in
