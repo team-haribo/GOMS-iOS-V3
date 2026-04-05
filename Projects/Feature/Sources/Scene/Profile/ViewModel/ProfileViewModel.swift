@@ -28,7 +28,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
         super.init()
     }
 
-    let providerAuccount = MoyaProvider<AccountServices>(plugins: [NetworkLoggerPlugin()])
+
     let providerMember = MoyaProvider<MemberServices>(plugins: [NetworkLoggerPlugin()])
     let providerAuth = MoyaProvider<AuthServices>(plugins: [NetworkLoggerPlugin()])
     let providerOuting = MoyaProvider<OutingServices>(plugins: [NetworkLoggerPlugin()])
@@ -170,27 +170,46 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     }
 
     public func withdraw(completion: @escaping (Bool) -> Void) {
-        providerAuccount.request(.withdraw(password: self.password, authorization: accessToken)) { response in
+        providerMember.request(.withdraw(password: self.password, authorization: accessToken)) { [weak self] response in
+            guard let self = self else { return }
+            
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
+                
                 switch statusCode {
-                case 205:
-                    print(result.data)
+                case 200:
+                   
+                    self.keyChain.delete(key: Const.KeyChainKey.accessToken)
+                    self.keyChain.delete(key: Const.KeyChainKey.refreshToken)
+                    
+                    print("회원탈퇴 성공")
                     completion(true)
-                case 404:
-                    print(result.data)
-                    completion(false)
+                    
                 case 400:
-                    print("현재 비밀번호 입력 String: \(self.password)")
-                    print(result.data)
+                    self.errorMessage = "요청 형식이 잘못되었습니다."
                     completion(false)
+                    
+                case 401:
+                    self.errorMessage = "인증이 만료되었습니다. 다시 로그인해주세요."
+                    completion(false)
+                    
+                case 403:
+                    self.errorMessage = "비밀번호가 올바르지 않습니다."
+                    completion(false)
+                    
+                case 500:
+                    self.errorMessage = "서버 오류가 발생했습니다."
+                    completion(false)
+                    
                 default:
-                    print(result)
+                    self.errorMessage = "알 수 없는 오류"
                     completion(false)
                 }
+                
             case .failure(let err):
-                print(err.localizedDescription)
+                self.errorMessage = err.localizedDescription
+                print("withdraw error: \(err.localizedDescription)")
                 completion(false)
             }
         }

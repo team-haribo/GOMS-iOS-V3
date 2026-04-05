@@ -64,6 +64,10 @@ public final class AuthViewModel: BaseViewModel {
         self.grade = grade
     }
 
+    func setupEmailStatus(status: String) {
+        self.emailStatus = status
+    }
+
     func signIn(completion: @escaping (Int, String?) -> Void) {
 
         let param = SignInRequest(email: email, password: password)
@@ -141,10 +145,10 @@ public final class AuthViewModel: BaseViewModel {
 
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
         
-        // 민선: Swagger에 맞춰 purpose를 "SIGNUP"으로 수정함
+        // 비밀번호 찾기랑 이넘 분기했습니다
         let param = SendAuthCodeRequest(
             email: email,
-            purpose: "SIGNUP"
+            purpose: emailStatus.isEmpty ? "SIGNUP" : emailStatus
         )
         
         print("AUTH email:", param.email)
@@ -221,7 +225,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: "SIGNUP" // 민선: 여기도 똑같이 "SIGNUP"으로 수정
+                purpose: emailStatus // 민선: 여기도 똑같이 "SIGNUP"으로 수정
             )
         ) { response in
 

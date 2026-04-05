@@ -96,6 +96,7 @@ public final class FindPasswordViewController: BaseViewController {
 
      
         viewModel.setupEmail(email: email)
+        viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
 
       
         viewModel.sendAuthCode { [weak self] success, statusCode in
