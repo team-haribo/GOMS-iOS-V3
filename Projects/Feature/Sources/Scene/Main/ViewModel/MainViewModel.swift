@@ -46,101 +46,55 @@ public final class MainViewModel: BaseViewModel {
         self.profileData = nil
     }
     
-    func getLateList(completion: @escaping () -> Void) {
-        lateProvider.request(.lateRank(authorization: accessToken)) { response in
-            switch response {
-            case .success(let result):
-                let responseData = result.data
-                let statusCode = result.statusCode
-                do {
-                    let responseModel = try JSONDecoder().decode(LatecomerModel.self, from: responseData)
-                    self.lateList = responseModel.students
-                    self.lateListDatas = self.lateList.map {
-                        LatecomerData(
-                            profileImageURL: nil,
-                            name: $0.name,
-                            grade: $0.grade,
-                            department: $0.department
-                        )
-                    }
-                    DispatchQueue.main.async { completion() }
-                } catch(let err) {
-                    DispatchQueue.main.async { completion() }
-                }
-                switch statusCode {
-                case 200:
-                    break
-                case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ [weak self] success in
-                        guard let self = self else { return }
-                        if success {
-                            self.getLateList(completion: completion)
-                        } else {
-                            DispatchQueue.main.async { completion() }
-                        }
-                    }
-                case 404:
-                    break
-                case 500:
-                    break
-                default:
-                    DispatchQueue.main.async { completion() }
-                }
-                if statusCode != 200 {
-                    DispatchQueue.main.async { completion() }
-                }
-            case .failure(let err):
-                DispatchQueue.main.async { completion() }
-            }
-        }
-    }
-    
     func getOutingList(completion: @escaping () -> Void) {
         outingProvider.request(.outingList(authorization: accessToken)) { response in
             switch response {
+
             case .success(let result):
-                let responseData = result.data
-                do {
-                    let responseModel = try JSONDecoder().decode(OutingListModel.self, from: responseData)
-                    self.outingList = responseModel.students
-                    self.outingListDatas = self.outingList.map {
-                        OutingListData(
-                            id: $0.memberId,
-                            profileImageURL: nil,
-                            name: $0.name,
-                            grade: $0.grade,
-                            department: $0.department,
-                            outingTime: $0.outingAt
-                        )
-                    }
-                    DispatchQueue.main.async { completion() }
-                } catch(let err) {
-                    DispatchQueue.main.async { completion() }
-                }
                 let statusCode = result.statusCode
+                let responseData = result.data
+
                 switch statusCode {
+
                 case 200:
-                    break
+                    do {
+                        let model = try JSONDecoder().decode(OutingListModel.self, from: responseData)
+                        self.outingList = model.students
+                        self.outingListDatas = self.outingList.map {
+                            OutingListData(
+                                id: $0.memberId,
+                                profileImageURL: nil,
+                                name: $0.name,
+                                grade: $0.grade,
+                                department: $0.department,
+                                outingTime: $0.outingAt
+                            )
+                        }
+                    } catch {
+                     
+                    }
+
+                    DispatchQueue.main.async { completion() }
+
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ [weak self] success in
+                    self.gomsRefreshToken.tokenReissuance { [weak self] success in
                         guard let self = self else { return }
+
                         if success {
                             self.getOutingList(completion: completion)
                         } else {
                             DispatchQueue.main.async { completion() }
                         }
                     }
-                case 404:
-                    break
-                case 500:
-                    break
+
+                case 404, 500:
+                    DispatchQueue.main.async { completion() }
+
                 default:
                     DispatchQueue.main.async { completion() }
                 }
-                if statusCode != 200 {
-                    DispatchQueue.main.async { completion() }
-                }
-            case .failure(let err):
+
+            case .failure:
                 DispatchQueue.main.async { completion() }
             }
         }
@@ -214,9 +168,7 @@ public final class MainViewModel: BaseViewModel {
                 status: status,
                 lateCount: lateCount
             )
-            DispatchQueue.main.async {
-                completion(authority)
-            }
+            completion(authority)
         }
     }
 }
