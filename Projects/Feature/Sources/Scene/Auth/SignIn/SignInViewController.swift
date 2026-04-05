@@ -8,6 +8,8 @@
 
 import UIKit
 import Service
+import SnapKit
+import Then
 
 public final class SignInViewController: BaseViewController {
     
@@ -18,6 +20,17 @@ public final class SignInViewController: BaseViewController {
     private let notificationViewModel = NotificationViewModel()
 
     private let loader = LoaderViewController()
+    
+    // 커스텀 뒤로가기 버튼
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
     
     private let pageTitleLabel = UILabel().then {
         $0.text = "로그인"
@@ -46,7 +59,7 @@ public final class SignInViewController: BaseViewController {
         $0.alignment = .fill
     }
     
-    private let emailTextField = GOMSTextField(frame: CGRect(x: 0, y: 0, width: 0, height: 0), placeholder: "이메일을 입력해주세요")
+    private let emailTextField = GOMSTextField(frame: .zero, placeholder: "이메일을 입력해주세요")
     
     private let defaultDomain = UILabel().then {
         $0.text = "@gsm.hs.kr"
@@ -62,7 +75,7 @@ public final class SignInViewController: BaseViewController {
         $0.isHidden = true
     }
 
-    lazy var passwordTextField = GOMSTextField(frame: CGRect(x: 0, y: 0, width: 0, height: 0), placeholder: "비밀번호를 입력해주세요").then {
+    lazy var passwordTextField = GOMSTextField(frame: .zero, placeholder: "비밀번호를 입력해주세요").then {
         $0.isSecureTextEntry = true
         $0.rightView = showPasswordButton
         $0.rightViewMode = .always
@@ -75,8 +88,6 @@ public final class SignInViewController: BaseViewController {
         $0.addTarget(self, action: #selector(showPasswordButtonTapped), for: .touchUpInside)
         $0.isEnabled = true
     }
-    
-
     
     private lazy var findPasswordButton = UIButton().then {
         $0.setTitle("비밀번호 찾기", for: .normal)
@@ -94,11 +105,11 @@ public final class SignInViewController: BaseViewController {
         $0.isHidden = true
     }
     
-    private lazy var signInButton = GOMSButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "로그인").then {
+    private lazy var signInButton = GOMSButton(frame: .zero, title: "로그인").then {
         $0.addTarget(self, action: #selector(signInButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - Life Cycel
+    // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -107,15 +118,34 @@ public final class SignInViewController: BaseViewController {
         emailTextField.addTarget(self, action: #selector(emailEditingChanged(_:)), for: .editingChanged)
         passwordTextField.addTarget(self, action: #selector(passwordEditingChanged(_:)), for: .editingChanged)
     }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 참고 코드 방식대로 애니메이션 없이 내비 바 숨김
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    // ⭐ 핵심: BaseViewController에서 강제로 추가한 높이 100짜리 뷰 등을 지워버림
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
+        }
+    }
     
-    // MARK: - Seletors
+    // MARK: - Selectors
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
+    }
+
     @objc func findPasswordButtonTapped() {
         let findPasswordVC = FindPasswordViewController(viewModel: self.viewModel)
         navigationController?.pushViewController(findPasswordVC, animated: true)
     }
     
-    private var isTransitioning = false
-
     @objc func signInButtonTapped() {
         let email = emailTextField.text ?? ""
         let password = passwordTextField.text ?? ""
@@ -149,42 +179,30 @@ public final class SignInViewController: BaseViewController {
             return
         }
 
-        // MARK: - 로그인 api
         viewModel.setupEmail(email: email)
         viewModel.setupPassword(password: password)
 
         viewModel.signIn { [weak self] statusCode, authority in
             guard let self = self else { return }
-            print("STATUS:", statusCode)
-
             DispatchQueue.main.async {
                 if (200..<300).contains(statusCode) {
-                    
                     UserDefaults.standard.set(email, forKey: "localEmail")
                     UserDefaults.standard.set(password, forKey: "localPass")
                     
                     if authority == "ROLE_STUDENT" {
                         let mainVC = MainViewController()
                         self.navigationController?.setViewControllers([mainVC], animated: true)
-                        
                     } else if authority == "ROLE_STUDENT_COUNCIL" {
                         let adminVC = AdminMainViewController()
                         self.navigationController?.setViewControllers([adminVC], animated: true)
-                        
                     } else {
                         self.passwordErrorLabel.text = "권한 정보를 확인할 수 없습니다."
                         self.showPasswordError()
                     }
-
-                } else if statusCode == 400 || statusCode == 403 || statusCode == 404 {
+                } else {
                     self.passwordErrorLabel.text = "이메일 또는 비밀번호를 확인해주세요."
                     self.showPasswordError()
-                    
-                } else {
-                    self.passwordErrorLabel.text = "서버 오류가 발생했습니다."
-                    self.showPasswordError()
                 }
-                
             }
         }
     }
@@ -195,10 +213,8 @@ public final class SignInViewController: BaseViewController {
         
         if showPasswordButton.isSelected {
             showPasswordButton.setImage(.image.off.image, for: .normal)
-            showPasswordButton.tintColor = .color.sub2.color
         } else {
             showPasswordButton.setImage(.image.on.image, for: .normal)
-            showPasswordButton.tintColor = .color.sub2.color
         }
     }
     
@@ -210,7 +226,6 @@ public final class SignInViewController: BaseViewController {
         else { return }
 
         let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
-
         signInButton.snp.updateConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
         }
@@ -246,20 +261,14 @@ public final class SignInViewController: BaseViewController {
         passwordTextField.layer.borderColor = UIColor.clear.cgColor
         passwordTextField.layer.borderWidth = 0
 
-        emailErrorLabel.snp.updateConstraints {
-            $0.height.equalTo(0)
-        }
-
-        passwordErrorLabel.snp.updateConstraints {
-            $0.height.equalTo(0)
-        }
+        emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        passwordErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
 
         findPasswordButton.snp.remakeConstraints {
             $0.height.equalTo(48)
-            $0.trailing.equalTo(-bounds.width * 0.07)
+            $0.trailing.equalToSuperview().offset(-20)
             $0.top.equalTo(passwordTextField.snp.bottom)
         }
-
         view.layoutIfNeeded()
     }
     
@@ -274,48 +283,45 @@ public final class SignInViewController: BaseViewController {
         passwordTextField.layer.borderColor = UIColor.clear.cgColor
         passwordTextField.layer.borderWidth = 0
 
-        emailErrorLabel.snp.updateConstraints {
-            $0.height.equalTo(19)
-        }
-
+        emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
         view.layoutIfNeeded()
     }
     
     private func showPasswordError() {
         passwordTextField.setPlaceholderColor(.color.gomsNegative.color)
         passwordErrorLabel.isHidden = false
-        passwordErrorLabel.snp.updateConstraints {
-            $0.height.equalTo(19)
-        }
+        passwordErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
         passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
         passwordTextField.layer.borderWidth = 1
 
         emailErrorLabel.isHidden = true
-        emailErrorLabel.snp.updateConstraints {
-            $0.height.equalTo(0)
-        }
+        emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
 
         findPasswordButton.snp.remakeConstraints {
             $0.height.equalTo(48)
-            $0.trailing.equalTo(-bounds.width * 0.07)
+            $0.trailing.equalToSuperview().offset(-20)
             $0.top.equalTo(passwordErrorLabel.snp.bottom).offset(0)
         }
-
         view.layoutIfNeeded()
     }
-    
     
     // MARK: - Add View
     public override func addView() {
         emailTextField.addSubview(defaultDomain)
-        [pageTitleLabel, emailTextField, emailErrorLabel, passwordTextField, passwordErrorLabel, findPasswordButton, signInButton].forEach { view.addSubview($0) }
+        [customBackButton, pageTitleLabel, emailTextField, emailErrorLabel, passwordTextField, passwordErrorLabel, findPasswordButton, signInButton].forEach { view.addSubview($0) }
+        view.bringSubviewToFront(customBackButton) // 커스텀 버튼을 맨 앞으로
     }
     
     // MARK: - Layout
     public override func setLayout() {
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+
         pageTitleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(90 + 26)
-            $0.leading.equalTo(24)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
+            $0.leading.equalToSuperview().offset(20)
         }
 
         defaultDomain.snp.makeConstraints {
@@ -325,8 +331,8 @@ public final class SignInViewController: BaseViewController {
         }
 
         emailTextField.snp.makeConstraints {
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().offset(-20)
             $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
             $0.height.equalTo(56)
         }
@@ -336,12 +342,11 @@ public final class SignInViewController: BaseViewController {
             $0.top.equalTo(emailTextField.snp.bottom).offset(8)
             $0.height.equalTo(0)
         }
-
       
         passwordTextField.snp.makeConstraints {
             $0.height.equalTo(56)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+            $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().offset(-20)
             $0.top.equalTo(emailErrorLabel.snp.bottom).offset(16)
         }
 
@@ -353,18 +358,17 @@ public final class SignInViewController: BaseViewController {
 
         findPasswordButton.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.trailing.equalTo(-bounds.width * 0.07)
+            $0.trailing.equalToSuperview().offset(-20)
             $0.top.equalTo(passwordTextField.snp.bottom)
         }
 
         signInButton.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
-            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
-   
+    
     @objc private func emailEditingChanged(_ textField: UITextField) {
         textFieldDidChange(textField)
     }
@@ -380,16 +384,13 @@ extension SignInViewController: UITextFieldDelegate {
         if textField == emailTextField {
             let email = textField.text ?? ""
             viewModel.setupEmail(email: email)
-          
             let emailRegex = "^s[0-9]{5}$"
             let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
             
             if email.isEmpty {
                 emailErrorLabel.isHidden = true
                 emailTextField.layer.borderWidth = 0
-                emailErrorLabel.snp.updateConstraints {
-                    $0.height.equalTo(0)
-                }
+                emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
                 view.layoutIfNeeded()
             } else if !emailPredicate.evaluate(with: email) {
                 emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
@@ -397,7 +398,6 @@ extension SignInViewController: UITextFieldDelegate {
             } else {
                 showDefaultState()
             }
-            
         } else if textField == passwordTextField {
             viewModel.setupPassword(password: textField.text ?? "")
         }
@@ -406,15 +406,12 @@ extension SignInViewController: UITextFieldDelegate {
     public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let currentText = (textField.text ?? "") as NSString
         let updatedText = currentText.replacingCharacters(in: range, with: string)
-    
         if textField == emailTextField {
             return updatedText.count <= 6 && updatedText.rangeOfCharacter(from: .whitespaces) == nil
         }
-      
         if textField == passwordTextField {
             return updatedText.rangeOfCharacter(from: .whitespaces) == nil
         }
-        
         return true
     }
     

@@ -93,7 +93,7 @@ public final class AuthViewModel: BaseViewModel {
 
                             self.keyChain.create(key: Const.KeyChainKey.accessToken, token: signInResponse.accessToken)
                             self.keyChain.create(key: Const.KeyChainKey.refreshToken, token: signInResponse.refreshToken)
-                           
+                            
                             let accessToken = signInResponse.accessToken
 
                             if let payload = accessToken.split(separator: ".").dropFirst().first,
@@ -141,9 +141,10 @@ public final class AuthViewModel: BaseViewModel {
 
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
         
+        // 민선: Swagger에 맞춰 purpose를 "SIGNUP"으로 수정함
         let param = SendAuthCodeRequest(
             email: email,
-            purpose: AuthPurpose.passwordChange.rawValue
+            purpose: "SIGNUP"
         )
         
         print("AUTH email:", param.email)
@@ -220,7 +221,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: AuthPurpose.passwordChange.rawValue
+                purpose: "SIGNUP" // 민선: 여기도 똑같이 "SIGNUP"으로 수정
             )
         ) { response in
 
