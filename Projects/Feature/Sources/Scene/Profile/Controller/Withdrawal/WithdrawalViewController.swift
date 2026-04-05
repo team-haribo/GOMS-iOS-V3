@@ -56,28 +56,47 @@ public class WithdrawalViewController: BaseViewController {
     @objc func withdrawalButtonTapped() {
         let inputPassword = passwordTextField.text ?? ""
 
-        if inputPassword == "1234" {
-            passwordErrorLabel.isHidden = true
-            passwordTextField.layer.borderWidth = 0
-            passwordTextField.setPlaceholderColor(.color.sub2.color)
+        guard !inputPassword.isEmpty else {
+            passwordErrorUI()
+            return
+        }
 
-            let alert = UIAlertController(title: "회원 탈퇴 완료", message: "그동안 GOMS를 이용해주셔서 감사합니다.\n안녕히 가세요!", preferredStyle: .alert)
+        viewModel.setupPassword(password: inputPassword)
 
-            let ok = UIAlertAction(title: "완료", style: .default) { _ in
-                let introVC = IntroViewController()
-                let nav = UINavigationController(rootViewController: introVC)
+        viewModel.withdraw { [weak self] success in
+            guard let self = self else { return }
 
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = scene.windows.first {
-                    window.rootViewController = nav
-                    window.makeKeyAndVisible()
+            DispatchQueue.main.async {
+                if success {
+                    self.passwordErrorLabel.isHidden = true
+                    self.passwordTextField.layer.borderWidth = 0
+                    self.passwordTextField.setPlaceholderColor(.color.sub2.color)
+
+                    let alert = UIAlertController(
+                        title: "회원 탈퇴 완료",
+                        message: "그동안 GOMS를 이용해주셔서 감사합니다.\n안녕히 가세요!",
+                        preferredStyle: .alert
+                    )
+
+                    let ok = UIAlertAction(title: "완료", style: .default) { _ in
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
+
+                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = scene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    }
+
+                    alert.addAction(ok)
+                    self.present(alert, animated: true)
+
+                } else {
+                    self.passwordErrorLabel.text = self.viewModel.errorMessage
+                    self.passwordErrorUI()
                 }
             }
-            alert.addAction(ok)
-            self.present(alert, animated: true)
-        } else {
-            print("탈퇴하기 실패")
-            self.passwordErrorUI()
         }
     }
     

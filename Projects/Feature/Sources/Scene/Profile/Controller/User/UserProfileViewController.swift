@@ -198,9 +198,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         let alert = UIAlertController(title: "회원 탈퇴", message: "정말로 회원을 탈퇴하시겠습니까?", preferredStyle: .alert)
         
         let cancel = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        let withdrawal = UIAlertAction(title: "회원 탈퇴", style: .destructive) { action in
+        let withdrawal = UIAlertAction(title: "회원 탈퇴", style: .destructive) { [weak self] _ in
             let withdrawalVC = WithdrawalViewController()
-            self.navigationController?.pushViewController(withdrawalVC , animated: true)
+            self?.navigationController?.pushViewController(withdrawalVC, animated: true)
         }
         
         alert.addAction(cancel)
@@ -307,16 +307,23 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         alertController.addAction(cancelAction)
         
         let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
+            self?.profileViewModel.profileLogout { success in
+                DispatchQueue.main.async {
+                    if success {
+                        let introVC = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introVC)
 
-            if let window = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first?.windows.first {
+                        if let window = UIApplication.shared.connectedScenes
+                            .compactMap({ $0 as? UIWindowScene })
+                            .first?.windows.first {
 
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    } else {
+                        print("로그아웃 실패")
+                    }
+                }
             }
         }
         
