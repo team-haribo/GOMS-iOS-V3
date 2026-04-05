@@ -145,10 +145,10 @@ public final class AuthViewModel: BaseViewModel {
 
     func sendAuthCode(completion: @escaping (Bool, Int) -> Void) {
         
-        // 민선: Swagger에 맞춰 purpose를 "SIGNUP"으로 수정함
+        // 비밀번호 찾기랑 이넘 분기했습니다
         let param = SendAuthCodeRequest(
             email: email,
-            purpose: emailStatus
+            purpose: emailStatus.isEmpty ? "SIGNUP" : emailStatus
         )
         
         print("AUTH email:", param.email)

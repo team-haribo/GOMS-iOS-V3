@@ -259,6 +259,7 @@ public final class SignUpViewController: BaseViewController {
         let name = nameTextField.text ?? ""
         let email = emailTextField.text ?? ""
         viewModel.setupEmail(email: email)
+        viewModel.setupEmailStatus(status: "SIGNUP")
 
         nameErrorLabel.isHidden = true
         emailErrorLabel.isHidden = true

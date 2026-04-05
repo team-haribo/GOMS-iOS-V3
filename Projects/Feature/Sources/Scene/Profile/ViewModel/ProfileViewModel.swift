@@ -28,7 +28,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
         super.init()
     }
 
-    let providerAuccount = MoyaProvider<AccountServices>(plugins: [NetworkLoggerPlugin()])
+
     let providerMember = MoyaProvider<MemberServices>(plugins: [NetworkLoggerPlugin()])
     let providerAuth = MoyaProvider<AuthServices>(plugins: [NetworkLoggerPlugin()])
     let providerOuting = MoyaProvider<OutingServices>(plugins: [NetworkLoggerPlugin()])
@@ -170,7 +170,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     }
 
     public func withdraw(completion: @escaping (Bool) -> Void) {
-        providerAuccount.request(.withdraw(password: self.password, authorization: accessToken)) { [weak self] response in
+        providerMember.request(.withdraw(password: self.password, authorization: accessToken)) { [weak self] response in
             guard let self = self else { return }
             
             switch response {
