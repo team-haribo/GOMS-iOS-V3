@@ -421,16 +421,18 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }))
         actionSheet.addAction(UIAlertAction(title: "기본 프로필 사용", style: .default, handler: { [weak self] (ACTION:UIAlertAction) in
             self?.userProfile.image = .image.gomsBasicProfile.image
-            self?.profileViewModel.deleteProfileImage()
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        print("기본 프로필 삭제 완료")
-                    case .failure(let error):
-                        print("삭제 실패: \(error)")
-                    }
-                } receiveValue: { _ in }
-                .store(in: &self!.cancellables)
+            if let self = self {
+                self.profileViewModel.deleteProfileImage()
+                    .sink { completion in
+                        switch completion {
+                        case .finished:
+                            print("기본 프로필 삭제 완료")
+                        case .failure(let error):
+                            print("삭제 실패: \(error)")
+                        }
+                    } receiveValue: { _ in }
+                    .store(in: &self.cancellables)
+            }
         }))
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel, handler: { [weak self] _ in
             self?.updateImage(isActionSheetShowing: false)
