@@ -523,14 +523,13 @@ private let profileVC = AdminProfileViewController()
         scrollView.addSubview(contentView)
 
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
-        [logo, profileView, basicsProfileView, latecomerLabel, latecomerCollectionView, lateNilView, outingView].forEach { self.contentView.addSubview($0) }
+        [logo, profileView, basicsProfileView, latecomerLabel, latecomerCollectionView, lateNilView, outingView, reportButton].forEach { self.contentView.addSubview($0) }
         
         view.addSubview(mapContainerView)
         view.addSubview(profileContainerView)
         view.addSubview(tabBar)
         view.addSubview(qrButton)
         view.addSubview(codeButton)
-        view.addSubview(reportButton)
     }
 
     // MARK: - Layout
@@ -607,7 +606,7 @@ private let profileVC = AdminProfileViewController()
         
         reportButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(14)
+            $0.top.equalTo(contentView.snp.top).offset(14)
             $0.size.equalTo(26)
         }
 

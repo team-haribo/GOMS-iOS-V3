@@ -125,7 +125,6 @@ public final class SignInViewController: BaseViewController {
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
-    // ⭐ 핵심: BaseViewController에서 강제로 추가한 높이 100짜리 뷰 등을 지워버림
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.view.subviews.forEach {
@@ -191,10 +190,23 @@ public final class SignInViewController: BaseViewController {
                     
                     if authority == "ROLE_STUDENT" {
                         let mainVC = MainViewController()
-                        self.navigationController?.setViewControllers([mainVC], animated: true)
+                        let nav = UINavigationController(rootViewController: mainVC)
+                        
+                        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                              let window = windowScene.windows.first else { return }
+                        
+                        window.rootViewController = nav
+                        window.makeKeyAndVisible()
+                        
                     } else if authority == "ROLE_STUDENT_COUNCIL" {
                         let adminVC = AdminMainViewController()
-                        self.navigationController?.setViewControllers([adminVC], animated: true)
+                        let nav = UINavigationController(rootViewController: adminVC)
+                        
+                        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                              let window = windowScene.windows.first else { return }
+                        
+                        window.rootViewController = nav
+                        window.makeKeyAndVisible()
                     } else {
                         self.passwordErrorLabel.text = "권한 정보를 확인할 수 없습니다."
                         self.showPasswordError()
