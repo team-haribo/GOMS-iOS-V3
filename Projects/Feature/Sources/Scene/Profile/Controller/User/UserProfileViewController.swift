@@ -676,19 +676,19 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }
 
         passwordResetButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
         }
 
         logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(passwordResetButton.snp.bottom).offset(0)
         }
 
         withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(logoutButton.snp.bottom)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
