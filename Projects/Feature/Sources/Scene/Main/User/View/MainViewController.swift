@@ -475,11 +475,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         // 외출자
         outingView.isHidden = isOutingEmpty
 
-    
-        outingStatusLabel.isHidden = isOutingEmpty
-        outingCountLabel.isHidden = isOutingEmpty
-        moreOutingStatusButton.isHidden = isOutingEmpty
-
         self.setCollectionView()
         self.setupCountLable()
     }
