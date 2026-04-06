@@ -317,10 +317,15 @@ private let profileVC = AdminProfileViewController()
 
     // MARK: - Setting
     func setup() {
-        let isEmpty = self.viewModel.lateListDatas.isEmpty
+        let isLateEmpty = self.viewModel.lateListDatas.isEmpty
+        let isOutingEmpty = self.viewModel.outingListDatas.isEmpty
 
-        lateNilView.isHidden = !isEmpty
-        latecomerCollectionView.isHidden = isEmpty
+        
+        lateNilView.isHidden = !isLateEmpty
+        latecomerCollectionView.isHidden = isLateEmpty
+
+        
+        outingView.isHidden = isOutingEmpty
 
         self.setCollectionView()
         self.setupCountLable()
@@ -340,6 +345,14 @@ private let profileVC = AdminProfileViewController()
 
     func setupCountLable() {
         let count = viewModel.outingListDatas.count
+
+        
+        if count == 0 {
+            outingCountLabel.isHidden = true
+            return
+        } else {
+            outingCountLabel.isHidden = false
+        }
 
         let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
         let range = (attributedString.string as NSString).range(of: "\(count)")
