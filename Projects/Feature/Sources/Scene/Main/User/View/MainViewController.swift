@@ -545,7 +545,26 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     func setupCountLable() {
         let count = mainViewModel.outingListDatas.count
-        outingCountLabel.text = "\(count)명이 외출 중"
+
+        outingCountLabel.isHidden = count == 0
+        guard count > 0 else { return }
+
+        let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
+        let range = (attributedString.string as NSString).range(of: "\(count)")
+
+        attributedString.addAttribute(
+            .foregroundColor,
+            value: UIColor.color.gomsPrimary.color,
+            range: range
+        )
+
+        attributedString.addAttribute(
+            .font,
+            value: UIFont.suit(size: 14, weight: .medium),
+            range: range
+        )
+
+        outingCountLabel.attributedText = attributedString
     }
 
     // MARK: - Configure UI
