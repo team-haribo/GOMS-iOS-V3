@@ -187,30 +187,26 @@ public final class SignInViewController: BaseViewController {
                 if (200..<300).contains(statusCode) {
                     UserDefaults.standard.set(email, forKey: "localEmail")
                     UserDefaults.standard.set(password, forKey: "localPass")
-                    
+
+                    let rootVC: UIViewController
+
                     if authority == "ROLE_STUDENT" {
-                        let mainVC = MainViewController()
-                        let nav = UINavigationController(rootViewController: mainVC)
-                        
-                        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                              let window = windowScene.windows.first else { return }
-                        
-                        window.rootViewController = nav
-                        window.makeKeyAndVisible()
-                        
+                        rootVC = MainViewController()
                     } else if authority == "ROLE_STUDENT_COUNCIL" {
-                        let adminVC = AdminMainViewController()
-                        let nav = UINavigationController(rootViewController: adminVC)
-                        
-                        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                              let window = windowScene.windows.first else { return }
-                        
-                        window.rootViewController = nav
-                        window.makeKeyAndVisible()
+                        rootVC = AdminMainViewController()
                     } else {
                         self.passwordErrorLabel.text = "권한 정보를 확인할 수 없습니다."
                         self.showPasswordError()
+                        return
                     }
+
+                    let nav = UINavigationController(rootViewController: rootVC)
+
+                    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                          let window = windowScene.windows.first(where: { $0.isKeyWindow }) else { return }
+
+                    window.rootViewController = nav
+                    window.makeKeyAndVisible()
                 } else {
                     self.passwordErrorLabel.text = "이메일 또는 비밀번호를 확인해주세요."
                     self.showPasswordError()
