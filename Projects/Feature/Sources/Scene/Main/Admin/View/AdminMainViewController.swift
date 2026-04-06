@@ -49,7 +49,8 @@ var isClockOn: Bool = UserDefaults.standard.bool(forKey: "isClockOn") {
     }
 
     private lazy var adminMenuButton = ExpandableButton().then {
-        $0.setBackgroundImage(.image.adminMenu.image, for: .normal)
+        let image = UIImage.image.adminMenu.image
+        $0.setBackgroundImage(image, for: .normal)
         $0.addTarget(self, action: #selector(adminMenuButtonTapped), for: .touchUpInside)
         $0.expandedTouchArea = 30
     }
