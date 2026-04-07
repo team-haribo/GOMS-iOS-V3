@@ -15,7 +15,6 @@ public final class MapViewController: UIViewController {
     
     private var mapContainer: KMViewContainer?
     private var mapController: KMController?
-    private var isMapInitialized = false
     private let mapWrapperView = UIView()
     
     private var dummyRecentSearches = MapMockData.recentSearches
@@ -63,34 +62,10 @@ public final class MapViewController: UIViewController {
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        guard !isMapInitialized else { return }
-        isMapInitialized = true
-
-        mapWrapperView.layoutIfNeeded()
-
-        let container = KMViewContainer(frame: mapWrapperView.bounds)
-        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        mapWrapperView.addSubview(container)
-        self.mapContainer = container
-
-        let controller = KMController(viewContainer: container)
-        self.mapController = controller
-
-        controller.prepareEngine()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            controller.activateEngine()
-
-    
-            let defaultPosition = MapPoint(longitude: 127.0326, latitude: 37.4980)
-            let mapviewInfo = MapviewInfo(
-                viewName: "mapview",
-                viewInfoName: "map",
-                defaultPosition: defaultPosition,
-                defaultLevel: 15
-            )
-
-            controller.addView(mapviewInfo)
+        if mapController == nil {
+            setupMap()
+        } else {
+            mapController?.activateEngine()
         }
     }
 
@@ -284,7 +259,34 @@ public final class MapViewController: UIViewController {
     }
     
     private func setupMap() {
-   
+        mapWrapperView.layoutIfNeeded()
+
+        let container = KMViewContainer(frame: mapWrapperView.bounds)
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        mapWrapperView.addSubview(container)
+        self.mapContainer = container
+
+        let controller = KMController(viewContainer: container)
+        self.mapController = controller
+
+        controller.prepareEngine()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self,
+                  let controller = self.mapController else { return }
+
+            controller.activateEngine()
+
+            let defaultPosition = MapPoint(longitude: 127.0326, latitude: 37.4980)
+            let mapviewInfo = MapviewInfo(
+                viewName: "mapview",
+                viewInfoName: "map",
+                defaultPosition: defaultPosition,
+                defaultLevel: 15
+            )
+
+            controller.addView(mapviewInfo)
+        }
     }
     deinit {
         mapController?.pauseEngine()
@@ -296,11 +298,6 @@ public final class MapViewController: UIViewController {
         super.viewDidDisappear(animated)
 
         mapController?.pauseEngine()
-        mapController?.resetEngine()
-        mapController = nil
-
-        mapContainer?.removeFromSuperview()
-        mapContainer = nil
     }
 }
 
