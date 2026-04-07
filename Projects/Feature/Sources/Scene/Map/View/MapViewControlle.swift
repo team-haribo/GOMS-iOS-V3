@@ -64,6 +64,8 @@ public final class MapViewController: UIViewController {
 
         if mapController == nil {
             setupMap()
+        } else {
+            mapController?.activateEngine()
         }
     }
 
@@ -269,8 +271,9 @@ public final class MapViewController: UIViewController {
 
         controller.prepareEngine()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            controller.activateEngine()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            self.mapController?.activateEngine()
 
             let defaultPosition = MapPoint(longitude: 127.0326, latitude: 37.4980)
             let mapviewInfo = MapviewInfo(
@@ -280,7 +283,7 @@ public final class MapViewController: UIViewController {
                 defaultLevel: 15
             )
 
-            controller.addView(mapviewInfo)
+            self.mapController?.addView(mapviewInfo)
         }
     }
     deinit {
