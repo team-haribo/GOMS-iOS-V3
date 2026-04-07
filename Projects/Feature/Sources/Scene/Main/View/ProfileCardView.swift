@@ -65,17 +65,12 @@ final class ProfileCardView: UIView {
                    outingStatus: String,
                    isAdmin: Bool,
                    profileImageUrl: String?) {
+        // TEMP: isolate crash by disabling configure logic
+        return
     
-        if let urlString = profileImageUrl,
-           let url = URL(string: urlString) {
-            
-            KF.url(url)
-              .placeholder(.image.gomsBasicProfile.image)
-              .set(to: profileImageView)
-            
-        } else {
-            profileImageView.image = .image.gomsBasicProfile.image
-        }
+        print("🔥 profileImageUrl:", profileImageUrl ?? "nil")
+        profileImageView.image = .image.gomsBasicProfile.image
+
         nameLabel.text = name
         studentInformationLabel.text = studentInfo
       

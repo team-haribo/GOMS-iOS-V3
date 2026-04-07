@@ -9,7 +9,6 @@ import UIKit
 import SnapKit
 import Then
 import KakaoMapsSDK
-import Feature
 
 public final class MapViewController: UIViewController {
     

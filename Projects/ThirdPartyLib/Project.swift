@@ -45,9 +45,9 @@ let project = Project.makeModule(
         .package(product: "GAuthSignin"),
         .package(product: "QRCode"),
         .package(product: "QRCodeReader"),
-        .package(product: "KakaoMapsSDK-SPM"),
         .package(product: "FirebaseCore"),
         .package(product: "FirebaseMessaging"),
+        
         
     ]
     )
