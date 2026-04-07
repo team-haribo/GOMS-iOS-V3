@@ -15,6 +15,7 @@ public struct ProfileResponse {
     public let authority: String
     public let lateCount: Int
     public let isOuting: Bool
+    public let profileImageUrl: String?
 
     public init(
         name: String,
@@ -22,7 +23,8 @@ public struct ProfileResponse {
         department: String,
         authority: String,
         lateCount: Int,
-        isOuting: Bool
+        isOuting: Bool,
+        profileImageUrl: String?
     ) {
         self.name = name
         self.grade = grade
@@ -30,5 +32,6 @@ public struct ProfileResponse {
         self.authority = authority
         self.lateCount = lateCount
         self.isOuting = isOuting
+        self.profileImageUrl = profileImageUrl
     }
 }

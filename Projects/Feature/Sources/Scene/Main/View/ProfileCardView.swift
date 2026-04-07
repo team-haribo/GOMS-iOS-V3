@@ -10,6 +10,7 @@ import UIKit
 import SnapKit
 import Then
 import Service
+import Kingfisher
 
 final class ProfileCardView: UIView {
     
@@ -20,7 +21,7 @@ final class ProfileCardView: UIView {
     }
     
     // MARK: - Properties
-    let profileImageView = UIImageView().then {
+    let profileImageView: UIImageView = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
         $0.contentMode = .scaleAspectFill
         $0.layer.cornerRadius = 8
@@ -62,10 +63,22 @@ final class ProfileCardView: UIView {
                    studentInfo: String,
                    lateCount: Int,
                    outingStatus: String,
-                   isAdmin: Bool) {
+                   isAdmin: Bool,
+                   profileImageUrl: String?) {
+    
+        if let urlString = profileImageUrl,
+           let url = URL(string: urlString) {
+            
+            KF.url(url)
+              .placeholder(.image.gomsBasicProfile.image)
+              .set(to: profileImageView)
+            
+        } else {
+            profileImageView.image = .image.gomsBasicProfile.image
+        }
         nameLabel.text = name
         studentInformationLabel.text = studentInfo
-        // 기본은 보이게
+      
         studentInformationLabel.isHidden = false
 
         if isAdmin {

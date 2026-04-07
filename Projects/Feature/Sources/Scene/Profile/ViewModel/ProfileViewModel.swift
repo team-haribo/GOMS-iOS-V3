@@ -19,6 +19,10 @@ public struct MyRoleResponse: Decodable {
     public let role: String
 }
 
+struct ProfileImageResponse: Decodable {
+    let imageUrl: String
+}
+
 public final class ProfileViewModel: BaseViewModel, ObservableObject {
     @Published public var errorMessage = ""
     @Published public var isDataLoaded = false
@@ -103,7 +107,8 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                 department: department,
                 authority: authority,
                 lateCount: lateCount,
-                isOuting: isOuting
+                isOuting: isOuting,
+                profileImageUrl: nil
             )
 
             completion(true, authority)
@@ -111,25 +116,46 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     }
     
 
-    func submitProfileImage(imageData: Data) -> Future<Void, Error> {
-        Future { promise in
-            self.providerProfile.request(.submit(authorization: self.accessToken, imageData: imageData)) { result in
-                switch result {
-                case .success:
-                    promise(.success(()))
-                case let .failure(err):
-                    promise(.failure(err))
-                }
-            }
-        }
-    }
 
     func updateProfileImage(imageData: Data) -> Future<Void, Error> {
-        Future { promise in
+        return Future<Void, Error> { promise in
             self.providerProfile.request(.update(authorization: self.accessToken, imageData: imageData)) { result in
                 switch result {
-                case .success:
-                    promise(.success(()))
+                case .success(let response):
+                    switch response.statusCode {
+                    case 200:
+                        do {
+                            let data = try JSONDecoder().decode(ProfileImageResponse.self, from: response.data)
+                            self.profileInfo = ProfileResponse(
+                                name: self.profileInfo?.name ?? "",
+                                grade: self.profileInfo?.grade ?? 0,
+                                department: self.profileInfo?.department ?? "",
+                                authority: self.profileInfo?.authority ?? "",
+                                lateCount: self.profileInfo?.lateCount ?? 0,
+                                isOuting: self.profileInfo?.isOuting ?? false,
+                                profileImageUrl: data.imageUrl
+                            )
+                            promise(.success(()))
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    case 400:
+                        promise(.failure(NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: "잘못된 요청입니다."])))
+                    case 401:
+                        promise(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "인증이 필요합니다."])))
+                    case 404:
+                        promise(.failure(NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "사용자를 찾을 수 없습니다."])))
+                    case 409:
+                        promise(.failure(NSError(domain: "", code: 409, userInfo: [NSLocalizedDescriptionKey: "프로필 이미지가 없습니다."])))
+                    case 413:
+                        promise(.failure(NSError(domain: "", code: 413, userInfo: [NSLocalizedDescriptionKey: "파일 크기가 너무 큽니다."])))
+                    case 415:
+                        promise(.failure(NSError(domain: "", code: 415, userInfo: [NSLocalizedDescriptionKey: "지원하지 않는 이미지 형식입니다."])))
+                    case 500:
+                        promise(.failure(NSError(domain: "", code: 500, userInfo: [NSLocalizedDescriptionKey: "서버 오류입니다."])))
+                    default:
+                        promise(.failure(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "알 수 없는 오류"])))
+                    }
                 case let .failure(err):
                     promise(.failure(err))
                 }
@@ -138,11 +164,33 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     }
 
     func deleteProfileImage() -> Future<Void, Error> {
-        Future { promise in
+        return Future<Void, Error> { promise in
             self.providerProfile.request(.delete(authorization: self.accessToken)) { result in
                 switch result {
-                case .success:
-                    promise(.success(()))
+                case .success(let response):
+                    switch response.statusCode {
+                    case 204:
+                        self.profileInfo = ProfileResponse(
+                            name: self.profileInfo?.name ?? "",
+                            grade: self.profileInfo?.grade ?? 0,
+                            department: self.profileInfo?.department ?? "",
+                            authority: self.profileInfo?.authority ?? "",
+                            lateCount: self.profileInfo?.lateCount ?? 0,
+                            isOuting: self.profileInfo?.isOuting ?? false,
+                            profileImageUrl: nil
+                        )
+                        promise(.success(()))
+                    case 401:
+                        promise(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "인증이 필요합니다."])))
+                    case 404:
+                        promise(.failure(NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "사용자를 찾을 수 없습니다."])))
+                    case 409:
+                        promise(.failure(NSError(domain: "", code: 409, userInfo: [NSLocalizedDescriptionKey: "삭제할 이미지가 없습니다."])))
+                    case 500:
+                        promise(.failure(NSError(domain: "", code: 500, userInfo: [NSLocalizedDescriptionKey: "서버 오류입니다."])))
+                    default:
+                        promise(.failure(NSError(domain: "", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "알 수 없는 오류"])))
+                    }
                 case let .failure(err):
                     promise(.failure(err))
                 }

@@ -30,6 +30,10 @@ let project = Project.makeModule(
                 requirement: .upToNextMajor(from: "10.1.0")),
         .remote(url: "https://github.com/firebase/firebase-ios-sdk.git",
                 requirement: .upToNextMajor(from: "11.6.0")),
+        .remote(
+            url: "https://github.com/kakao-mapsSDK/KakaoMapsSDK-SPM",
+            requirement: .upToNextMajor(from: "2.10.0")
+        ),
 
     ],
     dependencies: [
@@ -41,8 +45,9 @@ let project = Project.makeModule(
         .package(product: "GAuthSignin"),
         .package(product: "QRCode"),
         .package(product: "QRCodeReader"),
-
+        .package(product: "KakaoMapsSDK-SPM"),
         .package(product: "FirebaseCore"),
-        .package(product: "FirebaseMessaging")
+        .package(product: "FirebaseMessaging"),
+        
     ]
     )

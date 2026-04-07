@@ -392,7 +392,8 @@ private let profileVC = AdminProfileViewController()
             studentInfo: "\(grade)기 | \(majorText)",
             lateCount: 0,
             outingStatus: "관리자",
-            isAdmin: true
+            isAdmin: true,
+            profileImageUrl: nil 
         )
 
         profileView.profileStatus.text = "관리자"
