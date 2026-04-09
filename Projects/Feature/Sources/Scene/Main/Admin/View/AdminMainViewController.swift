@@ -150,12 +150,6 @@ private let profileVC = AdminProfileViewController()
         isVisible = true
         isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
 
-        viewModel.getLateList { [weak self] in
-            self?.viewModel.getOutingList { [weak self] in
-                self?.setup()
-            }
-        }
-
         fetchData()
         self.navigationController?.navigationBar.prefersLargeTitles = false
         self.navigationItem.hidesBackButton = true
@@ -186,7 +180,6 @@ private let profileVC = AdminProfileViewController()
         self.outingStatusCollectionView.reloadData()
         configureRefreshControl()
         refreshControl.beginRefreshing()
-        fetchData()
         bindTabBar()
         setupMapContainer()
         setupProfileContainer()
@@ -290,6 +283,11 @@ private let profileVC = AdminProfileViewController()
         viewModel.getProfile { [weak self] _ in group.leave() }
 
         group.enter()
+        profileViewModel.loadProfileInfo { _, _ in
+            group.leave()
+        }
+
+        group.enter()
         viewModel.getOutingList { [weak self] in group.leave() }
 
         group.notify(queue: .main) { [weak self] in
@@ -318,14 +316,13 @@ private let profileVC = AdminProfileViewController()
 
     // MARK: - Setting
     func setup() {
+        print("late:", viewModel.lateListDatas.count, "outing:", viewModel.outingListDatas.count)
         let isLateEmpty = self.viewModel.lateListDatas.isEmpty
         let isOutingEmpty = self.viewModel.outingListDatas.isEmpty
 
-        
         lateNilView.isHidden = !isLateEmpty
         latecomerCollectionView.isHidden = isLateEmpty
 
-        
         outingView.isHidden = isOutingEmpty
 
         self.setCollectionView()
@@ -365,42 +362,64 @@ private let profileVC = AdminProfileViewController()
     }
 
     func setupProfileView() {
-        guard let grade = viewModel.profileData?.grade else { return }
+        let profile = viewModel.profileData
 
-        if let imageURL = viewModel.profileData?.profileUrl, let url = URL(string: imageURL) {
-            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
-            basicsProfileView.profileImageView.layer.cornerRadius = basicsProfileView.profileImageView.frame.width / 2
+        let grade = profile?.grade ?? 0
+        let name = profile?.name ?? "이름 없음"
+        let department = profile?.department ?? "정보 없음"
+
+        // ✅ 프로필 이미지 (User랑 동일하게 ProfileViewModel 사용)
+        if let urlString = profileViewModel.profileInfo?.profileImageUrl,
+           let url = URL(string: urlString) {
+            basicsProfileView.profileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage.image.profile.image,
+                options: [.forceRefresh]
+            )
+            
+            profileView.profileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage.image.profile.image,
+                options: [.forceRefresh]
+            )
         } else {
             basicsProfileView.profileImageView.image = .image.profile.image
+            profileView.profileImageView.image = .image.profile.image
         }
 
+        // 이름
+        basicsProfileView.nameLabel.text = name
+        profileView.nameLabel.text = name
+
+        // 학과
         let majorText: String
-        if viewModel.profileData?.department == Major.sw.rawValue {
+        if department == Major.sw.rawValue {
             majorText = "SW"
-        } else if viewModel.profileData?.department == Major.iot.rawValue {
+        } else if department == Major.iot.rawValue {
             majorText = "IoT"
         } else {
             majorText = "AI"
         }
 
-        profileView.nameLabel.text = viewModel.profileData?.name
+        basicsProfileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
         profileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
-        profileView.isAdmin = true
 
-        basicsProfileView.configure(
-            name: viewModel.profileData?.name ?? "",
-            studentInfo: "\(grade)기 | \(majorText)",
-            lateCount: 0,
-            outingStatus: "관리자",
-            isAdmin: true,
-            profileImageUrl: nil 
-        )
-
+        // 관리자 상태 (기존 디자인 유지)
         profileView.profileStatus.text = "관리자"
         profileView.profileStatus.textColor = .color.admin.color
 
         profileView.lateCountLabel.isHidden = true
         profileView.lateCountLabel.text = ""
+
+        basicsProfileView.configure(
+            name: name,
+            studentInfo: "\(grade)기 | \(majorText)",
+            lateCount: 0,
+            outingStatus: "관리자",
+            isAdmin: true,
+            profileImageUrl: profileViewModel.profileInfo?.profileImageUrl
+        )
+
         profileView.isClockOn = isClockOn
     }
 
@@ -689,6 +708,15 @@ private let profileVC = AdminProfileViewController()
             } else {
                 let data = viewModel.lateListDatas[indexPath.row]
                 cell.configure(with: data)
+                if let urlString = data.profileImageURL,
+                   let url = URL(string: urlString) {
+                    cell.profileImageView.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.profile.image
+                    )
+                } else {
+                    cell.profileImageView.image = UIImage.image.profile.image
+                }
             }
 
             return cell
@@ -700,6 +728,16 @@ private let profileVC = AdminProfileViewController()
             } else {
                 let data = viewModel.outingListDatas[indexPath.row]
                 cell.configure(with: data)
+
+                if let urlString = data.profileImageURL,
+                   let url = URL(string: urlString) {
+                    cell.profileImageView.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.profile.image
+                    )
+                } else {
+                    cell.profileImageView.image = UIImage.image.profile.image
+                }
             }
 
             return cell

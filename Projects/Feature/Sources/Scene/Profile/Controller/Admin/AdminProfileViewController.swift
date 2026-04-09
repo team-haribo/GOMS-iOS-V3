@@ -11,6 +11,7 @@ import UIKit
 import Combine
 import Moya
 import Service
+import Kingfisher
 
 private enum Layout {
     static let horizontal: CGFloat = 20
@@ -374,7 +375,15 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
                 self.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
 
-                self.userProfile.image = UIImage.image.gomsBasicProfile.image
+                if let urlString = profileInfo.profileImageUrl,
+                   let url = URL(string: urlString) {
+                    self.userProfile.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.gomsBasicProfile.image
+                    )
+                } else {
+                    self.userProfile.image = UIImage.image.gomsBasicProfile.image
+                }
             }
             .store(in: &cancellables)
     }
