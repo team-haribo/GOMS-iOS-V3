@@ -319,7 +319,8 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
-            cell.configure(title: dummyRecentSearches[indexPath.row], date: "26.02.11")
+            let data = dummyRecentSearches[indexPath.row]
+            cell.configure(model: data, date: "26.02.11")
             cell.backgroundColor = .clear
             
             cell.onDeleteTap = { [weak self, weak tableView] in
@@ -353,6 +354,18 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
                 }
             }
             return cell
+        }
+    }
+
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if tableView == recentSearchView.tableView {
+            // 최근 검색어 셀을 눌렀을 때의 동작
+            recentSearchView.isHidden = true
+            searchBar.updateState(.home)
+            view.endEditing(true)
+            
+            // 상세 뷰 띄우기
+            showDetailView()
         }
     }
 }
