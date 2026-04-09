@@ -61,10 +61,10 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
 
     // MARK: - Selector
     @objc func closeButtonDidTap() {
-        if self.presentingViewController != nil {
-            self.dismiss(animated: true)
+        if let navigationController = self.navigationController {
+            navigationController.popToRootViewController(animated: true)
         } else {
-            self.navigationController?.popViewController(animated: true)
+            self.dismiss(animated: true)
         }
     }
 
