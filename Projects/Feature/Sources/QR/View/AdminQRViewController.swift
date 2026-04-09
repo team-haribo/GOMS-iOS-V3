@@ -66,26 +66,12 @@ public class AdminQRViewController: BaseViewController {
         createQRCode()
     }
 
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-    }
-    
-    public override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-    }
-
-    public override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        
-    }
-
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
         self.view.subviews.forEach {
-            if $0 != backButton && $0 != titleText && $0.frame.height == 100 {
-                $0.isHidden = true
+            let isSystemView = String(describing: type(of: $0)).contains("UI")
+            if $0 != backButton && $0 != titleText && isSystemView && $0.frame.height == 100 {
                 $0.removeFromSuperview()
             }
         }
