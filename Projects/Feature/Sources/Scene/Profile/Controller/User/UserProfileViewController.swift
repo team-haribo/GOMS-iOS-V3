@@ -10,6 +10,7 @@ import UIKit
 import Combine
 import Moya
 import Service
+import Kingfisher
 
 public class UserProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -28,7 +29,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
 
     let userProfile = UIImageView().then {
-        $0.image = .image.gomsBasicProfile.image
         $0.contentMode = .scaleAspectFill
         $0.layer.cornerRadius = 32
         $0.clipsToBounds = true
@@ -367,9 +367,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             self?.presentGallery()
         }))
         actionSheet.addAction(UIAlertAction(title: "기본 프로필 사용", style: .default, handler: { [weak self] (ACTION:UIAlertAction) in
-            self?.userProfile.image = .image.gomsBasicProfile.image
-            let viewModel = ProfileViewModel()
-            viewModel.deleteProfileImage()
+            self?.profileViewModel.deleteProfileImage()
+            self?.profileViewModel.loadProfileInfo { _, _ in }
         }))
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel, handler: { [weak self] _ in
             self?.updateImage(isActionSheetShowing: false)
@@ -402,18 +401,21 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         
         if let selectedImage = info[.originalImage] as? UIImage {
             userProfile.image = selectedImage
-            
+
             if let jpegData = selectedImage.jpegData(compressionQuality: 0.5) {
                 profileViewModel.updateProfileImage(imageData: jpegData)
-                    .sink { completion in
+                    .sink { [weak self] completion in
                         switch completion {
                         case .finished:
-                            print("이미지 업로드 완료.")
+                            print("이미지 PATCH 성공")
                         case .failure(let error):
-                            print("이미지 업로드 실패: \(error)")
+                            print("이미지 PATCH 실패: \(error)")
                         }
-                    } receiveValue: { response in
-                        print("이미지 업로드 응답: \(response)")
+                    } receiveValue: { [weak self] response in
+                        let urlString = response.imageUrl
+                        if let url = URL(string: urlString) {
+                            self?.userProfile.kf.setImage(with: url)
+                        }
                     }
                     .store(in: &cancellables)
             } else {
@@ -463,9 +465,18 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
                     majorText = "AI"
                 }
                 
-                let finalText = "\(profileInfo.grade)기ㅣ\(majorText)"
-                self?.userProfile.image = UIImage.image.gomsBasicProfile.image
+                let finalText = "\(profileInfo.grade)기 | \(majorText)"
                 self?.userGradeDepartment.text = finalText
+                if let urlString = profileInfo.profileImageUrl,
+                   let url = URL(string: urlString) {
+                    self?.userProfile.kf.setImage(
+                        with: url,
+                        placeholder: self?.userProfile.image,
+                        options: [.transition(.fade(0.2)), .keepCurrentImageWhileLoading]
+                    )
+                } else {
+                    self?.userProfile.image = UIImage.image.gomsBasicProfile.image
+                }
             }
         }
         .store(in: &cancellables)
@@ -483,6 +494,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     func configureRefreshControl () {
         refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
         refreshControl.tintColor = .color.gomsPrimary.color
+        if let scrollView = self.view as? UIScrollView {
+            scrollView.refreshControl = refreshControl
+        }
     }
     
     @objc func handleRefreshControl() {

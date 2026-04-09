@@ -57,7 +57,7 @@ public final class MainViewModel: BaseViewModel {
                     self.lateList = responseModel.students
                     self.lateListDatas = self.lateList.map {
                         LatecomerData(
-                            profileImageURL: nil,
+                            profileImageURL: $0.profileUrl,
                             name: $0.name,
                             grade: $0.grade,
                             department: $0.department
@@ -106,7 +106,7 @@ public final class MainViewModel: BaseViewModel {
                     self.outingListDatas = self.outingList.map {
                         OutingListData(
                             id: $0.memberId,
-                            profileImageURL: nil,
+                            profileImageURL: $0.profileImageUrl,
                             name: $0.name,
                             grade: $0.grade,
                             department: $0.department,

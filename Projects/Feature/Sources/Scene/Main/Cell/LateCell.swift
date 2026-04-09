@@ -74,7 +74,6 @@ final class LateCell: UICollectionViewCell {
 
     private func configureUI() {
         self.backgroundColor = .color.gomsCardBackgroundColor.color
-        profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
         profileImageView.clipsToBounds = true
         layer.cornerRadius = 8
         layer.masksToBounds = true
@@ -103,5 +102,10 @@ final class LateCell: UICollectionViewCell {
             $0.top.equalTo(nameLabel.snp.bottom)
             $0.centerX.equalToSuperview()
         }
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
     }
 }

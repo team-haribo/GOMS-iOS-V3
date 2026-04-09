@@ -9,10 +9,12 @@
 import UIKit
 import Kingfisher
 import Service
+import Combine
 
 
 public final class MainViewController: BaseViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     // MARK: - Properties
+    private var cancellables = Set<AnyCancellable>()
     private let mainViewModel = MainViewModel()
     private let profileViewModel = ProfileViewModel()
     private let profileView = MainProfileView()
@@ -283,10 +285,16 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
         bindTabBar()
+        profileViewModel.$profileInfo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.setupProfileView()
+            }
+            .store(in: &cancellables)
         handleRefreshControl()
         configureRefreshControl()
         updateSelectedTab()
-        refreshControl.beginRefreshing()
+        
       
         NotificationCenter.default.addObserver(
             self,
@@ -406,7 +414,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 self?.refreshControl.endRefreshing()
                 return
             }
-
             self.setupProfileView()
             self.setupViewComponents()
             self.latecomerCollectionView.reloadData()
@@ -482,17 +489,38 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     func setupProfileView() {
         let profile = mainViewModel.profileData
 
-        
         let grade = profile?.grade ?? 0
         let name = profile?.name ?? "이름 없음"
         let department = profile?.department ?? "정보 없음"
         let lateCount = profile?.lateCount ?? 0
         let status = profile?.status ?? "UNKNOWN"
 
-        basicsProfileView.profileImageView.image = .image.profile.image
+        // Set basicsProfileView image using Kingfisher and placeholder
+        if let urlString = profileViewModel.profileInfo?.profileImageUrl,
+           let url = URL(string: urlString) {
+            basicsProfileView.profileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage.image.profile.image,
+                options: [.forceRefresh]
+            )
+        } else {
+            basicsProfileView.profileImageView.image = .image.profile.image
+        }
 
         basicsProfileView.nameLabel.text = name
         profileView.nameLabel.text = name
+
+        // Set profileView image using Kingfisher and placeholder
+        if let urlString = profileViewModel.profileInfo?.profileImageUrl,
+           let url = URL(string: urlString) {
+            profileView.profileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage.image.profile.image,
+                options: [.forceRefresh]
+            )
+        } else {
+            profileView.profileImageView.image = .image.profile.image
+        }
 
         if department == Major.sw.rawValue {
             profileView.studentInformationLabel.text = "\(grade)기 | SW"
@@ -527,6 +555,11 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
             basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
         }
+        basicsProfileView.layer.cornerRadius = 16
+        basicsProfileView.layer.masksToBounds = true
+
+        profileView.layer.cornerRadius = 16
+        profileView.layer.masksToBounds = true
     }
 
     private func setCollectionView() {
@@ -692,7 +725,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             $0.height.equalTo(84)
             $0.top.equalTo(logo.snp.bottom).offset(20)
         }
-        
+
+        basicsProfileView.layer.cornerRadius = 16
+        basicsProfileView.layer.masksToBounds = true
+
+        profileView.layer.cornerRadius = 16
+        profileView.layer.masksToBounds = true
 
         if isClockOn {
             profileView.isHidden = false
@@ -728,17 +766,34 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             } else {
                 let data = mainViewModel.lateListDatas[indexPath.row]
                 cell.configure(with: data)
+                if let urlString = data.profileImageURL,
+                   let url = URL(string: urlString) {
+                    cell.profileImageView.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.profile.image
+                    )
+                } else {
+                    cell.profileImageView.image = UIImage.image.profile.image
+                }
             }
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
 
             if mainViewModel.outingListDatas.isEmpty {
-                
                 cell.configureDummy()
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
                 cell.configure(with: data, showTime: false)
+                if let urlString = data.profileImageURL,
+                   let url = URL(string: urlString) {
+                    cell.profileImageView.kf.setImage(
+                        with: url,
+                        placeholder: UIImage.image.profile.image
+                    )
+                } else {
+                    cell.profileImageView.image = UIImage.image.profile.image
+                }
             }
 
             return cell

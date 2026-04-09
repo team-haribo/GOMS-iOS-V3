@@ -91,7 +91,7 @@ public final class AuthCodeViewController: BaseViewController {
         requestInitialAuthCode()
     }
 
-    // ⭐ 성공 공식: 시스템이 강제로 끼워넣는 뷰(돌아가기 버튼 등)를 레이아웃 시점에 삭제
+
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.view.subviews.forEach {

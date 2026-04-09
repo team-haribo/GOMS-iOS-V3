@@ -46,16 +46,20 @@ public final class LetecomerViewModel: BaseViewModel {
                 let responseData = result.data
                 do {
                     self.latecomerList = try JSONDecoder().decode([LatecomerListResponse].self, from: responseData)
-                    self.latecomerListDatas = self.latecomerList.map { LatecomerListData(
-                        id: $0.memberid,
-                        profileImageURL: $0.profileUrl,
-                        name: $0.name,
-                        grade: $0.grade,
-                        department: $0.major
-                    ) }
-                    completion(self.latecomerListDatas)
+                    self.latecomerListDatas = self.latecomerList.map {
+                        LatecomerListData(
+                            id: $0.memberid,
+                            profileImageURL: $0.profileUrl,
+                            name: $0.name,
+                            grade: $0.grade,
+                            department: $0.major
+                        )
+                    }
+                    DispatchQueue.main.async {
+                        completion(self.latecomerListDatas)
+                    }
                 } catch(let err) {
-                    print(String(describing: err))
+                    print("Latecomer decode error: \(err)")
                 }
             case .failure(let err):
                 print(err.localizedDescription)

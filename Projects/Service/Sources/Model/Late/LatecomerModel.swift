@@ -18,4 +18,5 @@ public struct LatecomerResponse: Codable {
     public let grade: Int
     public let department: String
     public let comingAt: String
+    public let profileUrl: String?
 }

@@ -54,6 +54,7 @@ extension ProfileServices: TargetType {
         case .getProfile:
             return .requestPlain
         case let .update(_, imageData):
+            print("imageData size:", imageData.count)
             let formData = MultipartFormData(
                 provider: .data(imageData),
                 name: "image",

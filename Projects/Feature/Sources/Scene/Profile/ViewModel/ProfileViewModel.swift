@@ -23,6 +23,18 @@ struct ProfileImageResponse: Decodable {
     let imageUrl: String
 }
 
+struct ProfileResponseDTO: Decodable {
+    let memberId: Int
+    let email: String
+    let name: String
+    let grade: Int
+    let department: String
+    let gender: String
+    let role: String
+    let status: String
+    let profileImageUrl: String?
+}
+
 public final class ProfileViewModel: BaseViewModel, ObservableObject {
     @Published public var errorMessage = ""
     @Published public var isDataLoaded = false
@@ -58,6 +70,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
         var grade: Int = 0
         var department: String = ""
         var lateCount: Int = 0
+        var profileImageUrl: String? = nil
 
         
         group.enter()
@@ -97,6 +110,30 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
             group.leave()
         }
 
+        // 3. profile info (image 포함)
+        group.enter()
+        providerProfile.request(.getProfile(authorization: accessToken)) { result in
+            switch result {
+            case .success(let response):
+                do {
+                    let data = try JSONDecoder().decode(ProfileResponseDTO.self, from: response.data)
+                    print("PROFILE RAW RESPONSE:", String(data: response.data, encoding: .utf8) ?? "nil")
+                    
+                    if let url = data.profileImageUrl, !url.isEmpty {
+                        profileImageUrl = url
+                    } else {
+                       
+                        profileImageUrl = self.profileInfo?.profileImageUrl
+                    }
+                } catch {
+                    print("profile decode error: \(error)")
+                }
+            case .failure(let err):
+                print("profile error: \(err.localizedDescription)")
+            }
+            group.leave()
+        }
+
         group.notify(queue: .main, execute: {
             self.isDataLoaded = true
 
@@ -108,7 +145,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                 authority: authority,
                 lateCount: lateCount,
                 isOuting: isOuting,
-                profileImageUrl: nil
+                profileImageUrl: profileImageUrl
             )
 
             completion(true, authority)
@@ -117,15 +154,20 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     
 
 
-    func updateProfileImage(imageData: Data) -> Future<Void, Error> {
-        return Future<Void, Error> { promise in
-            self.providerProfile.request(.update(authorization: self.accessToken, imageData: imageData)) { result in
+    func updateProfileImage(imageData: Data) -> Future<ProfileImageResponse, Error> {
+        return Future<ProfileImageResponse, Error> { promise in
+          
+            
+            let request: ProfileServices = .update(authorization: self.accessToken, imageData: imageData)
+
+            self.providerProfile.request(request) { result in
                 switch result {
                 case .success(let response):
                     switch response.statusCode {
                     case 200:
                         do {
                             let data = try JSONDecoder().decode(ProfileImageResponse.self, from: response.data)
+                            print("UPLOAD IMAGE URL:", data.imageUrl)
                             self.profileInfo = ProfileResponse(
                                 name: self.profileInfo?.name ?? "",
                                 grade: self.profileInfo?.grade ?? 0,
@@ -133,9 +175,9 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                                 authority: self.profileInfo?.authority ?? "",
                                 lateCount: self.profileInfo?.lateCount ?? 0,
                                 isOuting: self.profileInfo?.isOuting ?? false,
-                                profileImageUrl: data.imageUrl
+                                profileImageUrl: data.imageUrl.isEmpty ? self.profileInfo?.profileImageUrl : data.imageUrl
                             )
-                            promise(.success(()))
+                            promise(.success(data))
                         } catch {
                             promise(.failure(error))
                         }
@@ -145,8 +187,6 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                         promise(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "인증이 필요합니다."])))
                     case 404:
                         promise(.failure(NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "사용자를 찾을 수 없습니다."])))
-                    case 409:
-                        promise(.failure(NSError(domain: "", code: 409, userInfo: [NSLocalizedDescriptionKey: "프로필 이미지가 없습니다."])))
                     case 413:
                         promise(.failure(NSError(domain: "", code: 413, userInfo: [NSLocalizedDescriptionKey: "파일 크기가 너무 큽니다."])))
                     case 415:
