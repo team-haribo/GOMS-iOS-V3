@@ -368,7 +368,7 @@ private let profileVC = AdminProfileViewController()
         let name = profile?.name ?? "이름 없음"
         let department = profile?.department ?? "정보 없음"
 
-        // ✅ 프로필 이미지 (User랑 동일하게 ProfileViewModel 사용)
+        
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
             basicsProfileView.profileImageView.kf.setImage(
