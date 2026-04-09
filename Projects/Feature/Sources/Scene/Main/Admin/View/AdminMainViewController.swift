@@ -373,13 +373,11 @@ private let profileVC = AdminProfileViewController()
            let url = URL(string: urlString) {
             basicsProfileView.profileImageView.kf.setImage(
                 with: url,
-                placeholder: UIImage.image.profile.image,
-                options: [.forceRefresh]
+                placeholder: UIImage.image.profile.image
             )
             profileView.profileImageView.kf.setImage(
                 with: url,
-                placeholder: UIImage.image.profile.image,
-                options: [.forceRefresh]
+                placeholder: UIImage.image.profile.image
             )
         } else {
             basicsProfileView.profileImageView.image = .image.profile.image
