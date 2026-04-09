@@ -367,8 +367,13 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             self?.presentGallery()
         }))
         actionSheet.addAction(UIAlertAction(title: "기본 프로필 사용", style: .default, handler: { [weak self] (ACTION:UIAlertAction) in
-            self?.profileViewModel.deleteProfileImage()
-            self?.profileViewModel.loadProfileInfo { _, _ in }
+            guard let self = self else { return }
+
+            self.profileViewModel.deleteProfileImage()
+                .sink(receiveCompletion: { [weak self] _ in
+                    self?.profileViewModel.loadProfileInfo { _, _ in }
+                }, receiveValue: { _ in })
+                .store(in: &self.cancellables)
         }))
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel, handler: { [weak self] _ in
             self?.updateImage(isActionSheetShowing: false)
