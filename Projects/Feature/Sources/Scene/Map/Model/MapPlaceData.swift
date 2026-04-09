@@ -17,7 +17,7 @@ public struct MapPlaceResponse: Codable {
     }
 }
 
-// MARK: - Place Data (검색 목록용)
+// MARK: - Place Data
 public struct MapPlaceData: Codable {
     public let latitude: Double
     public let longitude: Double
@@ -26,36 +26,20 @@ public struct MapPlaceData: Codable {
     public let recommendCount: Int
     public let recommended: Bool
 
-    public init(latitude: Double, longitude: Double, placeId: Int, reviewCount: Int, recommendCount: Int, recommended: Bool) {
+    public init(
+        latitude: Double,
+        longitude: Double,
+        placeId: Int,
+        reviewCount: Int,
+        recommendCount: Int,
+        recommended: Bool
+    ) {
         self.latitude = latitude
         self.longitude = longitude
         self.placeId = placeId
         self.reviewCount = reviewCount
         self.recommendCount = recommendCount
         self.recommended = recommended
-    }
-}
-
-// MARK: - Place Detail Data (상세 페이지용)
-public struct MapPlaceDetailData: Codable {
-    public let title: String
-    public let category: String
-    public let address: String
-    public let distance: String
-    public let time: String
-    public let reviewCount: Int
-    public let recommendationCount: Int
-    public let reviews: [MapReview]
-    
-    public init(title: String, category: String, address: String, distance: String, time: String, reviewCount: Int, recommendationCount: Int, reviews: [MapReview]) {
-        self.title = title
-        self.category = category
-        self.address = address
-        self.distance = distance
-        self.time = time
-        self.reviewCount = reviewCount
-        self.recommendationCount = recommendationCount
-        self.reviews = reviews
     }
 }
 
@@ -67,7 +51,13 @@ public struct MapReview: Codable {
     public let date: String
     public let isMine: Bool
     
-    public init(name: String, info: String, content: String, date: String, isMine: Bool = false) {
+    public init(
+        name: String,
+        info: String,
+        content: String,
+        date: String,
+        isMine: Bool = false
+    ) {
         self.name = name
         self.info = info
         self.content = content

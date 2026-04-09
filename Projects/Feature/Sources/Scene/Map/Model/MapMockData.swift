@@ -8,6 +8,7 @@
 
 import Foundation
 
+// MARK: - Map Mock Data
 public enum MapMockData {
     public static let recentSearches = [
         "메가MGC커피 광주송정시장점",
@@ -18,14 +19,19 @@ public enum MapMockData {
     
     public static let reviews: [MapReview] = []
     
-    public static let detailExample = MapPlaceDetailData(
-            title: "짬뽕관 광주송정선운점",
-            category: "중식당",
-            address: "광주 광산구 상무대로 277-1 1층",
-            distance: "149m",
-            time: "4분",
-            reviewCount: reviews.count,
-            recommendationCount: 17,
-            reviews: reviews
-        )
+    public static let detailExample = MapPlaceDetailModel(
+        placeId: 1,
+        placeName: "짬뽕관 광주송정선운점",
+        address: "광주 광산구 상무대로 277-1 1층",
+        roadAddress: "광주 광산구 상무대로 277-1",
+        latitude: 35.137,
+        longitude: 126.791,
+        categoryGroupName: "음식점",
+        categoryName: "중식당",
+        phone: "062-123-4567",
+        placeUrl: "http://place.com/1",
+        reviewCount: 0,
+        recommendCount: 17,
+        recommended: true
+    )
 }
