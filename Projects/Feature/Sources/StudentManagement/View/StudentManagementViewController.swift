@@ -17,6 +17,7 @@ public final class StudentManagementViewController: BaseViewController {
         didSet { studentCollectionView.reloadData() }
     }
     
+    
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
