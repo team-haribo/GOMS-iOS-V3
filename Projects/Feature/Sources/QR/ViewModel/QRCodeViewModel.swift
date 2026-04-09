@@ -17,8 +17,9 @@ public final class QRCodeViewModel: BaseViewModel {
     private let outingProvider = MoyaProvider<OutingServices>()
     private let profileViewModel = ProfileViewModel()
     
-    public var outingUUID: UUID = UUID()
-    private var isRequesting: Bool = false
+public var outingUUID: UUID = UUID()
+public var exp: Int = 0
+private var isRequesting: Bool = false
 
     func outing(completion: @escaping (String) -> Void) {
         guard !isRequesting else {
@@ -27,7 +28,8 @@ public final class QRCodeViewModel: BaseViewModel {
         }
         
         isRequesting = true
-        outingProvider.request(.outingOut(uuid: outingUUID.uuidString, exp: 0, authorization: accessToken)) { response in
+        outingProvider.request(.outingOut(uuid: outingUUID.uuidString, exp: self.exp, authorization: accessToken)) { response in
+            defer { self.isRequesting = false }
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
@@ -61,7 +63,9 @@ public final class QRCodeViewModel: BaseViewModel {
                         }
                     }
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance() { _ in
+                        completion("fail")
+                    }
                 case 500:
                     print("SERVER ERROR")
                 default:
@@ -82,18 +86,26 @@ public final class QRCodeViewModel: BaseViewModel {
                 case 200:
                     do {
                         let responseJSON = try result.mapJSON() as? [String: Any]
-                        if let outingUUIDString = responseJSON?["outingUUID"] as? String,
-                           let outingUUID = UUID(uuidString: outingUUIDString) {
+                        if let uuidString = responseJSON?["uuid"] as? String,
+                           let exp = responseJSON?["exp"] as? Int,
+                           let outingUUID = UUID(uuidString: uuidString) {
+                            
                             self.outingUUID = outingUUID
+                            self.exp = exp
                             completion(true)
+                            
                         } else {
-                            print("outingUUID를 가져올 수 없습니다.")
+                            print("uuid 또는 exp를 가져올 수 없습니다.")
+                            completion(false)
                         }
                     } catch {
                         print(error.localizedDescription)
+                        completion(false)
                     }
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    self.gomsRefreshToken.tokenReissuance() { _ in
+                        completion(false)
+                    }
                 case 403:
                     print("학생회 계정이 아닌데 요청할 경우")
                     completion(false)
