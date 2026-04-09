@@ -122,8 +122,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                     if let url = data.profileImageUrl, !url.isEmpty {
                         profileImageUrl = url
                     } else {
-                       
-                        profileImageUrl = self.profileInfo?.profileImageUrl
+                        profileImageUrl = nil
                     }
                 } catch {
                     print("profile decode error: \(error)")
