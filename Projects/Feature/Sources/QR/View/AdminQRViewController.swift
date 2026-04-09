@@ -13,6 +13,13 @@ import CoreImage
 
 public class AdminQRViewController: BaseViewController {
     
+
+    public override func configNavigation() {
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+        self.navigationItem.hidesBackButton = true
+        self.navigationItem.leftBarButtonItem = nil
+    }
+    
     // MARK: Propertices
     let viewModel = QRCodeViewModel()
     
@@ -21,12 +28,21 @@ public class AdminQRViewController: BaseViewController {
     private let titleText = UILabel().then {
         $0.text = "외출 QR코드"
         $0.textColor = .color.mainText.color
-        $0.font = UIFont.suit(size: 29, weight: .bold)
+        $0.font = UIFont.suit(size: 24, weight: .bold)
+    }
+    
+    private lazy var backButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.tintColor = UIColor.color.admin.color
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.addTarget(self, action: #selector(qrExitButtonTapped), for: .touchUpInside)
     }
     
     @objc func qrExitButtonTapped() {
-        let adminMainVC = AdminMainViewController()
-        self.navigationController?.pushViewController(adminMainVC, animated: true)
+        self.navigationController?.popViewController(animated: true)
     }
     
     private let qrCodeImage = UIImageView()
@@ -34,13 +50,13 @@ public class AdminQRViewController: BaseViewController {
     private let lastTimeText = UILabel().then {
         $0.text = "QR코드 만료까지"
         $0.textColor = .color.gomsSecondary.color
-        $0.font = UIFont.suit(size: 14, weight: .regular)
+        $0.font = UIFont.suit(size: 15, weight: .medium)
     }
     
     private var lastTimer = UILabel().then {
         $0.text = "5분 00초"
         $0.textColor = .color.admin.color
-        $0.font = UIFont.suit(size: 19, weight: .semibold)
+        $0.font = UIFont.suit(size: 20, weight: .semibold)
     }
     
     // MARK: Life Cycle
@@ -48,23 +64,35 @@ public class AdminQRViewController: BaseViewController {
         super.viewDidLoad()
         startTimer()
         createQRCode()
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         
-        self.navigationController?.navigationBar.prefersLargeTitles = false
-        self.navigationItem.hidesBackButton = false
-        self.navigationController?.navigationBar.isHidden = false
+        self.view.subviews.forEach {
+            let isSystemView = String(describing: type(of: $0)).contains("UI")
+            if $0 != backButton && $0 != titleText && isSystemView && $0.frame.height == 100 {
+                $0.removeFromSuperview()
+            }
+        }
     }
     
 
     
     // MARK: Add View
     public override func addView() {
-        [titleText, qrCodeImage, lastTimeText, lastTimer].forEach { view.addSubview($0) }
+        [backButton, titleText, qrCodeImage, lastTimeText, lastTimer].forEach { view.addSubview($0) }
     }
     
     // MARK: Layout
     public override func setLayout() {
+        backButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+        
         titleText.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(100)
+            $0.top.equalTo(backButton.snp.bottom).offset(20)
             $0.leading.equalToSuperview().offset(20)
         }
         

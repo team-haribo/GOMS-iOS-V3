@@ -175,6 +175,7 @@ private let profileVC = AdminProfileViewController()
         navigationController?.setNavigationBarHidden(true, animated: false)
         self.navigationItem.backButtonTitle = ""
         self.navigationItem.hidesBackButton = true
+        self.navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
@@ -487,7 +488,7 @@ private let profileVC = AdminProfileViewController()
         codeButton.isUserInteractionEnabled = false
 
         let adminQRVC = AdminQRViewController()
-        navigationController?.pushViewController(adminQRVC, animated: true)
+        self.navigationController?.pushViewController(adminQRVC, animated: true)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.codeButton.isUserInteractionEnabled = true
