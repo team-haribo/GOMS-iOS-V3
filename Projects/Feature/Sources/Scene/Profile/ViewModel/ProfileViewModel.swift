@@ -117,7 +117,6 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
             case .success(let response):
                 do {
                     let data = try JSONDecoder().decode(ProfileResponseDTO.self, from: response.data)
-                    print("PROFILE RAW RESPONSE:", String(data: response.data, encoding: .utf8) ?? "nil")
                     
                     if let url = data.profileImageUrl, !url.isEmpty {
                         profileImageUrl = url
@@ -166,7 +165,6 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                     case 200:
                         do {
                             let data = try JSONDecoder().decode(ProfileImageResponse.self, from: response.data)
-                            print("UPLOAD IMAGE URL:", data.imageUrl)
                             self.profileInfo = ProfileResponse(
                                 name: self.profileInfo?.name ?? "",
                                 grade: self.profileInfo?.grade ?? 0,
