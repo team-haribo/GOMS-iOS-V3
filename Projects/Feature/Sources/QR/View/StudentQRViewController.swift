@@ -12,6 +12,10 @@ import Vision
 
 public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
+    override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
+
     let viewModel = QRCodeViewModel()
 
     let captureSession = AVCaptureSession()
@@ -37,46 +41,49 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     // MARK: - Life Cycle
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.view.backgroundColor = .clear
-        self.navigationController?.navigationBar.isHidden = true
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
         self.navigationItem.hidesBackButton = true
+        self.navigationItem.leftBarButtonItem = nil
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
     }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+        addView()
+        setLayout()
         setupCamera()
     }
 
     // MARK: - Selector
     @objc func closeButtonDidTap() {
-        if let navigationController = self.navigationController, navigationController.viewControllers.count > 1 {
-            navigationController.popViewController(animated: true)
+        if self.presentingViewController != nil {
+            self.dismiss(animated: true)
         } else {
-            let mainViewController = MainViewController()
-            self.navigationController?.pushViewController(mainViewController, animated: true)
+            self.navigationController?.popViewController(animated: true)
         }
     }
 
     // MARK: - Add View
     public override func addView() {
-        [gomsLogo, closeButton, qrFrame].forEach { self.view.addSubview($0) }
+        [closeButton, qrFrame].forEach { self.view.addSubview($0) }
     }
 
     // MARK: - Layout
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        previewLayer?.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
+        previewLayer?.frame = view.bounds
     }
 
     public override func setLayout() {
-        gomsLogo.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(48)
-            $0.leading.equalToSuperview()
-        }
 
         closeButton.snp.makeConstraints {
             $0.width.height.equalTo(24)
-            $0.top.equalToSuperview().offset(64)
+            $0.top.equalTo(self.view.safeAreaLayoutGuide).offset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
 
@@ -124,7 +131,7 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer?.videoGravity = .resizeAspectFill
         if let previewLayer = previewLayer {
-            view.layer.addSublayer(previewLayer)
+            view.layer.insertSublayer(previewLayer, at: 0)
         }
 
         DispatchQueue.global().async {
