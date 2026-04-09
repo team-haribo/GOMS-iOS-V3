@@ -12,11 +12,11 @@ public final class MapReviewWriteViewController: UIViewController {
     
     private let mainView = MapReviewWriteView()
     private let viewModel = MapReviewWriteViewModel()
-    private let placeData: MapPlaceDetailData // 데이터를 담을 변수 추가
+    private let placeData: MapPlaceDetailModel
     private var isHeartSelected = false
     
-    // 초기화 시점에 데이터를 주입받습니다.
-    public init(placeData: MapPlaceDetailData) {
+    // MARK: - Life Cycle
+    public init(placeData: MapPlaceDetailModel) {
         self.placeData = placeData
         super.init(nibName: nil, bundle: nil)
     }
@@ -35,8 +35,11 @@ public final class MapReviewWriteViewController: UIViewController {
         setupActions()
         bindViewModel()
         
-        // 주입받은 데이터를 뷰에 적용
         mainView.configure(with: placeData)
+        
+        isHeartSelected = placeData.recommended
+        mainView.heartButton.isSelected = isHeartSelected
+        mainView.heartButton.tintColor = isHeartSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub2.color
     }
     
     private func setupDelegate() {

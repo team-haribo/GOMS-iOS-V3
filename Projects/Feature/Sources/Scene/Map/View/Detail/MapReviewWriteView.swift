@@ -178,11 +178,12 @@ public final class MapReviewWriteView: UIView {
         }
     }
 
-    public func configure(with data: MapPlaceDetailData) {
-        placeNameLabel.text = data.title
-        categoryLabel.text = data.category
+    public func configure(with data: MapPlaceDetailModel) {
+        placeNameLabel.text = data.placeName
+        categoryLabel.text = data.categoryName
         addressLabel.text = data.address
-        statsLabel.text = "학생 후기 \(data.reviewCount) | 추천 \(data.recommendationCount)"
+        statsLabel.text = "학생 후기 \(data.reviewCount) | 추천 \(data.recommendCount)"
+        heartButton.isSelected = data.recommended
     }
     
     public func updateButtonState(isEnabled: Bool) {

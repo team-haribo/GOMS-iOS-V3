@@ -119,7 +119,7 @@ public final class MapPlaceDetailView: UIView {
         $0.axis = .vertical
         $0.spacing = 12
         $0.alignment = .center
-        $0.isHidden = true // 기본은 숨김
+        $0.isHidden = true
     }
 
     private let emptyIconView = UIImageView().then {
@@ -148,19 +148,20 @@ public final class MapPlaceDetailView: UIView {
     
     required init?(coder: NSCoder) { fatalError() }
     
-    public func configure(with data: MapPlaceDetailData) {
-        titleLabel.text = data.title
-        categoryLabel.text = data.category
+    public func configure(with data: MapPlaceDetailModel) {
+        titleLabel.text = data.placeName
+        categoryLabel.text = data.categoryName
         addressLabel.text = data.address
-        infoLabel.text = "\(data.distance) | \(data.time)"
+        infoLabel.text = data.roadAddress
+        heartButton.isSelected = data.recommended
+        heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
-        
-        updateReviewCount(data.reviews.count)
+        updateReviewCount(data.reviewCount, recommendCount: data.recommendCount)
         tableView.reloadData()
     }
 
-    public func updateReviewCount(_ count: Int) {
-        reviewCountLabel.text = "학생 후기 \(count) | 추천 17"
+    public func updateReviewCount(_ count: Int, recommendCount: Int) {
+        reviewCountLabel.text = "학생 후기 \(count) | 추천 \(recommendCount)"
         
         let fullText = "학생 후기 \(count)건"
         let attributedString = NSMutableAttributedString(string: fullText)

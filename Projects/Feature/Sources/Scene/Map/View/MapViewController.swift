@@ -12,6 +12,8 @@ import KakaoMapsSDK
 
 public final class MapViewController: UIViewController {
     
+    // MARK: - Properties
+    
     private var mapContainer: KMViewContainer?
     private var mapController: KMController?
     private let mapWrapperView = UIView()
@@ -20,11 +22,13 @@ public final class MapViewController: UIViewController {
     
     private var dummyReviews = MapMockData.reviews {
         didSet {
-            self.placeDetailView.updateReviewCount(dummyReviews.count)
+            self.placeDetailView.updateReviewCount(
+                dummyReviews.count,
+                recommendCount: MapMockData.detailExample.recommendCount
+            )
             self.placeDetailView.tableView.reloadData()
         }
     }
-    
     
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
@@ -48,6 +52,8 @@ public final class MapViewController: UIViewController {
     private let defaultHeight: CGFloat = 240
     private let detailMinHeight: CGFloat = 225
 
+    // MARK: - Life Cycle
+    
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -68,9 +74,8 @@ public final class MapViewController: UIViewController {
         }
     }
 
-
-
-
+    // MARK: - Setup
+    
     private func setupView() {
         view.backgroundColor = .color.background.color
 
@@ -81,7 +86,6 @@ public final class MapViewController: UIViewController {
         }
     }
 
-    
     private func setupLayout() {
         mapWrapperView.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -158,6 +162,8 @@ public final class MapViewController: UIViewController {
     private func setupReviewWriteAction() {
         placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
     }
+    
+    // MARK: - Actions
     
     @objc private func didTapReviewWrite() {
         let detailData = MapMockData.detailExample
@@ -257,6 +263,8 @@ public final class MapViewController: UIViewController {
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
     }
     
+    // MARK: - Map
+    
     private func setupMap() {
         mapWrapperView.layoutIfNeeded()
 
@@ -287,6 +295,7 @@ public final class MapViewController: UIViewController {
             controller.addView(mapviewInfo)
         }
     }
+    
     deinit {
         mapController?.pauseEngine()
         mapController?.resetEngine()
@@ -299,6 +308,8 @@ public final class MapViewController: UIViewController {
         mapController?.pauseEngine()
     }
 }
+
+// MARK: - TableView Delegate & DataSource
 
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
