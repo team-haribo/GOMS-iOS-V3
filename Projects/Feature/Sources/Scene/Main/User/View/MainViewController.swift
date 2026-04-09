@@ -766,15 +766,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             } else {
                 let data = mainViewModel.lateListDatas[indexPath.row]
                 cell.configure(with: data)
-                if let urlString = data.profileImageURL,
-                   let url = URL(string: urlString) {
-                    cell.profileImageView.kf.setImage(
-                        with: url,
-                        placeholder: UIImage.image.profile.image
-                    )
-                } else {
-                    cell.profileImageView.image = UIImage.image.profile.image
-                }
             }
             return cell
         } else if collectionView == outingStatusCollectionView {
@@ -785,15 +776,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
                 cell.configure(with: data, showTime: false)
-                if let urlString = data.profileImageURL,
-                   let url = URL(string: urlString) {
-                    cell.profileImageView.kf.setImage(
-                        with: url,
-                        placeholder: UIImage.image.profile.image
-                    )
-                } else {
-                    cell.profileImageView.image = UIImage.image.profile.image
-                }
             }
 
             return cell
