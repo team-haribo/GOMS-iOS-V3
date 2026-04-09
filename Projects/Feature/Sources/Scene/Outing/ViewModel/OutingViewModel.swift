@@ -29,7 +29,7 @@ public final class OutingViewModel: BaseViewModel {
     var outingSearchList: [OutingSearchResponse] = []
     var outingSearchListDatas: [OutingListData] = []
     
-    func getOutingList(completion: @escaping () -> Void) {
+    func getOutingList(isRetry: Bool = false, completion: @escaping () -> Void) {
         outingProvider.request(.outingList(authorization: accessToken)) { response in
             switch response {
             case .success(let result):
@@ -55,7 +55,15 @@ public final class OutingViewModel: BaseViewModel {
                         print(String(describing: err))
                     }
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    if isRetry {
+                        print("재시도 실패 (getOutingList)")
+                        return
+                    }
+                    self.gomsRefreshToken.tokenReissuance() { success in
+                        if success {
+                            self.getOutingList(isRetry: true, completion: completion)
+                        }
+                    }
                 case 404:
                     print("외출한 사람이 없을 경우")
                 default:
@@ -67,7 +75,7 @@ public final class OutingViewModel: BaseViewModel {
         }
     }
     
-    func searchStudent(searchString: String, completion: @escaping () -> Void) {
+    func searchStudent(searchString: String, isRetry: Bool = false, completion: @escaping () -> Void) {
         outingProvider.request(.outingSearch(name: searchString, authorization: accessToken)) { response in
             switch response {
             case .success(let result):
@@ -94,7 +102,15 @@ public final class OutingViewModel: BaseViewModel {
                 case 200:
                     print("success")
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ success in}
+                    if isRetry {
+                        print("재시도 실패 (searchStudent)")
+                        return
+                    }
+                    self.gomsRefreshToken.tokenReissuance() { success in
+                        if success {
+                            self.searchStudent(searchString: searchString, isRetry: true, completion: completion)
+                        }
+                    }
                 default:
                     print(result)
                 }
@@ -104,7 +120,7 @@ public final class OutingViewModel: BaseViewModel {
         }
     }
     
-    func deleteOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
+    func deleteOutingStudent(user: OutingListData, isRetry: Bool = false, completion: @escaping () -> Void) {
         let deleteStudent = user.id
 
         studentCouncilProvider.request(
@@ -121,7 +137,15 @@ public final class OutingViewModel: BaseViewModel {
                     print("잘못된 요청")
 
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ _ in }
+                    if isRetry {
+                        print("재시도 실패 (deleteOutingStudent)")
+                        return
+                    }
+                    self.gomsRefreshToken.tokenReissuance() { success in
+                        if success {
+                            self.deleteOutingStudent(user: user, isRetry: true, completion: completion)
+                        }
+                    }
 
                 case 403:
                     print("권한 없음 / 외출 불가 상태")
@@ -141,7 +165,7 @@ public final class OutingViewModel: BaseViewModel {
         }
     }
 
-    func forceOutingStudent(user: OutingListData, completion: @escaping () -> Void) {
+    func forceOutingStudent(user: OutingListData, isRetry: Bool = false, completion: @escaping () -> Void) {
         let forceOutingStudent = user.id
 
         studentCouncilProvider.request(
@@ -158,7 +182,15 @@ public final class OutingViewModel: BaseViewModel {
                     print("QR 만료 또는 요청 값 오류")
 
                 case 401:
-                    self.gomsRefreshToken.tokenReissuance(){ _ in }
+                    if isRetry {
+                        print("재시도 실패 (forceOutingStudent)")
+                        return
+                    }
+                    self.gomsRefreshToken.tokenReissuance() { success in
+                        if success {
+                            self.forceOutingStudent(user: user, isRetry: true, completion: completion)
+                        }
+                    }
 
                 case 403:
                     print("외출 불가 상태 (CANNOT_OUTING)")
