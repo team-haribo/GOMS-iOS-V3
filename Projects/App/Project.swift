@@ -14,10 +14,10 @@ let project = Project.makeModule(
     product: .app,
     organizationName: "HARIBO",
 
-    packages: [
+    packages: [ 
         .remote(
             url: "https://github.com/kakao-mapsSDK/KakaoMapsSDK-SPM",
-            requirement: .revision("HEAD")
+            requirement: .upToNextMajor(from: "2.10.0")
         )
     ],
 

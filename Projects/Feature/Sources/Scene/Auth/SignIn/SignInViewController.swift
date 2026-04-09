@@ -317,7 +317,7 @@ public final class SignInViewController: BaseViewController {
     public override func addView() {
         emailTextField.addSubview(defaultDomain)
         [customBackButton, pageTitleLabel, emailTextField, emailErrorLabel, passwordTextField, passwordErrorLabel, findPasswordButton, signInButton].forEach { view.addSubview($0) }
-        view.bringSubviewToFront(customBackButton) // 커스텀 버튼을 맨 앞으로
+        view.bringSubviewToFront(customBackButton)
     }
     
     // MARK: - Layout

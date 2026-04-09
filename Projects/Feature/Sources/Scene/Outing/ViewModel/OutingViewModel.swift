@@ -43,7 +43,7 @@ public final class OutingViewModel: BaseViewModel {
                         self.outingListDatas = self.outingList.map {
                             OutingListData(
                                 id: $0.memberId,
-                                profileImageURL: nil,
+                                profileImageURL: $0.profileImageUrl,
                                 name: $0.name,
                                 grade: $0.grade,
                                 department: $0.department,
@@ -78,7 +78,7 @@ public final class OutingViewModel: BaseViewModel {
                     self.outingSearchListDatas = self.outingSearchList.map {
                         OutingListData(
                             id: $0.memberId,
-                            profileImageURL: nil,
+                            profileImageURL: $0.profileImageUrl,
                             name: $0.name,
                             grade: $0.grade,
                             department: $0.department,

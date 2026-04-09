@@ -10,6 +10,7 @@ import UIKit
 import SnapKit
 import Then
 import Service
+import Kingfisher
 
 final class ProfileCardView: UIView {
     
@@ -20,10 +21,10 @@ final class ProfileCardView: UIView {
     }
     
     // MARK: - Properties
-    let profileImageView = UIImageView().then {
+    let profileImageView: UIImageView = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
         $0.contentMode = .scaleAspectFill
-        $0.layer.cornerRadius = 8
+        $0.layer.cornerRadius = 26
         $0.clipsToBounds = true
     }
     
@@ -62,10 +63,23 @@ final class ProfileCardView: UIView {
                    studentInfo: String,
                    lateCount: Int,
                    outingStatus: String,
-                   isAdmin: Bool) {
+                   isAdmin: Bool,
+                   profileImageUrl: String?) {
+        print("profileImageUrl:", profileImageUrl ?? "nil")
+        if let urlString = profileImageUrl,
+           let url = URL(string: urlString) {
+            profileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage.image.gomsBasicProfile.image,
+                options: [.transition(.fade(0.2))]
+            )
+        } else {
+            profileImageView.image = .image.gomsBasicProfile.image
+        }
+
         nameLabel.text = name
         studentInformationLabel.text = studentInfo
-        // 기본은 보이게
+      
         studentInformationLabel.isHidden = false
 
         if isAdmin {
@@ -87,11 +101,6 @@ final class ProfileCardView: UIView {
 
             myOutingStatusLabel.text = outingStatus
             myOutingStatusLabel.textColor = .color.sub1.color
-        }
-
-        myOutingStatusLabel.snp.remakeConstraints {
-            $0.centerY.equalToSuperview()
-            $0.trailing.equalToSuperview().inset(16)
         }
     }
     
@@ -156,5 +165,10 @@ final class ProfileCardView: UIView {
             $0.centerY.equalTo(nameLabel)
             $0.trailing.lessThanOrEqualTo(myOutingStatusLabel.snp.leading).offset(-8)
         }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
     }
 }

@@ -18,4 +18,5 @@ public struct OutingSearchResponse: Codable {
     public let grade: Int
     public let department: String
     public let outingAt: String
+    public let profileImageUrl: String?
 }

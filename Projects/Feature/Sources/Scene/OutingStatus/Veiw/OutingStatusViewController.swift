@@ -2,7 +2,7 @@
 //  OutingStatusViewController.swift
 //  Feature
 //
-//  Created by 새미 on 1/11/24.
+//  Created by 준표 on 9/4/26.
 //  Copyright © 2024 HARIBO. All rights reserved.
 //
 

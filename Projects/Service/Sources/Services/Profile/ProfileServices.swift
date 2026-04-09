@@ -11,12 +11,11 @@ import Moya
 
 public enum ProfileServices {
     case getProfile(authorization: String)
-    case submit(authorization: String, imageData: Data)
     case update(authorization: String, imageData: Data)
     case delete(authorization: String)
 }
 struct ProfileImageResponse: Codable {
-    let file: Data
+    let imageUrl: String
 }
 
 extension ProfileServices: TargetType {
@@ -31,13 +30,11 @@ extension ProfileServices: TargetType {
     public var path: String {
         switch self {
         case .getProfile:
-            return "/account/profile"
-        case .submit:
-            return "/account/image"
+            return "/api/v3/member/profile"
         case .update:
-            return "/account/image"
+            return "/api/v3/member/profile-image"
         case .delete:
-            return "/account"
+            return "/api/v3/member/profile-image"
         }
     }
     
@@ -45,8 +42,6 @@ extension ProfileServices: TargetType {
         switch self {
         case .getProfile:
             return .get
-        case .submit:
-            return .post
         case .update:
             return .patch
         case .delete:
@@ -58,21 +53,28 @@ extension ProfileServices: TargetType {
         switch self {
         case .getProfile:
             return .requestPlain
-        case let .submit(authorization, imageData),
-             let .update(authorization, imageData):
-            let formData = MultipartFormData(provider: .data(imageData), name: "File", fileName: "profile_image.jpg", mimeType: "image/jpeg")
+        case let .update(_, imageData):
+            print("imageData size:", imageData.count)
+            let formData = MultipartFormData(
+                provider: .data(imageData),
+                name: "image",
+                fileName: "profile.jpg",
+                mimeType: "image/jpeg"
+            )
             return .uploadMultipart([formData])
-        case let .delete(authorization):
+        case .delete:
             return .requestPlain
         }
     }
     
     public var headers: [String : String]? {
         switch self {
-        case .getProfile(let authorization):
-            return ["Content-Type": "application/json", "Authorization": authorization]
-        default:
-            return ["Content-Type": "application/json"]
+        case .getProfile(let authorization),
+             .update(let authorization, _),
+             .delete(let authorization):
+            return [
+                "Authorization": authorization
+            ]
         }
     }
 }
