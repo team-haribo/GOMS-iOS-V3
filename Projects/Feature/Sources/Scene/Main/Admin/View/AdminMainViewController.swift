@@ -283,7 +283,7 @@ private let profileVC = AdminProfileViewController()
         viewModel.getProfile { [weak self] _ in group.leave() }
 
         group.enter()
-        profileViewModel.loadProfileInfo { _, _ in
+        profileViewModel.loadProfileInfo { [weak self] _, _ in
             group.leave()
         }
 
@@ -362,13 +362,13 @@ private let profileVC = AdminProfileViewController()
     }
 
     func setupProfileView() {
-        let profile = viewModel.profileData
+        guard let profile = viewModel.profileData else { return }
 
-        let grade = profile?.grade ?? 0
-        let name = profile?.name ?? "이름 없음"
-        let department = profile?.department ?? "정보 없음"
+        let grade = profile.grade ?? 0
+        let name = profile.name ?? "이름 없음"
+        let department = profile.department ?? ""
 
-        
+       
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
             basicsProfileView.profileImageView.kf.setImage(
@@ -376,7 +376,6 @@ private let profileVC = AdminProfileViewController()
                 placeholder: UIImage.image.profile.image,
                 options: [.forceRefresh]
             )
-            
             profileView.profileImageView.kf.setImage(
                 with: url,
                 placeholder: UIImage.image.profile.image,
@@ -397,17 +396,18 @@ private let profileVC = AdminProfileViewController()
             majorText = "SW"
         } else if department == Major.iot.rawValue {
             majorText = "IoT"
-        } else {
+        } else if department == Major.ai.rawValue {
             majorText = "AI"
+        } else {
+            majorText = ""
         }
 
         basicsProfileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
         profileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
 
-        // 관리자 상태 (기존 디자인 유지)
+        
         profileView.profileStatus.text = "관리자"
         profileView.profileStatus.textColor = .color.admin.color
-
         profileView.lateCountLabel.isHidden = true
         profileView.lateCountLabel.text = ""
 
