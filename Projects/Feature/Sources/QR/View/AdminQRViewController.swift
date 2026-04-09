@@ -87,7 +87,8 @@ public class AdminQRViewController: BaseViewController {
     }
     
     private func startTimer() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { (t) in
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { [weak self] (t) in
+            guard let self = self else { return }
             self.timer -= 1
             let minutes = self.timer / 60
             let seconds = self.timer % 60
@@ -103,9 +104,19 @@ public class AdminQRViewController: BaseViewController {
     }
     
     private func createQRCode() {
-        viewModel.makeQR { success in
+        viewModel.makeQR { [weak self] success in
+            guard let self = self else { return }
+            
             if success {
                 let outingUUIDString = self.viewModel.outingUUID.uuidString
+                
+             
+                if self.viewModel.exp > 0 {
+                    let currentTime = Int(Date().timeIntervalSince1970 * 1000)
+                    let remaining = (self.viewModel.exp - currentTime) / 1000
+                    self.timer = max(remaining, 0)
+                }
+                
                 if let qrCodeImage = self.generateQRCode(from: outingUUIDString) {
                     DispatchQueue.main.async {
                         self.qrCodeImage.image = qrCodeImage
