@@ -19,24 +19,39 @@ public struct MapPlaceResponse: Codable {
 
 // MARK: - Place Data
 public struct MapPlaceData: Codable {
+    public let placeId: Int
+    public let placeName: String
+    public let address: String
+    public let roadAddress: String
     public let latitude: Double
     public let longitude: Double
-    public let placeId: Int
+    public let categoryGroupName: String
+    public let categoryName: String
     public let reviewCount: Int
     public let recommendCount: Int
     public let recommended: Bool
 
     public init(
+        placeId: Int,
+        placeName: String,
+        address: String,
+        roadAddress: String,
         latitude: Double,
         longitude: Double,
-        placeId: Int,
+        categoryGroupName: String,
+        categoryName: String,
         reviewCount: Int,
         recommendCount: Int,
         recommended: Bool
     ) {
+        self.placeId = placeId
+        self.placeName = placeName
+        self.address = address
+        self.roadAddress = roadAddress
         self.latitude = latitude
         self.longitude = longitude
-        self.placeId = placeId
+        self.categoryGroupName = categoryGroupName
+        self.categoryName = categoryName
         self.reviewCount = reviewCount
         self.recommendCount = recommendCount
         self.recommended = recommended
