@@ -24,6 +24,8 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     let metadataObjectTypes: [AVMetadataObject.ObjectType] = [.qr]
 
     private var isScanningEnabled = true
+    private var lastScanTime = Date(timeIntervalSince1970: 0)
+    private let scanInterval: TimeInterval = 0.3
 
     private let gomsLogo = UIImageView().then {
         $0.image = .image.gomsWhiteLogo.image
@@ -140,7 +142,12 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     }
 
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard isScanningEnabled, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        guard isScanningEnabled,
+              Date().timeIntervalSince(lastScanTime) > scanInterval,
+              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        lastScanTime = Date()
+        isScanningEnabled = false
 
         let request = VNDetectBarcodesRequest { [weak self] request, error in
             guard let self = self else { return }
@@ -157,24 +164,31 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
                         let qrFrameRect = self.qrFrame.convert(self.qrFrame.bounds, to: self.view)
 
                         let boundingBox = barcode.boundingBox
-                        let barcodeTopLeft = CGPoint(x: boundingBox.minX * self.view.bounds.width, y: boundingBox.minY * self.view.bounds.height)
-                        let barcodeTopRight = CGPoint(x: boundingBox.maxX * self.view.bounds.width, y: boundingBox.minY * self.view.bounds.height)
-                        let barcodeBottomLeft = CGPoint(x: boundingBox.minX * self.view.bounds.width, y: boundingBox.maxY * self.view.bounds.height)
-                        let barcodeBottomRight = CGPoint(x: boundingBox.maxX * self.view.bounds.width, y: boundingBox.maxY * self.view.bounds.height)
+                        let viewWidth = self.view.bounds.width
+                        let viewHeight = self.view.bounds.height
+
+                        let barcodeTopLeft = CGPoint(x: boundingBox.minX * viewWidth, y: (1 - boundingBox.maxY) * viewHeight)
+                        let barcodeTopRight = CGPoint(x: boundingBox.maxX * viewWidth, y: (1 - boundingBox.maxY) * viewHeight)
+                        let barcodeBottomLeft = CGPoint(x: boundingBox.minX * viewWidth, y: (1 - boundingBox.minY) * viewHeight)
+                        let barcodeBottomRight = CGPoint(x: boundingBox.maxX * viewWidth, y: (1 - boundingBox.minY) * viewHeight)
 
                         if qrFrameRect.contains(barcodeTopLeft)
                             && qrFrameRect.contains(barcodeTopRight)
                             && qrFrameRect.contains(barcodeBottomLeft)
                             && qrFrameRect.contains(barcodeBottomRight) {
 
-                            guard self.isScanningEnabled else { return }
-                            self.isScanningEnabled = false
-
-                            self.viewModel.outingUUID = UUID(uuidString: payload) ?? UUID()
-                            self.viewModel.outing { result in
-                                self.qrScanResult(result: result)
+                            guard let uuid = UUID(uuidString: payload) else {
+                                self.isScanningEnabled = true
+                                return
                             }
-                            self.captureSession.stopRunning()
+
+                            self.viewModel.outingUUID = uuid
+                            self.viewModel.outing { result in
+                                DispatchQueue.main.async {
+                                    self.captureSession.stopRunning()
+                                    self.qrScanResult(result: result)
+                                }
+                            }
                         }
                     }
                 }
