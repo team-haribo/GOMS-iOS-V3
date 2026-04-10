@@ -9,10 +9,13 @@ import UIKit
 import SnapKit
 import Then
 import KakaoMapsSDK
+import Service
+import Moya
 
 public final class MapViewController: UIViewController {
     
     // MARK: - Properties
+    private let placeProvider = MoyaProvider<PlaceServices>()
     
     private var mapContainer: KMViewContainer?
     private var mapController: KMController?
@@ -53,7 +56,6 @@ public final class MapViewController: UIViewController {
     private let detailMinHeight: CGFloat = 225
 
     // MARK: - Life Cycle
-    
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -62,6 +64,7 @@ public final class MapViewController: UIViewController {
         setupGesture()
         setupActions()
         setupReviewWriteAction()
+        fetchHotPlaces() // 핫플레이스 초기 로드 추가
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -75,12 +78,9 @@ public final class MapViewController: UIViewController {
     }
 
     // MARK: - Setup
-    
     private func setupView() {
         view.backgroundColor = .color.background.color
-
         view.addSubview(mapWrapperView)
-
         [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach {
             view.addSubview($0)
         }
@@ -146,7 +146,14 @@ public final class MapViewController: UIViewController {
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
         placeDetailView.onHeartToggled = { [weak self] isSelected in
-            if !isSelected { print("하트 취소됨") }
+            guard let self = self else { return }
+            // 현재 상세 페이지의 placeId를 가져와서 추천/취소 API 호출
+            let placeId = MapMockData.detailExample.placeId
+            if isSelected {
+                self.placeProvider.request(.recommendPlace(placeId: placeId)) { _ in }
+            } else {
+                self.placeProvider.request(.cancelRecommendPlace(placeId: placeId)) { _ in }
+            }
         }
 
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
@@ -162,9 +169,21 @@ public final class MapViewController: UIViewController {
     private func setupReviewWriteAction() {
         placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
     }
+
+    // MARK: - API Methods
+    private func fetchHotPlaces() {
+        placeProvider.request(.getHotPlaces) { result in
+            switch result {
+            case .success(let response):
+                // 여기서 받아온 데이터로 bottomSheetView 등을 업데이트할 수 있습니다.
+                print("핫플레이스 로드 성공: \(response.statusCode)")
+            case .failure(let error):
+                print("핫플레이스 로드 실패: \(error)")
+            }
+        }
+    }
     
     // MARK: - Actions
-    
     @objc private func didTapReviewWrite() {
         let detailData = MapMockData.detailExample
         let reviewWriteVC = MapReviewWriteViewController(placeData: detailData)
@@ -202,15 +221,39 @@ public final class MapViewController: UIViewController {
         gesture.setTranslation(.zero, in: view)
     }
 
-    private func showDetailView() {
-        let detailData = MapMockData.detailExample
-        placeDetailView.configure(with: detailData)
+    private func showDetailView(with data: MapPlaceData? = nil) {
+        let detailModel: MapPlaceDetailModel
+        
+        if let data = data {
+            detailModel = MapPlaceDetailModel(
+                placeId: data.placeId,
+                placeName: data.placeName,
+                address: data.address,
+                roadAddress: data.roadAddress,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                categoryGroupName: data.categoryGroupName,
+                categoryName: data.categoryName,
+                phone: "",
+                placeUrl: "",
+                reviewCount: data.reviewCount,
+                recommendCount: data.recommendCount,
+                recommended: data.recommended
+            )
+        } else {
+            detailModel = MapMockData.detailExample
+        }
+        
+        placeDetailView.configure(with: detailModel)
         
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
         searchBar.isHidden = false
         detailSheetHeight?.update(offset: detailMinHeight)
-        UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
+        
+        UIView.animate(withDuration: 0.3) {
+            self.view.layoutIfNeeded()
+        }
     }
     
     private func setupGesture() {
@@ -264,7 +307,6 @@ public final class MapViewController: UIViewController {
     }
     
     // MARK: - Map
-    
     private func setupMap() {
         mapWrapperView.layoutIfNeeded()
 
@@ -304,13 +346,11 @@ public final class MapViewController: UIViewController {
 
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-
         mapController?.pauseEngine()
     }
 }
 
 // MARK: - TableView Delegate & DataSource
-
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
@@ -359,13 +399,12 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
 
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView == recentSearchView.tableView {
-            // 최근 검색어 셀을 눌렀을 때의 동작
+            let selectedData = dummyRecentSearches[indexPath.row]
             recentSearchView.isHidden = true
             searchBar.updateState(.home)
             view.endEditing(true)
             
-            // 상세 뷰 띄우기
-            showDetailView()
+            showDetailView(with: selectedData)
         }
     }
 }

@@ -67,7 +67,7 @@ public final class MapPlaceDetailView: UIView {
         $0.font = .suit(size: 16, weight: .medium)
     }
     
-    private let infoLabel = UILabel().then {
+    public let infoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
@@ -148,6 +148,7 @@ public final class MapPlaceDetailView: UIView {
     
     required init?(coder: NSCoder) { fatalError() }
     
+    // MARK: - Configure
     public func configure(with data: MapPlaceDetailModel) {
         titleLabel.text = data.placeName
         categoryLabel.text = data.categoryName
@@ -179,6 +180,7 @@ public final class MapPlaceDetailView: UIView {
         emptyReviewStackView.isHidden = hasReviews
     }
 
+    // MARK: - Setup
     private func setupView() {
         self.backgroundColor = .color.surface.color
         self.layer.cornerRadius = 20
