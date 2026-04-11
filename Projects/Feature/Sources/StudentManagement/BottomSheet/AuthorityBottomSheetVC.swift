@@ -135,6 +135,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             outingDescLabel.text = "학생을 강제외출 시켜요"
         }
         outingButton.setImage(UIImage.image.outing.image, for: .normal)
+        outingButton.tintColor = UIColor.color.gomsNegative.color
 
         blackListSwitch.isOn = data.isBlackList
         adminSwitch.isOn = (data.authority == "ROLE_STUDENT_COUNCIL")
