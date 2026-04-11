@@ -136,16 +136,25 @@ public class AdminQRViewController: BaseViewController {
             guard let self = self else { return }
             
             if success {
-                let outingUUIDString = self.viewModel.outingUUID.uuidString
                 
-             
+                let qrData: [String: Any] = [
+                    "uuid": self.viewModel.outingUUID.uuidString,
+                    "exp": self.viewModel.exp
+                ]
+
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: qrData),
+                      let jsonString = String(data: jsonData, encoding: .utf8) else {
+                    print("QR JSON 생성 실패")
+                    return
+                }
+
                 if self.viewModel.exp > 0 {
-                    let currentTime = Int(Date().timeIntervalSince1970 * 1000)
-                    let remaining = (self.viewModel.exp - currentTime) / 1000
+                    let currentTimeDebug = Int(Date().timeIntervalSince1970 * 1000)
+                    let remaining = (self.viewModel.exp - currentTimeDebug) / 1000
                     self.timer = max(remaining, 0)
                 }
-                
-                if let qrCodeImage = self.generateQRCode(from: outingUUIDString) {
+
+                if let qrCodeImage = self.generateQRCode(from: jsonString) {
                     DispatchQueue.main.async {
                         self.qrCodeImage.image = qrCodeImage
                     }

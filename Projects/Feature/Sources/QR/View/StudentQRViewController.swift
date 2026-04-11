@@ -10,7 +10,7 @@ import UIKit
 import AVFoundation
 import Vision
 
-public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutputObjectsDelegate {
 
     override func shouldShowCustomNavigation() -> Bool {
         return false
@@ -24,6 +24,7 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     let metadataObjectTypes: [AVMetadataObject.ObjectType] = [.qr]
 
     private var isScanningEnabled = true
+    private var lastUsedUUID: String?
     private var lastScanTime = Date(timeIntervalSince1970: 0)
     private let scanInterval: TimeInterval = 0.3
 
@@ -126,9 +127,11 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
             return
         }
 
-        let output = AVCaptureVideoDataOutput()
-        output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-        captureSession.addOutput(output)
+        let metadataOutput = AVCaptureMetadataOutput()
+        captureSession.addOutput(metadataOutput)
+
+        metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        metadataOutput.metadataObjectTypes = [.qr]
 
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer?.videoGravity = .resizeAspectFill
@@ -140,66 +143,63 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
             self.captureSession.startRunning()
         }
     }
+}
+extension StudentQRViewController {
 
-    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    public func metadataOutput(_ output: AVCaptureMetadataOutput,
+                              didOutput metadataObjects: [AVMetadataObject],
+                              from connection: AVCaptureConnection) {
+
+        let now = Date()
+        guard now.timeIntervalSince(lastScanTime) > scanInterval else { return }
+        lastScanTime = now
+
         guard isScanningEnabled,
-              Date().timeIntervalSince(lastScanTime) > scanInterval,
-              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+              let metadataObject = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              let payload = metadataObject.stringValue else { return }
 
-        lastScanTime = Date()
+        print("QR detected:", payload)
+
         isScanningEnabled = false
 
-        let request = VNDetectBarcodesRequest { [weak self] request, error in
-            guard let self = self else { return }
-            if let error = error {
-                print("QR 코드 감지 중 오류 발생: \(error.localizedDescription)")
-                return
-            }
-
-            guard let barcodes = request.results as? [VNBarcodeObservation] else { return }
-
-            for barcode in barcodes {
-                if let payload = barcode.payloadStringValue {
-                    DispatchQueue.main.async {
-                        let qrFrameRect = self.qrFrame.convert(self.qrFrame.bounds, to: self.view)
-
-                        let boundingBox = barcode.boundingBox
-                        let viewWidth = self.view.bounds.width
-                        let viewHeight = self.view.bounds.height
-
-                        let barcodeTopLeft = CGPoint(x: boundingBox.minX * viewWidth, y: (1 - boundingBox.maxY) * viewHeight)
-                        let barcodeTopRight = CGPoint(x: boundingBox.maxX * viewWidth, y: (1 - boundingBox.maxY) * viewHeight)
-                        let barcodeBottomLeft = CGPoint(x: boundingBox.minX * viewWidth, y: (1 - boundingBox.minY) * viewHeight)
-                        let barcodeBottomRight = CGPoint(x: boundingBox.maxX * viewWidth, y: (1 - boundingBox.minY) * viewHeight)
-
-                        if qrFrameRect.contains(barcodeTopLeft)
-                            && qrFrameRect.contains(barcodeTopRight)
-                            && qrFrameRect.contains(barcodeBottomLeft)
-                            && qrFrameRect.contains(barcodeBottomRight) {
-
-                            guard let uuid = UUID(uuidString: payload) else {
-                                self.isScanningEnabled = true
-                                return
-                            }
-
-                            self.viewModel.outingUUID = uuid
-                            self.viewModel.outing { result in
-                                DispatchQueue.main.async {
-                                    self.captureSession.stopRunning()
-                                    self.qrScanResult(result: result)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+  
+        guard let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let uuidString = json["uuid"] as? String,
+              let exp = json["exp"] as? Int,
+              let uuid = UUID(uuidString: uuidString) else {
+            
+            print("QR 파싱 실패")
+            isScanningEnabled = true
+            return
         }
 
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        do {
-            try handler.perform([request])
-        } catch {
-            print("비디오 프레임 처리 중 오류 발생: \(error.localizedDescription)")
+        if uuidString == lastUsedUUID {
+            print("같은 QR 사용 불가 (외출/복귀 동일 QR 방지)")
+            self.qrScanResult(result: "uuidError")
+            isScanningEnabled = true
+            return
+        }
+
+        let expSec = exp > 10000000000 ? exp / 1000 : exp
+        let nowSec = Int(Date().timeIntervalSince1970)
+
+        if expSec < nowSec {
+            print("QR 만료됨")
+            self.qrScanResult(result: "uuidError")
+            isScanningEnabled = true
+            return
+        }
+
+        viewModel.outingUUID = uuid
+        lastUsedUUID = uuidString
+        viewModel.exp = expSec
+
+        viewModel.outing { result in
+            DispatchQueue.main.async {
+                self.captureSession.stopRunning()
+                self.qrScanResult(result: result)
+            }
         }
     }
 }
