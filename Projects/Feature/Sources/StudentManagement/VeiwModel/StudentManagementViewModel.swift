@@ -76,14 +76,17 @@ public final class StudentManagementViewModel: BaseViewModel {
     }
     
     func changeAuthority(user: UserData, completion: @escaping () -> Void) {
-        let newRole: Authority = user.authority == Authority.student.rawValue ? .admin : .student
+        let isStudent = user.authority == "ROLE_STUDENT"
+        let newRole: Authority = isStudent ? .admin : .student
         let body = AuthorityRequest(role: newRole.rawValue)
 
         studentCouncilProvider.request(.editAuthority(authorization: accessToken, memberId: user.id, param: body)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
-                    completion()
+                    self.getUserList {
+                        completion()
+                    }
                 } else if result.statusCode == 401 {
                     self.gomsRefreshToken.tokenReissuance { _ in }
                 } else {
@@ -102,7 +105,9 @@ public final class StudentManagementViewModel: BaseViewModel {
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
-                    completion()
+                    self.getUserList {
+                        completion()
+                    }
                 } else if result.statusCode == 401 {
                     self.gomsRefreshToken.tokenReissuance { _ in }
                 } else {
@@ -121,7 +126,9 @@ public final class StudentManagementViewModel: BaseViewModel {
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
-                    completion()
+                    self.getUserList {
+                        completion()
+                    }
                 } else if result.statusCode == 401 {
                     self.gomsRefreshToken.tokenReissuance { _ in }
                 } else {
@@ -138,7 +145,9 @@ public final class StudentManagementViewModel: BaseViewModel {
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
-                    completion()
+                    self.getUserList {
+                        completion()
+                    }
                 } else if result.statusCode == 401 {
                     self.gomsRefreshToken.tokenReissuance { _ in }
                 } else {

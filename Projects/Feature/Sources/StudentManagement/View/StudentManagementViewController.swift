@@ -12,7 +12,7 @@ import Then
 
 public final class StudentManagementViewController: BaseViewController {
     
-    private let viewModel = StudentManagementViewModel()
+    let viewModel = StudentManagementViewModel()
     var userList: [UserData] = [] {
         didSet { studentCollectionView.reloadData() }
     }
@@ -77,8 +77,9 @@ public final class StudentManagementViewController: BaseViewController {
         setupSearchBar()
         
         
-        viewModel.getUserList {
-            if !self.viewModel.userListDatas.isEmpty {
+        viewModel.getUserList { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
                 self.userList = self.viewModel.userListDatas
             }
         }
@@ -117,12 +118,14 @@ public final class StudentManagementViewController: BaseViewController {
         let text = textField.text ?? ""
         viewModel.searchStudent(searchString: text.isEmpty ? nil : text) { [weak self] in
             guard let self = self else { return }
-            self.userList = self.viewModel.userListDatas
+            DispatchQueue.main.async {
+                self.userList = self.viewModel.userListDatas
+            }
         }
     }
     
     @objc private func filterButtonTapped() {
-        let filterVC = FilterBottomSheetVC(studentManagementVC: self)
+        let filterVC = FilterBottomSheetVC(studentManagementVC: self, viewModel: viewModel)
         filterVC.modalPresentationStyle = .overFullScreen
         self.present(filterVC, animated: false)
     }
@@ -189,9 +192,23 @@ extension StudentManagementViewController: UICollectionViewDataSource, UICollect
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self)
+        let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self, viewModel: viewModel)
         authorityVC.userData = userList[indexPath.row]
         authorityVC.modalPresentationStyle = .overFullScreen
+
+        authorityVC.presentationController?.delegate = self
+
         self.present(authorityVC, animated: false)
+    }
+}
+
+extension StudentManagementViewController: UIAdaptivePresentationControllerDelegate {
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        viewModel.getUserList { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.userList = self.viewModel.userListDatas
+            }
+        }
     }
 }

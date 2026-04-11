@@ -14,6 +14,7 @@ import Service
 
 public final class StudentCollectionViewCell: UICollectionViewCell {
     static let identifier = "StudentCell"
+    private var currentUser: UserData?
     
     private let profileImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
@@ -75,6 +76,7 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
     
     func configureData(with userData: UserData) {
+        currentUser = userData
         let defaultImage = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
         if let urlStr = userData.profileImageURL, let url = URL(string: urlStr) {
             profileImageView.kf.setImage(with: url, placeholder: defaultImage)
@@ -87,7 +89,12 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         infoLabel.text = "\(userData.grade)기 | \(displayMajor)"
         profileImageView.alpha = 1.0
         
-        if userData.authority == "ROLE_ADMIN" {
+        
+        profileImageView.layer.borderWidth = 0
+        profileImageView.layer.borderColor = UIColor.clear.cgColor
+        nameLabel.textColor = .color.mainText.color
+
+        if userData.authority == "ROLE_STUDENT_COUNCIL" {
             profileImageView.layer.borderWidth = 3
             profileImageView.layer.borderColor = UIColor.color.admin.color.cgColor
             nameLabel.textColor = UIColor.color.admin.color
@@ -95,9 +102,6 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
             profileImageView.layer.borderWidth = 3
             profileImageView.layer.borderColor = UIColor.systemRed.cgColor
             nameLabel.textColor = UIColor.systemRed
-        } else {
-            profileImageView.layer.borderWidth = 0
-            nameLabel.textColor = .color.mainText.color
         }
     }
 
@@ -105,12 +109,20 @@ public final class StudentCollectionViewCell: UICollectionViewCell {
         var responder: UIResponder? = self
         while responder != nil {
             if let vc = responder as? StudentManagementViewController {
-                let bottomSheet = AuthorityBottomSheetVC(studentManagementVC: vc)
-                bottomSheet.userData = vc.userList.first { $0.name == self.nameLabel.text }
+                let bottomSheet = AuthorityBottomSheetVC(studentManagementVC: vc, viewModel: vc.viewModel)
+                bottomSheet.userData = currentUser
                 vc.present(bottomSheet, animated: true)
                 break
             }
             responder = responder?.next
         }
+    }
+    
+    public override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        profileImageView.layer.borderWidth = 0
+        profileImageView.layer.borderColor = UIColor.clear.cgColor
+        nameLabel.textColor = .color.mainText.color
     }
 }

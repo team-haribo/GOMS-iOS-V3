@@ -63,7 +63,7 @@ class CustomSwitch: UIControl {
 
 public final class AuthorityBottomSheetVC: BaseViewController {
 
-    private let viewModel = StudentManagementViewModel()
+    private var viewModel: StudentManagementViewModel
     var studentManagementVC: StudentManagementViewController
     
     var userData: UserData? {
@@ -108,8 +108,9 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     private let blackListSwitch = CustomSwitch()
     private let adminSwitch = CustomSwitch()
 
-    init(studentManagementVC: StudentManagementViewController) {
+    init(studentManagementVC: StudentManagementViewController, viewModel: StudentManagementViewModel) {
         self.studentManagementVC = studentManagementVC
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
         self.modalPresentationStyle = .overFullScreen
     }
@@ -125,6 +126,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     private func setupData() {
         guard let data = userData else { return }
+        print("현재 authority:", data.authority)
         
         if data.isOuting {
             outingTitleLabel.text = "강제외출 복귀"
@@ -136,10 +138,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         outingButton.setImage(UIImage.image.outing.image, for: .normal)
 
         blackListSwitch.isOn = data.isBlackList
-        adminSwitch.isOn = (data.authority == "ROLE_ADMIN")
+        adminSwitch.isOn = (data.authority == "ROLE_STUDENT_COUNCIL")
 
-        forceOutingContainer.isHidden = data.authority == "ROLE_ADMIN" || data.isBlackList
-        blackListContainer.isHidden = data.authority == "ROLE_ADMIN"
+        forceOutingContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL" || data.isBlackList
+        blackListContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL"
         
         updateLayoutForState()
     }
@@ -192,7 +194,9 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             action: { [weak self] in
                 self?.viewModel.forceOutingStudent(user: data) { [weak self] in
                     guard let self = self else { return }
-                    self.studentManagementVC.userList = self.viewModel.userListDatas
+                    self.viewModel.getUserList {
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                    }
                     self.dismiss(animated: true)
                 }
             }
@@ -214,12 +218,16 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 if isOn {
                     self?.viewModel.blackList(user: data) { [weak self] in
                         guard let self = self else { return }
-                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                        self.viewModel.getUserList {
+                            self.studentManagementVC.userList = self.viewModel.userListDatas
+                        }
                     }
                 } else {
                     self?.viewModel.cancelBlackList(user: data) { [weak self] in
                         guard let self = self else { return }
-                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                        self.viewModel.getUserList {
+                            self.studentManagementVC.userList = self.viewModel.userListDatas
+                        }
                     }
                 }
             },
@@ -231,10 +239,18 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     @objc private func adminSwitchChanged() {
         guard let data = userData else { return }
+
+        let originalState = data.authority == "ROLE_STUDENT_COUNCIL"
+        let newState = adminSwitch.isOn
+
         viewModel.changeAuthority(user: data) { [weak self] in
             guard let self = self else { return }
-            self.studentManagementVC.userList = self.viewModel.userListDatas
-            self.dismiss(animated: true)
+            DispatchQueue.main.async {
+                self.viewModel.getUserList {
+                    self.studentManagementVC.userList = self.viewModel.userListDatas
+                }
+                self.dismiss(animated: true)
+            }
         }
     }
 
