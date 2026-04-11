@@ -233,9 +233,6 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     @objc private func adminSwitchChanged() {
         guard let data = userData else { return }
 
-        let originalState = data.authority == "ROLE_STUDENT_COUNCIL"
-        let newState = adminSwitch.isOn
-
         viewModel.changeAuthority(user: data) { [weak self] in
             guard let self = self else { return }
             DispatchQueue.main.async {
