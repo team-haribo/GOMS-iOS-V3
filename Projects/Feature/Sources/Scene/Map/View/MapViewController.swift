@@ -27,9 +27,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private let mapWrapperView = UIView()
     
     private var dummyRecentSearches: [MapPlaceData] = [] {
-        didSet {
-            self.recentSearchView.tableView.reloadData()
-        }
+        didSet { self.recentSearchView.tableView.reloadData() }
     }
     
     private var dummyReviews: [MapReview] = [] {
@@ -82,6 +80,11 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         } else {
             mapController?.activateEngine()
         }
+    }
+
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        mapController?.pauseEngine()
     }
 
     // MARK: - Setup
@@ -177,17 +180,11 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     // MARK: - Networking
     private func syncPlaces() {
-        placeProvider.request(.syncPlaces(authorization: accessToken)) { result in
-            if case .success = result { print("장소 동기화 완료") }
-        }
+        placeProvider.request(.syncPlaces(authorization: accessToken)) { _ in }
     }
 
     private func fetchRecommendedCount() {
-        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { result in
-            if case .success(let response) = result {
-                print("추천 개수: \(response.statusCode)")
-            }
-        }
+        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in }
     }
 
     private func fetchReviews(placeId: Int) {
@@ -201,19 +198,13 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     @objc private func performSearch() {
         guard let keyword = searchBar.textField.text, !keyword.isEmpty else { return }
-        
         placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
             guard let self = self else { return }
             if case .success(let response) = result {
                 let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data)
                 let results = decodedData ?? []
                 self.dummyRecentSearches = results
-                
-                if results.isEmpty {
-                    self.recentSearchView.titleLabel.text = "검색 결과가 없습니다"
-                } else {
-                    self.recentSearchView.titleLabel.text = "'\(keyword)' 검색 결과"
-                }
+                self.recentSearchView.titleLabel.text = results.isEmpty ? "검색 결과가 없습니다" : "'\(keyword)' 검색 결과"
             }
         }
     }
@@ -331,10 +322,12 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         mapWrapperView.addSubview(container)
         self.mapContainer = container
+        
         let controller = KMController(viewContainer: container)
         controller.delegate = self
         self.mapController = controller
-        controller.prepareEngine()
+        
+        mapController?.prepareEngine()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.mapController?.activateEngine()
         }
@@ -349,6 +342,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
         guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
         view.eventDelegate = self
+        
         createPoiStyle()
         let manager = view.getLabelManager()
         let layerOptions = LabelLayerOptions(layerID: "poiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 10000)
@@ -358,8 +352,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private func createPoiStyle() {
         guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
         let manager = view.getLabelManager()
-        guard let rawImage = UIImage(named: "ic_route_location_pin") else { return }
         
+        // 🛠 Fix: Bitmap Rendering (K3fCore Error Solution)
+        guard let rawImage = UIImage(named: "ic_route_location_pin") else { return }
         let renderer = UIGraphicsImageRenderer(size: rawImage.size)
         let bitmapImage = renderer.image { _ in
             rawImage.draw(in: CGRect(origin: .zero, size: rawImage.size))
@@ -384,7 +379,6 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         
         if let poi = layer.addPoi(option: option, at: mapPoint) {
             poi.show()
-        
             kakaoMap.animateCamera(
                 cameraUpdate: CameraUpdate.make(target: mapPoint, zoomLevel: 15, mapView: kakaoMap),
                 options: CameraAnimationOptions(autoElevation: false, consecutive: true, durationInMillis: 300)
@@ -406,11 +400,6 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         mapController?.pauseEngine()
         mapController?.resetEngine()
         mapController = nil
-    }
-
-    public override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        mapController?.pauseEngine()
     }
 }
 
