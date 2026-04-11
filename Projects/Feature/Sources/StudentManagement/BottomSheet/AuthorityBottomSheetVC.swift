@@ -193,9 +193,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             action: { [weak self] in
                 self?.viewModel.forceOutingStudent(user: data) { [weak self] in
                     guard let self = self else { return }
-                    self.viewModel.getUserList {
-                        self.studentManagementVC.userList = self.viewModel.userListDatas
-                    }
+                    self.studentManagementVC.userList = self.viewModel.userListDatas
                     self.dismiss(animated: true)
                 }
             }
@@ -217,16 +215,12 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 if isOn {
                     self?.viewModel.blackList(user: data) { [weak self] in
                         guard let self = self else { return }
-                        self.viewModel.getUserList {
-                            self.studentManagementVC.userList = self.viewModel.userListDatas
-                        }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 } else {
                     self?.viewModel.cancelBlackList(user: data) { [weak self] in
                         guard let self = self else { return }
-                        self.viewModel.getUserList {
-                            self.studentManagementVC.userList = self.viewModel.userListDatas
-                        }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 }
             },
@@ -245,9 +239,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         viewModel.changeAuthority(user: data) { [weak self] in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                self.viewModel.getUserList {
-                    self.studentManagementVC.userList = self.viewModel.userListDatas
-                }
+                self.studentManagementVC.userList = self.viewModel.userListDatas
                 self.dismiss(animated: true)
             }
         }
