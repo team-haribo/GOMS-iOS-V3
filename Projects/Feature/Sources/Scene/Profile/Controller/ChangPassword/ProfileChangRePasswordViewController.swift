@@ -17,7 +17,7 @@ public class ProfileChangRePasswordViewController: BaseViewController, UIImagePi
     private let viewModel = ProfileViewModel()
     
     let navigationTitle = UILabel().then {
-        $0.text = "비밀번호 재설정"
+        $0.text = "비밀번호 확인"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 29, weight: .bold)
     }

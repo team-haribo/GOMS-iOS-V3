@@ -15,7 +15,7 @@ public final class ChangNewPasswordViewController: BaseViewController {
     private let textFieldStackView = UIStackView().then {
         $0.spacing = 16
         $0.axis = .vertical
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
         $0.alignment = .fill
     }
     
@@ -160,18 +160,17 @@ public final class ChangNewPasswordViewController: BaseViewController {
     // MARK: - Layout
     
     public override func addView() {
-        
-        [passwordTextField, checkPasswordTextField].forEach {
-            textFieldStackView.addArrangedSubview($0)
-        }
+
+        textFieldStackView.addArrangedSubview(passwordTextField)
+        textFieldStackView.addArrangedSubview(passwordWrongRegularExpression)
+        textFieldStackView.addArrangedSubview(checkPasswordTextField)
+        textFieldStackView.addArrangedSubview(passwordErrorLabel)
 
         [
             navigationTitle,
             textFieldStackView,
             conditionsLabel,
-            doneButton,
-            passwordErrorLabel,
-            passwordWrongRegularExpression
+            doneButton
         ].forEach {
             view.addSubview($0)
         }
@@ -180,33 +179,29 @@ public final class ChangNewPasswordViewController: BaseViewController {
     public override func setLayout() {
         
         navigationTitle.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(100)
-            $0.leading.equalToSuperview().offset(20)
+            $0.top.equalToSuperview().offset(124)
+            $0.leading.equalToSuperview().inset(20)
         }
+
+        passwordTextField.snp.makeConstraints { $0.height.equalTo(56) }
+        checkPasswordTextField.snp.makeConstraints { $0.height.equalTo(56) }
 
         textFieldStackView.snp.makeConstraints {
-            $0.top.equalTo(navigationTitle.snp.bottom).offset(32)
-            $0.leading.trailing.equalToSuperview().inset(20)
-        }
-
-        passwordErrorLabel.snp.makeConstraints {
-            $0.top.equalTo(checkPasswordTextField.snp.bottom).offset(8)
-            $0.trailing.equalToSuperview().inset(20)
-        }
-
-        passwordWrongRegularExpression.snp.makeConstraints {
-            $0.top.equalTo(passwordTextField.snp.bottom).offset(8)
+            $0.top.equalTo(navigationTitle.snp.bottom).offset(24)
+            $0.leading.equalToSuperview().inset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
 
         conditionsLabel.snp.makeConstraints {
-            $0.top.equalTo(textFieldStackView.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().offset(20)
+            $0.top.equalTo(textFieldStackView.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(20)
         }
 
         doneButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).inset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).inset(24)
             $0.height.equalTo(48)
         }
     }
