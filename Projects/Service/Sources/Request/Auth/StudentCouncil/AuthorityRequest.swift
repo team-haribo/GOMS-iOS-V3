@@ -8,12 +8,10 @@
 
 import Foundation
 
-public struct AuthorityRequest: Codable {
-    var accountIdx: UUID
-    var authority: String
+public struct AuthorityRequest: Encodable {
+    public let role: String
     
-    public init(accountIdx: UUID, authority: String) {
-        self.accountIdx = accountIdx
-        self.authority = authority
+    public init(role: String) {
+        self.role = role
     }
 }

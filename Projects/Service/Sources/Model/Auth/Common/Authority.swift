@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum Authority: String {
+public enum Authority: String {
     case student = "ROLE_STUDENT"
     case admin = "ROLE_STUDENT_COUNCIL"
 }

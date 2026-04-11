@@ -15,9 +15,10 @@ public enum StudentCouncilServices {
     case statusIn(authorization: String, memberId: Int)
     case studentList(authorization: String)
     case editAuthority(authorization: String, memberId: Int, param: AuthorityRequest)
-    case changeBlackList(authorization: String, memberId: Int)
-    case cancelBlackList(authorization: String, memberId: Int)
-    case searchStudent(authorization: String, parm: SearchStudentRequest)
+    case outingAllowed(authorization: String, memberId: Int, param: OutingAllowedRequest)
+    case forceOuting(authorization: String, memberId: Int)
+    case searchStudent(authorization: String, param: SearchStudentRequest)
+    case filterStudent(authorization: String, param: SearchStudentRequest)
     case lateList(authorization: String, date: String)
 }
 
@@ -42,12 +43,14 @@ extension StudentCouncilServices: TargetType {
             return "/api/v3/student-council/member"
         case .editAuthority(_, let memberId, _):
             return "/api/v3/student-council/role/\(memberId)"
-        case .changeBlackList(_, let memberId):
+        case .outingAllowed(_, let memberId, _):
             return "/api/v3/student-council/outing-allowed/\(memberId)"
-        case .cancelBlackList(_, let memberId):
-            return "/api/v3/student-council/outing-allowed/\(memberId)"
+        case .forceOuting(_, let memberId):
+            return "/api/v3/student-council/status/out/\(memberId)"
         case .searchStudent:
             return "/api/v3/student-council/search"
+        case .filterStudent:
+            return "/api/v3/student-council/filter"
         case .lateList:
             return "/api/v3/student-council/late"
         }
@@ -57,15 +60,16 @@ extension StudentCouncilServices: TargetType {
         switch self {
         case .makeQRCode,
              .statusOut,
-             .statusIn:
+             .statusIn,
+             .forceOuting:
             return .post
 
-        case .changeBlackList,
-             .cancelBlackList:
+        case .outingAllowed:
             return .patch
 
         case .studentList,
              .searchStudent,
+             .filterStudent,
              .lateList:
             return .get
 
@@ -79,24 +83,35 @@ extension StudentCouncilServices: TargetType {
     }
     
     public var task: Task {
+        func makeQueryParameters(from param: SearchStudentRequest) -> [String: Any] {
+            var parameters: [String: Any] = [:]
+            
+            if let name = param.name { parameters["name"] = name }
+            if let grade = param.grade { parameters["grade"] = grade }
+            if let gender = param.gender { parameters["gender"] = gender }
+            if let authority = param.authority { parameters["role"] = authority }
+            if let major = param.major { parameters["department"] = major }
+            if let status = param.status { parameters["status"] = status }
+            
+            return parameters
+        }
+        
         switch self {
         case .makeQRCode,
              .studentList,
-             .changeBlackList,
-             .cancelBlackList,
+             .forceOuting,
              .statusOut,
              .statusIn:
             return .requestPlain
         case .editAuthority(_, _, let param):
             return .requestJSONEncodable(param)
+        case .outingAllowed(_, _, let param):
+            return .requestJSONEncodable(param)
         case .searchStudent(_, let param):
-            var parameters: [String: Any] = [:]
-            if let grade = param.grade { parameters["grade"] = grade }
-            if let gender = param.gender { parameters["gender"] = gender }
-            if let name = param.name { parameters["name"] = name }
-            if let isBlackList = param.isBlackList { parameters["isBlackList"] = isBlackList }
-            if let authority = param.authority { parameters["authority"] = authority }
-            if let major = param.major { parameters["major"] = major }
+            let parameters = makeQueryParameters(from: param)
+            return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
+        case .filterStudent(_, let param):
+            let parameters = makeQueryParameters(from: param)
             return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         case .lateList(_ , let date):
             return .requestParameters(parameters: ["date": date], encoding: URLEncoding.default)
@@ -109,9 +124,10 @@ extension StudentCouncilServices: TargetType {
              .studentList(let authorization):
             return ["Content-Type" :"application/json", "Authorization" : authorization]
         case .editAuthority(let authorization, _, _),
-             .changeBlackList(let authorization, _),
-             .cancelBlackList(let authorization, _),
+             .outingAllowed(let authorization, _, _),
+             .forceOuting(let authorization, _),
              .searchStudent(let authorization, _),
+             .filterStudent(let authorization, _),
              .lateList(let authorization, _),
              .statusOut(let authorization, _),
              .statusIn(let authorization, _):

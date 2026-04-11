@@ -15,11 +15,12 @@ public final class FilterBottomSheetVC: BaseViewController {
     
     // MARK: - Propertie
     var userList: [UserData] = []
-    let viewModel = StudentManagementViewModel()
+    private var viewModel: StudentManagementViewModel
     var studentManagementVC: StudentManagementViewController
             
-    init(studentManagementVC: StudentManagementViewController) {
+    init(studentManagementVC: StudentManagementViewController, viewModel: StudentManagementViewModel) {
         self.studentManagementVC = studentManagementVC
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
         
@@ -37,6 +38,7 @@ public final class FilterBottomSheetVC: BaseViewController {
         $0.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         $0.clipsToBounds = true
     }
+    
     
     private let titleLabel = UILabel().then {
         $0.text = "필터"
@@ -75,7 +77,7 @@ public final class FilterBottomSheetVC: BaseViewController {
     private lazy var womanButton = BottomSheetButton(frame: .zero, title: "여성")
     
     private lazy var majorLabel = makeSectionLabel(title: "학과")
-    private lazy var swButton = BottomSheetButton(frame: .zero, title: "sw")
+    private lazy var swButton = BottomSheetButton(frame: .zero, title: "SW")
     private lazy var iotButton = BottomSheetButton(frame: .zero, title: "iot")
     private lazy var aiButton = BottomSheetButton(frame: .zero, title: "ai")
     
@@ -93,9 +95,16 @@ public final class FilterBottomSheetVC: BaseViewController {
     
     @objc func roleTapped(sender: BottomSheetButton) {
         [studentButton, adminButton, blackListButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
-        let role = sender.isSelected ? (sender == studentButton ? "ROLE_STUDENT" : (sender == adminButton ? "ROLE_ADMIN" : nil)) : nil
+        let role = sender.isSelected ? (sender == studentButton ? "ROLE_STUDENT" : (sender == adminButton ? "ROLE_STUDENT_COUNCIL" : nil)) : nil
         viewModel.setupAuthority(authority: role)
-        if sender == blackListButton { viewModel.setupIsBlackList(isBlackList: sender.isSelected) }
+
+        
+        if sender == blackListButton {
+            viewModel.setupStatus(status: sender.isSelected ? "CANNOT_OUTING" : nil)
+        } else {
+            viewModel.setupStatus(status: nil)
+        }
+
         fetchData()
     }
     
@@ -136,7 +145,12 @@ public final class FilterBottomSheetVC: BaseViewController {
         fetchData()
     }
     private func fetchData() {
-        viewModel.serachStudent(searchString: nil) { self.studentManagementVC.userList = $0 }
+        viewModel.filterStudent { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.studentManagementVC.userList = self.viewModel.userListDatas
+            }
+        }
     }
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
