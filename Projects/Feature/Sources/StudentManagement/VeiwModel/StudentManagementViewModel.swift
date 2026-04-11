@@ -14,7 +14,6 @@ public struct UserData {
     let id: Int
     let name: String
     let profileImageURL: String?
-    let gender: String
     let grade: Int
     let major: String
     let authority: String
@@ -25,7 +24,7 @@ public struct UserData {
 public final class StudentManagementViewModel: BaseViewModel {
     private let studentCouncilProvider = MoyaProvider<StudentCouncilServices>()
     
-    var userList: [Student] = []
+    var userList: [Service.Student] = []
     var userListDatas: [UserData] = []
     
     private var grade: Int?
@@ -52,13 +51,12 @@ public final class StudentManagementViewModel: BaseViewModel {
             UserData(
                 id: $0.memberId,
                 name: $0.name,
-                profileImageURL: nil,
-                gender: "",
+                profileImageURL: $0.profileImageUrl,
                 grade: $0.grade,
                 major: $0.department,
-                authority: "",
-                isBlackList: false,
-                isOuting: false
+                authority: $0.role,
+                isBlackList: $0.status == "CANNOT_OUTING",
+                isOuting: $0.status == "OUTING"
             )
         }
     }
@@ -78,10 +76,10 @@ public final class StudentManagementViewModel: BaseViewModel {
     }
     
     func changeAuthority(user: UserData, completion: @escaping () -> Void) {
-        let newRole = user.authority == Authority.student.rawValue ? Authority.admin.rawValue : Authority.student.rawValue
-        let body = ["role": newRole]
+        let newRole: Authority = user.authority == Authority.student.rawValue ? .admin : .student
+        let body = AuthorityRequest(role: newRole.rawValue)
 
-        studentCouncilProvider.request(.changeRole(memberId: user.id, body: body, authorization: accessToken)) { response in
+        studentCouncilProvider.request(.editAuthority(authorization: accessToken, memberId: user.id, param: body)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
@@ -98,9 +96,9 @@ public final class StudentManagementViewModel: BaseViewModel {
     }
     
     func blackList(user: UserData, completion: @escaping () -> Void) {
-        let body = ["status": "CANNOT_OUTING"]
+        let body = OutingAllowedRequest(status: .cannotOuting)
 
-        studentCouncilProvider.request(.outingAllowed(memberId: user.id, body: body, authorization: accessToken)) { response in
+        studentCouncilProvider.request(.outingAllowed(authorization: accessToken, memberId: user.id, param: body)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
@@ -117,9 +115,9 @@ public final class StudentManagementViewModel: BaseViewModel {
     }
     
     func cancelBlackList(user: UserData, completion: @escaping () -> Void) {
-        let body = ["status": "COMING"]
+        let body = OutingAllowedRequest(status: .coming)
 
-        studentCouncilProvider.request(.outingAllowed(memberId: user.id, body: body, authorization: accessToken)) { response in
+        studentCouncilProvider.request(.outingAllowed(authorization: accessToken, memberId: user.id, param: body)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
@@ -136,7 +134,7 @@ public final class StudentManagementViewModel: BaseViewModel {
     }
 
     func forceOutingStudent(user: UserData, completion: @escaping () -> Void) {
-        studentCouncilProvider.request(.forceOuting(memberId: user.id, authorization: accessToken)) { response in
+        studentCouncilProvider.request(.forceOuting(authorization: accessToken, memberId: user.id)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {
@@ -152,13 +150,21 @@ public final class StudentManagementViewModel: BaseViewModel {
         }
     }
 
-    func serachStudent(searchString: String?, completion: @escaping () -> Void) {
+    func searchStudent(searchString: String?, completion: @escaping () -> Void) {
         guard let name = searchString, !name.isEmpty else {
             getUserList(completion: completion)
             return
         }
-
-        studentCouncilProvider.request(.searchStudent(name: name, authorization: accessToken)) { response in
+        
+        let param = SearchStudentRequest(
+            grade: nil,
+            gender: nil,
+            name: name,
+            isBlackList: nil,
+            authority: nil,
+            major: nil
+        )
+        studentCouncilProvider.request(.searchStudent(authorization: accessToken, param: param)) { response in
             switch response {
             case .success(let result):
                 if result.statusCode == 200 {

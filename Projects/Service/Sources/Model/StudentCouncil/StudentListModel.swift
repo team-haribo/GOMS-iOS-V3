@@ -17,4 +17,7 @@ public struct Student: Decodable {
     public let name: String
     public let grade: Int
     public let department: String
+    public let role: String
+    public let status: String
+    public let profileImageUrl: String?
 }

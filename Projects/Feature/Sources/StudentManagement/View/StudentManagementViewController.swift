@@ -76,7 +76,6 @@ public final class StudentManagementViewController: BaseViewController {
         setupCollectionView()
         setupSearchBar()
         
-        self.userList = StudentMockData.students
         
         viewModel.getUserList {
             if !self.viewModel.userListDatas.isEmpty {
@@ -116,7 +115,10 @@ public final class StudentManagementViewController: BaseViewController {
 
     @objc private func searchTextFieldDidChange(_ textField: UITextField) {
         let text = textField.text ?? ""
-        viewModel.serachStudent(searchString: text.isEmpty ? nil : text) { self.userList = $0 }
+        viewModel.searchStudent(searchString: text.isEmpty ? nil : text) { [weak self] in
+            guard let self = self else { return }
+            self.userList = self.viewModel.userListDatas
+        }
     }
     
     @objc private func filterButtonTapped() {

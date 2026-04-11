@@ -190,9 +190,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             isNegative: true,
             highlightKeywords: [],
             action: { [weak self] in
-                self?.viewModel.forceOutingStudent(user: data) {
-                    self?.studentManagementVC.userList = $0
-                    self?.dismiss(animated: true)
+                self?.viewModel.forceOutingStudent(user: data) { [weak self] in
+                    guard let self = self else { return }
+                    self.studentManagementVC.userList = self.viewModel.userListDatas
+                    self.dismiss(animated: true)
                 }
             }
         )
@@ -211,9 +212,15 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             highlightKeywords: isOn ? ["외출 금지"] : ["해제"],
             action: { [weak self] in
                 if isOn {
-                    self?.viewModel.blackList(user: data) { self?.studentManagementVC.userList = $0 }
+                    self?.viewModel.blackList(user: data) { [weak self] in
+                        guard let self = self else { return }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                    }
                 } else {
-                    self?.viewModel.cancelBlackList(user: data) { self?.studentManagementVC.userList = $0 }
+                    self?.viewModel.cancelBlackList(user: data) { [weak self] in
+                        guard let self = self else { return }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                    }
                 }
             },
             cancelAction: { [weak self] in
@@ -225,8 +232,9 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     @objc private func adminSwitchChanged() {
         guard let data = userData else { return }
         viewModel.changeAuthority(user: data) { [weak self] in
-            self?.studentManagementVC.userList = $0
-            self?.dismiss(animated: true)
+            guard let self = self else { return }
+            self.studentManagementVC.userList = self.viewModel.userListDatas
+            self.dismiss(animated: true)
         }
     }
 

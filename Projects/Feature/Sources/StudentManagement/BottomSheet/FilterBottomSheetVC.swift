@@ -136,7 +136,10 @@ public final class FilterBottomSheetVC: BaseViewController {
         fetchData()
     }
     private func fetchData() {
-        viewModel.serachStudent(searchString: nil) { self.studentManagementVC.userList = $0 }
+        viewModel.searchStudent(searchString: nil as String?) { [weak self] in
+            guard let self = self else { return }
+            self.studentManagementVC.userList = self.viewModel.userListDatas
+        }
     }
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
