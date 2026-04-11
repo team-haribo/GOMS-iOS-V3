@@ -10,8 +10,8 @@ import UIKit
 
 public final class MapReviewWriteViewController: UIViewController {
     
+    // MARK: - Properties
     private let mainView = MapReviewWriteView()
-    // 뷰모델을 생성자에서 초기화하도록 수정했습니다.
     private let viewModel: MapReviewWriteViewModel
     private let placeData: MapPlaceDetailModel
     private var isHeartSelected = false
@@ -19,7 +19,6 @@ public final class MapReviewWriteViewController: UIViewController {
     // MARK: - Life Cycle
     public init(placeData: MapPlaceDetailModel) {
         self.placeData = placeData
-        // 뷰모델 생성 시 placeData의 placeId를 넘겨주어 서버 통신 준비를 마칩니다.
         self.viewModel = MapReviewWriteViewModel(placeId: placeData.placeId)
         super.init(nibName: nil, bundle: nil)
     }
@@ -45,6 +44,7 @@ public final class MapReviewWriteViewController: UIViewController {
         mainView.heartButton.tintColor = isHeartSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub2.color
     }
     
+    // MARK: - Setup
     private func setupDelegate() {
         mainView.textView.delegate = self
     }
@@ -75,14 +75,14 @@ public final class MapReviewWriteViewController: UIViewController {
             )
         }
         
-        // 에러 발생 시 알림 처리 (선택 사항)
+        // 에러 발생 시 알림 처리
         viewModel.onErrorOccurred = { [weak self] errorMessage in
             guard let self = self else { return }
             print("에러 발생: \(errorMessage)")
-            // 필요시 에러 알럿을 띄울 수 있습니다.
         }
     }
     
+    // MARK: - Actions
     @objc private func didTapBack() {
         self.navigationController?.popViewController(animated: true)
     }
@@ -107,6 +107,7 @@ public final class MapReviewWriteViewController: UIViewController {
     }
 }
 
+// MARK: - UITextViewDelegate
 extension MapReviewWriteViewController: UITextViewDelegate {
     public func textViewDidChange(_ textView: UITextView) {
         viewModel.updateText(textView.text)

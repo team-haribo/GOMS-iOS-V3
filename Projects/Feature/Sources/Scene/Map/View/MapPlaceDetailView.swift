@@ -36,11 +36,17 @@ public final class MapPlaceDetailView: UIView {
     public let titleLabel = UILabel().then {
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
+        // MARK: - FIX (Text Fitting)
+        $0.adjustsFontSizeToFitWidth = true
+        $0.minimumScaleFactor = 0.7
+        $0.lineBreakMode = .byTruncatingTail
     }
     
     public let categoryLabel = UILabel().then {
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
+        // MARK: - FIX (Compression Resistance)
+        $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
     
     public let heartButton = UIButton().then {
@@ -217,6 +223,7 @@ public final class MapPlaceDetailView: UIView {
             $0.width.equalTo(scrollView.frameLayoutGuide)
         }
         
+        // MARK: - FIX (Layout Constraints)
         titleLabel.snp.makeConstraints {
             $0.top.equalToSuperview().offset(Metric.topMargin)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
@@ -225,6 +232,8 @@ public final class MapPlaceDetailView: UIView {
         categoryLabel.snp.makeConstraints {
             $0.leading.equalTo(titleLabel.snp.trailing).offset(8)
             $0.bottom.equalTo(titleLabel.snp.bottom).offset(-2)
+            // 카테고리 레이블이 하트 버튼 왼쪽까지만 가도록 제한
+            $0.trailing.lessThanOrEqualTo(heartButton.snp.leading).offset(-8)
         }
 
         closeButton.snp.makeConstraints {
@@ -242,11 +251,13 @@ public final class MapPlaceDetailView: UIView {
         addressLabel.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin) // 우측 여백 추가
         }
         
         infoLabel.snp.makeConstraints {
             $0.top.equalTo(addressLabel.snp.bottom).offset(4)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin) // 우측 여백 추가
         }
         
         reviewCountLabel.snp.makeConstraints {
