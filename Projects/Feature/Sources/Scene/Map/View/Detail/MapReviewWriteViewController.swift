@@ -11,13 +11,16 @@ import UIKit
 public final class MapReviewWriteViewController: UIViewController {
     
     private let mainView = MapReviewWriteView()
-    private let viewModel = MapReviewWriteViewModel()
+    // 뷰모델을 생성자에서 초기화하도록 수정했습니다.
+    private let viewModel: MapReviewWriteViewModel
     private let placeData: MapPlaceDetailModel
     private var isHeartSelected = false
     
     // MARK: - Life Cycle
     public init(placeData: MapPlaceDetailModel) {
         self.placeData = placeData
+        // 뷰모델 생성 시 placeData의 placeId를 넘겨주어 서버 통신 준비를 마칩니다.
+        self.viewModel = MapReviewWriteViewModel(placeId: placeData.placeId)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -53,10 +56,12 @@ public final class MapReviewWriteViewController: UIViewController {
     }
     
     private func bindViewModel() {
+        // 버튼 활성화 상태 업데이트
         viewModel.onNextButtonStateChanged = { [weak self] isEnabled in
             self?.mainView.updateButtonState(isEnabled: isEnabled)
         }
         
+        // 서버 등록 성공 시 처리
         viewModel.onReviewSuccess = { [weak self] in
             guard let self = self else { return }
             ReviewAlert.show(
@@ -64,9 +69,17 @@ public final class MapReviewWriteViewController: UIViewController {
                 title: "후기 등록 완료",
                 message: "후기를 성공적으로 등록했습니다!",
                 completion: { [weak self] in
+                    // 이전 화면(상세보기)으로 돌아가기
                     self?.navigationController?.popViewController(animated: true)
                 }
             )
+        }
+        
+        // 에러 발생 시 알림 처리 (선택 사항)
+        viewModel.onErrorOccurred = { [weak self] errorMessage in
+            guard let self = self else { return }
+            print("에러 발생: \(errorMessage)")
+            // 필요시 에러 알럿을 띄울 수 있습니다.
         }
     }
     
@@ -87,6 +100,7 @@ public final class MapReviewWriteViewController: UIViewController {
             title: "후기 등록",
             message: "이 후기를 등록하시겠습니까?",
             completion: { [weak self] in
+                // 뷰모델의 서버 등록 함수 호출 (writeReview 실행)
                 self?.viewModel.postReview()
             }
         )
