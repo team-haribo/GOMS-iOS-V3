@@ -12,15 +12,13 @@ import KakaoMapsSDK
 import Service
 import Moya
 
-public final class MapViewController: UIViewController {
+public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate {
     
     // MARK: - Properties
     private let placeProvider = MoyaProvider<PlaceServices>()
     
     private var accessToken: String {
-        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
-            return ""
-        }
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else { return "" }
         return "Bearer \(token)"
     }
     
@@ -28,7 +26,11 @@ public final class MapViewController: UIViewController {
     private var mapController: KMController?
     private let mapWrapperView = UIView()
     
-    private var dummyRecentSearches = MapMockData.recentSearches
+    private var dummyRecentSearches: [MapPlaceData] = [] {
+        didSet {
+            self.recentSearchView.tableView.reloadData()
+        }
+    }
     
     private var dummyReviews: [MapReview] = [] {
         didSet {
@@ -42,15 +44,12 @@ public final class MapViewController: UIViewController {
     
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
-    
     private let recentSearchView = MapRecentSearchView().then {
         $0.isHidden = true
         $0.backgroundColor = .color.background.color
         $0.tableView.backgroundColor = .color.background.color
     }
-
     private let bottomSheetView = MapBottomSheetView()
-    
     private let placeDetailView = MapPlaceDetailView().then {
         $0.isHidden = true
         $0.clipsToBounds = true
@@ -58,10 +57,8 @@ public final class MapViewController: UIViewController {
     
     private var bottomSheetHeight: Constraint?
     private var detailSheetHeight: Constraint?
-    
     private let defaultHeight: CGFloat = 240
     private let detailMinHeight: CGFloat = 225
-    
     private var selectedPlaceId: Int = -1
 
     // MARK: - Life Cycle
@@ -73,12 +70,13 @@ public final class MapViewController: UIViewController {
         setupGesture()
         setupActions()
         setupReviewWriteAction()
-        fetchHotPlaces()
+        
+        syncPlaces()
+        fetchRecommendedCount()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
         if mapController == nil {
             setupMap()
         } else {
@@ -96,9 +94,7 @@ public final class MapViewController: UIViewController {
     }
 
     private func setupLayout() {
-        mapWrapperView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
+        mapWrapperView.snp.makeConstraints { $0.edges.equalToSuperview() }
         routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         routeSelectionView.recommendationStackView.snp.remakeConstraints {
@@ -114,7 +110,6 @@ public final class MapViewController: UIViewController {
         }
         
         recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        
         recentSearchView.titleStack.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(24)
@@ -152,20 +147,17 @@ public final class MapViewController: UIViewController {
         
         bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
+        searchBar.textField.addTarget(self, action: #selector(performSearch), for: .editingDidEndOnExit)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
 
         placeDetailView.onHeartToggled = { [weak self] isSelected in
             guard let self = self, self.selectedPlaceId != -1 else { return }
-            let placeId = self.selectedPlaceId
+            let service: PlaceServices = isSelected ?
+                .recommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken) :
+                .cancelRecommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken)
             
-            if isSelected {
-                self.placeProvider.request(.recommendPlace(placeId: placeId, authorization: self.accessToken)) { result in
-                    if case .success(let response) = result { print("추천 성공: \(response.statusCode)") }
-                }
-            } else {
-                self.placeProvider.request(.cancelRecommendPlace(placeId: placeId, authorization: self.accessToken)) { result in
-                    if case .success(let response) = result { print("추천 취소 성공: \(response.statusCode)") }
-                }
+            self.placeProvider.request(service) { [weak self] _ in
+                self?.fetchRecommendedCount()
             }
         }
 
@@ -183,64 +175,64 @@ public final class MapViewController: UIViewController {
         placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
     }
 
-    // MARK: - API Methods
-    private func fetchHotPlaces() {
-        placeProvider.request(.getHotPlaces(authorization: accessToken)) { result in
-            if case .success(let response) = result { print("핫플레이스 로드 성공: \(response.statusCode)") }
+    // MARK: - Networking
+    private func syncPlaces() {
+        placeProvider.request(.syncPlaces(authorization: accessToken)) { result in
+            if case .success = result { print("장소 동기화 완료") }
+        }
+    }
+
+    private func fetchRecommendedCount() {
+        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { result in
+            if case .success(let response) = result {
+                print("추천 개수: \(response.statusCode)")
+            }
         }
     }
 
     private func fetchReviews(placeId: Int) {
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: self.accessToken)) { [weak self] result in
-            switch result {
-            case .success(let response):
-                do {
-                    let decodedData = try JSONDecoder().decode([MapReview].self, from: response.data)
-                    self?.dummyReviews = decodedData
-                } catch {
-                    print("리뷰 디코딩 실패: \(error)")
-                    self?.dummyReviews = []
+            if case .success(let response) = result {
+                let decodedData = try? JSONDecoder().decode([MapReview].self, from: response.data)
+                self?.dummyReviews = decodedData ?? []
+            }
+        }
+    }
+
+    @objc private func performSearch() {
+        guard let keyword = searchBar.textField.text, !keyword.isEmpty else { return }
+        
+        placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let response) = result {
+                let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data)
+                let results = decodedData ?? []
+                self.dummyRecentSearches = results
+                
+                if results.isEmpty {
+                    self.recentSearchView.titleLabel.text = "검색 결과가 없습니다"
+                } else {
+                    self.recentSearchView.titleLabel.text = "'\(keyword)' 검색 결과"
                 }
-            case .failure(let error):
-                print("리뷰 목록 호출 실패: \(error.localizedDescription)")
             }
         }
     }
     
-    // MARK: - Actions
     @objc private func didTapReviewWrite() {
         guard selectedPlaceId != -1 else { return }
-        
-        var detailData = MapMockData.detailExample
-        detailData = MapPlaceDetailModel(
-            placeId: selectedPlaceId,
-            placeName: detailData.placeName,
-            address: detailData.address,
-            roadAddress: detailData.roadAddress,
-            latitude: detailData.latitude,
-            longitude: detailData.longitude,
-            categoryGroupName: detailData.categoryGroupName,
-            categoryName: detailData.categoryName,
-            phone: detailData.phone,
-            placeUrl: detailData.placeUrl,
-            reviewCount: detailData.reviewCount,
-            recommendCount: detailData.recommendCount,
-            recommended: detailData.recommended
-        )
-        
+        let detailData = MapMockData.detailExample
         let reviewWriteVC = MapReviewWriteViewController(placeData: detailData)
         self.navigationController?.pushViewController(reviewWriteVC, animated: true)
     }
 
+    // MARK: - Gestures
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let isDetail = gesture.view == placeDetailView
         let translation = gesture.translation(in: view)
         let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
         let newHeight = currentHeight - translation.y
-        
         let minH = isDetail ? detailMinHeight : defaultHeight
-        let gap: CGFloat = 20
-        let maxH = view.frame.height - (searchBar.frame.maxY + gap)
+        let maxH = view.frame.height - (searchBar.frame.maxY + 20)
         
         if gesture.state == .changed {
             let clampedHeight = max(minH, min(newHeight, maxH))
@@ -249,8 +241,7 @@ public final class MapViewController: UIViewController {
         } else if gesture.state == .ended {
             let velocity = gesture.velocity(in: view).y
             let targetHeight: CGFloat = (velocity < -500 || (velocity <= 500 && newHeight > (minH + maxH) / 2)) ? maxH : minH
-
-            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+            UIView.animate(withDuration: 0.3) {
                 if isDetail { self.detailSheetHeight?.update(offset: targetHeight) }
                 else { self.bottomSheetHeight?.update(offset: targetHeight) }
                 self.view.layoutIfNeeded()
@@ -259,45 +250,35 @@ public final class MapViewController: UIViewController {
         gesture.setTranslation(.zero, in: view)
     }
 
+    private func setupGesture() {
+        bottomSheetView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
+        placeDetailView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
+    }
+
+    // MARK: - View Transition
     private func showDetailView(with data: MapPlaceData? = nil) {
-        let detailModel: MapPlaceDetailModel
-        let mockDetail = MapMockData.detailExample
-        
         if let data = data {
-            self.selectedPlaceId = data.placeId
-            detailModel = MapPlaceDetailModel(
-                placeId: data.placeId,
-                placeName: mockDetail.placeName,
-                address: mockDetail.address,
-                roadAddress: mockDetail.roadAddress,
-                latitude: mockDetail.latitude,
-                longitude: mockDetail.longitude,
-                categoryGroupName: mockDetail.categoryGroupName,
-                categoryName: mockDetail.categoryName,
-                phone: "", placeUrl: "",
-                reviewCount: mockDetail.reviewCount,
-                recommendCount: mockDetail.recommendCount,
-                recommended: mockDetail.recommended
-            )
+            placeProvider.request(.getPlaceDetail(placeId: data.placeId, authorization: accessToken)) { [weak self] result in
+                if case .success(let response) = result {
+                    if let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
+                        self?.selectedPlaceId = detailModel.placeId
+                        self?.placeDetailView.configure(with: detailModel)
+                        self?.fetchReviews(placeId: detailModel.placeId)
+                    }
+                }
+            }
         } else {
-            detailModel = mockDetail
+            let detailModel = MapMockData.detailExample
             self.selectedPlaceId = detailModel.placeId
+            fetchReviews(placeId: self.selectedPlaceId)
+            placeDetailView.configure(with: detailModel)
         }
-        
-        fetchReviews(placeId: self.selectedPlaceId)
-        placeDetailView.configure(with: detailModel)
         
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = false
         searchBar.isHidden = false
         detailSheetHeight?.update(offset: detailMinHeight)
-        
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
-    }
-    
-    private func setupGesture() {
-        bottomSheetView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
-        placeDetailView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
     }
 
     @objc private func hideDetailView() {
@@ -316,6 +297,7 @@ public final class MapViewController: UIViewController {
         recentSearchView.isHidden = true
         searchBar.updateState(.home)
         searchBar.isHidden = false
+        searchBar.textField.text = ""
         view.endEditing(true)
     }
 
@@ -323,6 +305,7 @@ public final class MapViewController: UIViewController {
         if !placeDetailView.isHidden { hideDetailView() }
         searchBar.updateState(.search)
         recentSearchView.isHidden = false
+        recentSearchView.titleLabel.text = "최근 검색"
     }
 
     @objc private func didTapArriveRoute() {
@@ -341,25 +324,81 @@ public final class MapViewController: UIViewController {
         UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
     }
     
-    // MARK: - Map
+    // MARK: - Kakao Maps
     private func setupMap() {
         mapWrapperView.layoutIfNeeded()
         let container = KMViewContainer(frame: mapWrapperView.bounds)
         container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         mapWrapperView.addSubview(container)
         self.mapContainer = container
-
         let controller = KMController(viewContainer: container)
+        controller.delegate = self
         self.mapController = controller
         controller.prepareEngine()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.mapController?.activateEngine()
+        }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self, let controller = self.mapController else { return }
-            controller.activateEngine()
-            // 광주 송정동 좌표로 수정 (기존 서울 좌표 127.0326, 37.4980에서 변경)
-            let defaultPosition = MapPoint(longitude: 126.7915, latitude: 35.1398)
-            let mapviewInfo = MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPosition, defaultLevel: 15)
-            controller.addView(mapviewInfo)
+    public func addViews() {
+        let defaultPosition = MapPoint(longitude: 126.8106, latitude: 35.1461)
+        let mapviewInfo = MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPosition, defaultLevel: 15)
+        mapController?.addView(mapviewInfo)
+    }
+    
+    public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
+        guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
+        view.eventDelegate = self
+        createPoiStyle()
+        let manager = view.getLabelManager()
+        let layerOptions = LabelLayerOptions(layerID: "poiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 10000)
+        let _ = manager.addLabelLayer(option: layerOptions)
+    }
+
+    private func createPoiStyle() {
+        guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
+        let manager = view.getLabelManager()
+        guard let rawImage = UIImage(named: "ic_route_location_pin") else { return }
+        
+        let renderer = UIGraphicsImageRenderer(size: rawImage.size)
+        let bitmapImage = renderer.image { _ in
+            rawImage.draw(in: CGRect(origin: .zero, size: rawImage.size))
+        }
+        
+        let iconStyle = PoiIconStyle(symbol: bitmapImage, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+        let poiStyle = PoiStyle(styleID: "customStyle", styles: [PerLevelPoiStyle(iconStyle: iconStyle, level: 0)])
+        manager.addPoiStyle(poiStyle)
+    }
+
+    public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) {
+        let manager = kakaoMap.getLabelManager()
+        guard let layer = manager.getLabelLayer(layerID: "poiLayer") else { return }
+        
+        if let allPois = layer.getAllPois() {
+            layer.removePois(poiIDs: allPois.map { $0.itemID })
+        }
+        
+        let mapPoint = kakaoMap.getPosition(point)
+        let option = PoiOptions(styleID: "customStyle", poiID: "tappedPoint")
+        option.clickable = true
+        
+        if let poi = layer.addPoi(option: option, at: mapPoint) {
+            poi.show()
+        
+            kakaoMap.animateCamera(
+                cameraUpdate: CameraUpdate.make(target: mapPoint, zoomLevel: 15, mapView: kakaoMap),
+                options: CameraAnimationOptions(autoElevation: false, consecutive: true, durationInMillis: 300)
+            )
+            showDetailView()
+        }
+    }
+
+    public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String) {
+        if poiID == "tappedPoint" {
+            showDetailView()
+        } else if let id = Int(poiID) {
+            let selectedData = dummyRecentSearches.first(where: { $0.placeId == id })
+            showDetailView(with: selectedData)
         }
     }
     
@@ -375,7 +414,7 @@ public final class MapViewController: UIViewController {
     }
 }
 
-// MARK: - TableView Delegate & DataSource
+// MARK: - TableView Extensions
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
@@ -384,7 +423,7 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
-            cell.configure(model: dummyRecentSearches[indexPath.row], date: "26.02.11")
+            cell.configure(model: dummyRecentSearches[indexPath.row], date: "26.04.11")
             cell.backgroundColor = .clear
             cell.onDeleteTap = { [weak self, weak tableView] in
                 guard let self = self, let tableView = tableView,
@@ -403,8 +442,10 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
                     if let currentIndexPath = tableView.indexPath(for: cell) {
                         let reviewToDelete = self.dummyReviews[currentIndexPath.row]
-                        self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { [weak self] _ in
-                            self?.dummyReviews.remove(at: currentIndexPath.row)
+                        self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { result in
+                            if case .success = result {
+                                self.dummyReviews.remove(at: currentIndexPath.row)
+                            }
                         }
                     }
                 }
@@ -412,7 +453,7 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             
             cell.onReportTap = { [weak self] in
                 guard let self = self else { return }
-                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { print("신고 처리 완료") }
+                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { }
             }
             return cell
         }
@@ -425,6 +466,14 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             searchBar.updateState(.home)
             view.endEditing(true)
             showDetailView(with: selectedData)
+            
+            if let view = mapController?.getView("mapview") as? KakaoMap {
+                let targetPoint = MapPoint(longitude: selectedData.longitude, latitude: selectedData.latitude)
+                view.animateCamera(
+                    cameraUpdate: CameraUpdate.make(target: targetPoint, zoomLevel: 15, mapView: view),
+                    options: CameraAnimationOptions(autoElevation: false, consecutive: true, durationInMillis: 300)
+                )
+            }
         }
     }
 }
