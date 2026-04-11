@@ -39,6 +39,7 @@ public enum MapMockData {
         )
     ]
     
+    // 이 부분에 테스트용 데이터를 넣을 때 reviewId를 포함시키면 됩니다.
     public static let reviews: [MapReview] = []
     
     public static let detailExample = MapPlaceDetailModel(

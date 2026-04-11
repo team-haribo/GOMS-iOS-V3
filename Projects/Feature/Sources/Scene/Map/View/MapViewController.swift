@@ -17,6 +17,14 @@ public final class MapViewController: UIViewController {
     // MARK: - Properties
     private let placeProvider = MoyaProvider<PlaceServices>()
     
+    // KeyChain에서 accessToken을 읽어와 Bearer 형식을 만드는 로직 적용
+    private var accessToken: String {
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
+            return ""
+        }
+        return "Bearer \(token)"
+    }
+    
     private var mapContainer: KMViewContainer?
     private var mapController: KMController?
     private let mapWrapperView = UIView()
@@ -147,12 +155,20 @@ public final class MapViewController: UIViewController {
 
         placeDetailView.onHeartToggled = { [weak self] isSelected in
             guard let self = self else { return }
-            // 현재 상세 페이지의 placeId를 가져와서 추천/취소 API 호출
             let placeId = MapMockData.detailExample.placeId
+            
             if isSelected {
-                self.placeProvider.request(.recommendPlace(placeId: placeId)) { _ in }
+                self.placeProvider.request(.recommendPlace(placeId: placeId, authorization: self.accessToken)) { result in
+                    if case .success(let response) = result {
+                        print("추천 성공: \(response.statusCode)")
+                    }
+                }
             } else {
-                self.placeProvider.request(.cancelRecommendPlace(placeId: placeId)) { _ in }
+                self.placeProvider.request(.cancelRecommendPlace(placeId: placeId, authorization: self.accessToken)) { result in
+                    if case .success(let response) = result {
+                        print("추천 취소 성공: \(response.statusCode)")
+                    }
+                }
             }
         }
 
@@ -172,10 +188,9 @@ public final class MapViewController: UIViewController {
 
     // MARK: - API Methods
     private func fetchHotPlaces() {
-        placeProvider.request(.getHotPlaces) { result in
+        placeProvider.request(.getHotPlaces(authorization: accessToken)) { result in
             switch result {
             case .success(let response):
-                // 여기서 받아온 데이터로 bottomSheetView 등을 업데이트할 수 있습니다.
                 print("핫플레이스 로드 성공: \(response.statusCode)")
             case .failure(let error):
                 print("핫플레이스 로드 실패: \(error)")
@@ -382,6 +397,8 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
                 guard let self = self, let tableView = tableView else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
                     if let currentIndexPath = tableView.indexPath(for: cell) {
+                        // 리뷰 삭제 API 호출 시에도 토큰 사용 적용
+                        self.placeProvider.request(.deleteReview(reviewId: data.reviewId, authorization: self.accessToken)) { _ in }
                         self.dummyReviews.remove(at: currentIndexPath.row)
                     }
                 }
