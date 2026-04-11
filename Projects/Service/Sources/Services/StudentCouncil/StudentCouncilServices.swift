@@ -83,6 +83,19 @@ extension StudentCouncilServices: TargetType {
     }
     
     public var task: Task {
+        func makeQueryParameters(from param: SearchStudentRequest) -> [String: Any] {
+            var parameters: [String: Any] = [:]
+            
+            if let name = param.name { parameters["name"] = name }
+            if let grade = param.grade { parameters["grade"] = grade }
+            if let gender = param.gender { parameters["gender"] = gender }
+            if let authority = param.authority { parameters["role"] = authority }
+            if let major = param.major { parameters["department"] = major }
+            if let status = param.status { parameters["status"] = status }
+            
+            return parameters
+        }
+        
         switch self {
         case .makeQRCode,
              .studentList,
@@ -95,26 +108,10 @@ extension StudentCouncilServices: TargetType {
         case .outingAllowed(_, _, let param):
             return .requestJSONEncodable(param)
         case .searchStudent(_, let param):
-            var parameters: [String: Any] = [:]
-            
-            if let name = param.name { parameters["name"] = name }
-            if let grade = param.grade { parameters["grade"] = grade }
-            if let gender = param.gender { parameters["gender"] = gender }
-            if let authority = param.authority { parameters["role"] = authority }
-            if let major = param.major { parameters["department"] = major }
-            if let status = param.status { parameters["status"] = status }
-            
+            let parameters = makeQueryParameters(from: param)
             return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         case .filterStudent(_, let param):
-            var parameters: [String: Any] = [:]
-            
-            if let name = param.name { parameters["name"] = name }
-            if let grade = param.grade { parameters["grade"] = grade }
-            if let gender = param.gender { parameters["gender"] = gender }
-            if let authority = param.authority { parameters["role"] = authority }
-            if let major = param.major { parameters["department"] = major }
-            if let status = param.status { parameters["status"] = status }
-            
+            let parameters = makeQueryParameters(from: param)
             return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         case .lateList(_ , let date):
             return .requestParameters(parameters: ["date": date], encoding: URLEncoding.default)
