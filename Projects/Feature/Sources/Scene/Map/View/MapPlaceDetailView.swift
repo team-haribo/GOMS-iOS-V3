@@ -12,6 +12,7 @@ import Then
 
 public final class MapPlaceDetailView: UIView {
     
+    // MARK: - Metric
     private enum Metric {
         static let topMargin: CGFloat = 34
         static let sideMargin: CGFloat = 24
@@ -137,8 +138,10 @@ public final class MapPlaceDetailView: UIView {
         $0.textColor = .color.sub2.color
     }
 
+    // MARK: - Properties
     public var onHeartToggled: ((Bool) -> Void)?
 
+    // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -289,6 +292,7 @@ public final class MapPlaceDetailView: UIView {
         }
     }
 
+    // MARK: - Actions
     private func bindActions() {
         heartButton.addTarget(self, action: #selector(heartButtonTapped), for: .touchUpInside)
     }

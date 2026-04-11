@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Service
 
 // MARK: - Place Detail Data
 public struct MapPlaceDetailModel: Codable {
@@ -53,4 +54,9 @@ public struct MapPlaceDetailModel: Codable {
         self.recommendCount = recommendCount
         self.recommended = recommended
     }
+}
+
+// MARK: - Review List Response
+public struct MapPlaceReviewResponse: Codable {
+    public let reviews: [MapReview]
 }
