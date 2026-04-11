@@ -126,8 +126,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     private func setupData() {
         guard let data = userData else { return }
-        print("현재 authority:", data.authority)
-        
+
         if data.isOuting {
             outingTitleLabel.text = "강제외출 복귀"
             outingDescLabel.text = "학생을 강제외출 복귀 시켜요"

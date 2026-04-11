@@ -77,7 +77,7 @@ public final class FilterBottomSheetVC: BaseViewController {
     private lazy var womanButton = BottomSheetButton(frame: .zero, title: "여성")
     
     private lazy var majorLabel = makeSectionLabel(title: "학과")
-    private lazy var swButton = BottomSheetButton(frame: .zero, title: "sw")
+    private lazy var swButton = BottomSheetButton(frame: .zero, title: "SW")
     private lazy var iotButton = BottomSheetButton(frame: .zero, title: "iot")
     private lazy var aiButton = BottomSheetButton(frame: .zero, title: "ai")
     
@@ -97,7 +97,14 @@ public final class FilterBottomSheetVC: BaseViewController {
         [studentButton, adminButton, blackListButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
         let role = sender.isSelected ? (sender == studentButton ? "ROLE_STUDENT" : (sender == adminButton ? "ROLE_STUDENT_COUNCIL" : nil)) : nil
         viewModel.setupAuthority(authority: role)
-        if sender == blackListButton { viewModel.setupIsBlackList(isBlackList: sender.isSelected) }
+
+        
+        if sender == blackListButton {
+            viewModel.setupStatus(status: sender.isSelected ? "CANNOT_OUTING" : nil)
+        } else {
+            viewModel.setupStatus(status: nil)
+        }
+
         fetchData()
     }
     
@@ -138,9 +145,11 @@ public final class FilterBottomSheetVC: BaseViewController {
         fetchData()
     }
     private func fetchData() {
-        viewModel.searchStudent(searchString: nil) { [weak self] in
+        viewModel.filterStudent { [weak self] in
             guard let self = self else { return }
-            self.studentManagementVC.userList = self.viewModel.userListDatas
+            DispatchQueue.main.async {
+                self.studentManagementVC.userList = self.viewModel.userListDatas
+            }
         }
     }
     @objc func resetButtonTapped() {
