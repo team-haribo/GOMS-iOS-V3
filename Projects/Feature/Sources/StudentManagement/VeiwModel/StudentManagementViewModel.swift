@@ -70,8 +70,8 @@ public final class StudentManagementViewModel: BaseViewModel {
                 grade: $0.grade,
                 major: $0.department,
                 authority: $0.role,
-                isBlackList: $0.status == "CANNOT_OUTING",
-                isOuting: $0.status == "OUTING"
+                isBlackList: $0.status == OutingStatus.cannotOuting.rawValue,
+                isOuting: $0.status == OutingStatus.outing.rawValue
             )
         }
     }
