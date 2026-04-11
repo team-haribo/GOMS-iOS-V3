@@ -28,13 +28,17 @@ private var isRequesting: Bool = false
         }
         
         isRequesting = true
-        outingProvider.request(.outingOut(uuid: outingUUID.uuidString, exp: self.exp, authorization: accessToken)) { response in
+        let body = OutingRequestDTO(
+            uuid: outingUUID.uuidString,
+            exp: self.exp > 10000000000 ? self.exp / 1000 : self.exp
+        )
+        outingProvider.request(.outingOut(body: body, authorization: accessToken)) { response in
             defer { self.isRequesting = false }
             switch response {
             case .success(let result):
                 let statusCode = result.statusCode
                 switch statusCode {
-                case 204:
+                case 200:
                     self.profileViewModel.loadProfileInfo { success, authority in
                         if success {
                             if let profileInfo = self.profileViewModel.profileInfo {
@@ -50,6 +54,9 @@ private var isRequesting: Bool = false
                             print("Failed to load profile info")
                         }
                     }
+                case 409:
+                  
+                    self.comeback(completion: completion)
                 case 400:
                     self.profileViewModel.loadProfileInfo { success, authority in
                         if success {
@@ -67,12 +74,40 @@ private var isRequesting: Bool = false
                         completion("fail")
                     }
                 case 500:
-                    print("SERVER ERROR")
+                    print("SERVER ERROR - 500 (body format or server issue)")
+                    completion("fail")
                 default:
                     print(result)
                 }
             case .failure(let err):
-                print(err.localizedDescription)
+                print("Network Error:", err.localizedDescription)
+                completion("fail")
+            }
+        }
+    }
+    
+    func comeback(completion: @escaping (String) -> Void) {
+        let body = OutingRequestDTO(
+            uuid: outingUUID.uuidString,
+            exp: self.exp > 10000000000 ? self.exp / 1000 : self.exp
+        )
+        outingProvider.request(.outingIn(body: body, authorization: accessToken)) { response in
+            switch response {
+            case .success(let result):
+                switch result.statusCode {
+                case 200:
+                    completion("comeback")
+                case 401:
+                    self.gomsRefreshToken.tokenReissuance { _ in
+                        completion("fail")
+                    }
+                default:
+                    print(result)
+                    completion("fail")
+                }
+            case .failure(let err):
+                print("Network Error:", err.localizedDescription)
+                completion("fail")
             }
         }
     }

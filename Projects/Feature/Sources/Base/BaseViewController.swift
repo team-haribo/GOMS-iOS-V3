@@ -21,6 +21,11 @@ public class BaseViewController: UIViewController {
     private let customNavView = UIView()
     private let backButton = UIButton(type: .system)
 
+  
+    func shouldShowCustomNavigation() -> Bool {
+        return true
+    }
+
     // MARK: - Life Cycle
 
     public override func viewDidLoad() {
@@ -45,6 +50,12 @@ public class BaseViewController: UIViewController {
         super.viewWillAppear(animated)
 
         navigationController?.navigationBar.isHidden = true
+
+        if shouldShowCustomNavigation() == false {
+            customNavView.isHidden = true
+            configNavigation()
+            return
+        }
 
         if let nav = navigationController {
 

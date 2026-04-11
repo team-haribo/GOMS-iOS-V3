@@ -448,7 +448,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 return
             }
             
-            // Removed debug print for profile data
+          
             self.setupProfileView()
             self.setupViewComponents()
             self.latecomerCollectionView.reloadData()
@@ -495,7 +495,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         let lateCount = profile?.lateCount ?? 0
         let status = profile?.status ?? "UNKNOWN"
 
-        // Set basicsProfileView image using Kingfisher and placeholder
+       
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
             basicsProfileView.profileImageView.kf.setImage(
@@ -510,7 +510,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         basicsProfileView.nameLabel.text = name
         profileView.nameLabel.text = name
 
-        // Set profileView image using Kingfisher and placeholder
+      
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
             profileView.profileImageView.kf.setImage(

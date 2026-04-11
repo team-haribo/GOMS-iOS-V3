@@ -10,7 +10,11 @@ import UIKit
 import AVFoundation
 import Vision
 
-public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutputObjectsDelegate {
+
+    override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
 
     let viewModel = QRCodeViewModel()
 
@@ -20,6 +24,9 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     let metadataObjectTypes: [AVMetadataObject.ObjectType] = [.qr]
 
     private var isScanningEnabled = true
+    private var lastUsedUUID: String?
+    private var lastScanTime = Date(timeIntervalSince1970: 0)
+    private let scanInterval: TimeInterval = 0.3
 
     private let gomsLogo = UIImageView().then {
         $0.image = .image.gomsWhiteLogo.image
@@ -37,46 +44,49 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
     // MARK: - Life Cycle
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.view.backgroundColor = .clear
-        self.navigationController?.navigationBar.isHidden = true
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
         self.navigationItem.hidesBackButton = true
+        self.navigationItem.leftBarButtonItem = nil
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
     }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+        addView()
+        setLayout()
         setupCamera()
     }
 
     // MARK: - Selector
     @objc func closeButtonDidTap() {
-        if let navigationController = self.navigationController, navigationController.viewControllers.count > 1 {
-            navigationController.popViewController(animated: true)
+        if let navigationController = self.navigationController {
+            navigationController.popToRootViewController(animated: true)
         } else {
-            let mainViewController = MainViewController()
-            self.navigationController?.pushViewController(mainViewController, animated: true)
+            self.dismiss(animated: true)
         }
     }
 
     // MARK: - Add View
     public override func addView() {
-        [gomsLogo, closeButton, qrFrame].forEach { self.view.addSubview($0) }
+        [closeButton, qrFrame].forEach { self.view.addSubview($0) }
     }
 
     // MARK: - Layout
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        previewLayer?.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
+        previewLayer?.frame = view.bounds
     }
 
     public override func setLayout() {
-        gomsLogo.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(48)
-            $0.leading.equalToSuperview()
-        }
 
         closeButton.snp.makeConstraints {
             $0.width.height.equalTo(24)
-            $0.top.equalToSuperview().offset(64)
+            $0.top.equalTo(self.view.safeAreaLayoutGuide).offset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
 
@@ -117,68 +127,79 @@ public class StudentQRViewController: BaseViewController, AVCaptureVideoDataOutp
             return
         }
 
-        let output = AVCaptureVideoDataOutput()
-        output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-        captureSession.addOutput(output)
+        let metadataOutput = AVCaptureMetadataOutput()
+        captureSession.addOutput(metadataOutput)
+
+        metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        metadataOutput.metadataObjectTypes = [.qr]
 
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer?.videoGravity = .resizeAspectFill
         if let previewLayer = previewLayer {
-            view.layer.addSublayer(previewLayer)
+            view.layer.insertSublayer(previewLayer, at: 0)
         }
 
         DispatchQueue.global().async {
             self.captureSession.startRunning()
         }
     }
+}
+extension StudentQRViewController {
 
-    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard isScanningEnabled, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+    public func metadataOutput(_ output: AVCaptureMetadataOutput,
+                              didOutput metadataObjects: [AVMetadataObject],
+                              from connection: AVCaptureConnection) {
 
-        let request = VNDetectBarcodesRequest { [weak self] request, error in
-            guard let self = self else { return }
-            if let error = error {
-                print("QR 코드 감지 중 오류 발생: \(error.localizedDescription)")
-                return
-            }
+        let now = Date()
+        guard now.timeIntervalSince(lastScanTime) > scanInterval else { return }
+        lastScanTime = now
 
-            guard let barcodes = request.results as? [VNBarcodeObservation] else { return }
+        guard isScanningEnabled,
+              let metadataObject = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              let payload = metadataObject.stringValue else { return }
 
-            for barcode in barcodes {
-                if let payload = barcode.payloadStringValue {
-                    DispatchQueue.main.async {
-                        let qrFrameRect = self.qrFrame.convert(self.qrFrame.bounds, to: self.view)
+        print("QR detected:", payload)
 
-                        let boundingBox = barcode.boundingBox
-                        let barcodeTopLeft = CGPoint(x: boundingBox.minX * self.view.bounds.width, y: boundingBox.minY * self.view.bounds.height)
-                        let barcodeTopRight = CGPoint(x: boundingBox.maxX * self.view.bounds.width, y: boundingBox.minY * self.view.bounds.height)
-                        let barcodeBottomLeft = CGPoint(x: boundingBox.minX * self.view.bounds.width, y: boundingBox.maxY * self.view.bounds.height)
-                        let barcodeBottomRight = CGPoint(x: boundingBox.maxX * self.view.bounds.width, y: boundingBox.maxY * self.view.bounds.height)
+        isScanningEnabled = false
 
-                        if qrFrameRect.contains(barcodeTopLeft)
-                            && qrFrameRect.contains(barcodeTopRight)
-                            && qrFrameRect.contains(barcodeBottomLeft)
-                            && qrFrameRect.contains(barcodeBottomRight) {
-
-                            guard self.isScanningEnabled else { return }
-                            self.isScanningEnabled = false
-
-                            self.viewModel.outingUUID = UUID(uuidString: payload) ?? UUID()
-                            self.viewModel.outing { result in
-                                self.qrScanResult(result: result)
-                            }
-                            self.captureSession.stopRunning()
-                        }
-                    }
-                }
-            }
+  
+        guard let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let uuidString = json["uuid"] as? String,
+              let exp = json["exp"] as? Int,
+              let uuid = UUID(uuidString: uuidString) else {
+            
+            print("QR 파싱 실패")
+            isScanningEnabled = true
+            return
         }
 
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        do {
-            try handler.perform([request])
-        } catch {
-            print("비디오 프레임 처리 중 오류 발생: \(error.localizedDescription)")
+        if uuidString == lastUsedUUID {
+            print("같은 QR 사용 불가 (외출/복귀 동일 QR 방지)")
+            self.qrScanResult(result: "uuidError")
+            isScanningEnabled = true
+            return
+        }
+
+        let expSec = exp > 10000000000 ? exp / 1000 : exp
+        let nowSec = Int(Date().timeIntervalSince1970)
+
+        if expSec < nowSec {
+            print("QR 만료됨")
+            self.qrScanResult(result: "uuidError")
+            isScanningEnabled = true
+            return
+        }
+
+        viewModel.outingUUID = uuid
+        lastUsedUUID = uuidString
+        viewModel.exp = expSec
+
+        viewModel.outing { result in
+            DispatchQueue.main.async {
+                self.captureSession.stopRunning()
+                self.qrScanResult(result: result)
+            }
         }
     }
 }

@@ -6,16 +6,27 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import Foundation
 import Moya
+
+public struct OutingRequestDTO: Encodable {
+    public let uuid: String
+    public let exp: Int
+    
+    public init(uuid: String, exp: Int) {
+        self.uuid = uuid
+        self.exp = exp
+    }
+}
 
 public enum OutingServices {
     case outingStatus(authorization: String)
     case outingList(authorization: String)
     case outingSearch(name: String, authorization: String)
     case outingCount(authorization: String)
-    case outingOut(uuid: String, exp: Int, authorization: String)
-    case outingIn(uuid: String, exp: Int, authorization: String)
+    case outingOut(body: OutingRequestDTO, authorization: String)
+    case outingIn(body: OutingRequestDTO, authorization: String)
 }
 
 extension OutingServices: TargetType {
@@ -74,15 +85,9 @@ extension OutingServices: TargetType {
                 encoding: URLEncoding.queryString
             )
 
-        case .outingOut(let uuid, let exp, _),
-             .outingIn(let uuid, let exp, _):
-            return .requestParameters(
-                parameters: [
-                    "uuid": uuid,
-                    "exp": exp
-                ],
-                encoding: JSONEncoding.default
-            )
+        case .outingOut(let body, _),
+             .outingIn(let body, _):
+            return .requestJSONEncodable(body)
         }
     }
     
@@ -96,8 +101,8 @@ extension OutingServices: TargetType {
                 "Authorization": authorization
             ]
 
-        case .outingOut(_, _, let authorization),
-             .outingIn(_, _, let authorization):
+        case .outingOut(_, let authorization),
+             .outingIn(_, let authorization):
             return [
                 "Content-Type": "application/json",
                 "Authorization": authorization
