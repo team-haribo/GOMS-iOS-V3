@@ -167,7 +167,10 @@ public final class MapPlaceDetailView: UIView {
         heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
         updateReviewCount(data.reviewCount, recommendCount: data.recommendCount)
+        
+        // MARK: - FIXED (Data Sync)
         tableView.reloadData()
+        self.layoutIfNeeded() // 데이터 갱신 후 레이아웃 즉시 재계산
     }
 
     public func updateReviewCount(_ count: Int, recommendCount: Int) {
@@ -223,7 +226,6 @@ public final class MapPlaceDetailView: UIView {
             $0.width.equalTo(scrollView.frameLayoutGuide)
         }
         
-        // MARK: - FIX (Layout Constraints)
         titleLabel.snp.makeConstraints {
             $0.top.equalToSuperview().offset(Metric.topMargin)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
@@ -232,7 +234,6 @@ public final class MapPlaceDetailView: UIView {
         categoryLabel.snp.makeConstraints {
             $0.leading.equalTo(titleLabel.snp.trailing).offset(8)
             $0.bottom.equalTo(titleLabel.snp.bottom).offset(-2)
-            // 카테고리 레이블이 하트 버튼 왼쪽까지만 가도록 제한
             $0.trailing.lessThanOrEqualTo(heartButton.snp.leading).offset(-8)
         }
 
@@ -251,13 +252,13 @@ public final class MapPlaceDetailView: UIView {
         addressLabel.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
-            $0.trailing.equalToSuperview().inset(Metric.sideMargin) // 우측 여백 추가
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
         infoLabel.snp.makeConstraints {
             $0.top.equalTo(addressLabel.snp.bottom).offset(4)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
-            $0.trailing.equalToSuperview().inset(Metric.sideMargin) // 우측 여백 추가
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
         reviewCountLabel.snp.makeConstraints {
