@@ -48,6 +48,10 @@ public final class AuthViewModel: BaseViewModel {
         self.authCode = authCode
     }
 
+    func setupVerifiedToken(verifiedToken: String) {
+        self.verifiedToken = verifiedToken
+    }
+
     func setupName(name: String) {
         self.name = name
     }
@@ -225,7 +229,7 @@ public final class AuthViewModel: BaseViewModel {
             .verifyAuthNumber(
                 email: email,
                 code: authCode,
-                purpose: emailStatus // 민선: 여기도 똑같이 "SIGNUP"으로 수정
+                purpose: emailStatus.isEmpty ? "SIGNUP" : emailStatus
             )
         ) { response in
 
@@ -237,11 +241,13 @@ public final class AuthViewModel: BaseViewModel {
                     print("verifyAuthCode status error: \(result.statusCode)")
                     completion(false)
                     return
+                    
                 }
 
                 do {
                     let data = try result.map(VerifyAuthResponse.self)
                     self.verifiedToken = data.verifiedToken
+                    self.keyChain.create(key: "verifiedToken", token: data.verifiedToken)
                     completion(true)
 
                 } catch {

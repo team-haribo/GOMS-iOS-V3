@@ -9,13 +9,17 @@
 import UIKit
 
 public final class ChangNewPasswordViewController: BaseViewController {
+    
+    private var viewModel = AuthViewModel()
+    var email: String = ""
+    var verifiedToken: String = ""
 
     // MARK: - UI Components
     
     private let textFieldStackView = UIStackView().then {
         $0.spacing = 16
         $0.axis = .vertical
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
         $0.alignment = .fill
     }
     
@@ -71,6 +75,10 @@ public final class ChangNewPasswordViewController: BaseViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        if verifiedToken.isEmpty {
+            verifiedToken = KeyChain.shared.read(key: "verifiedToken") ?? ""
+        }
         
         passwordTextField.delegate = self
         checkPasswordTextField.delegate = self
@@ -95,26 +103,62 @@ public final class ChangNewPasswordViewController: BaseViewController {
             return
         }
 
-        // 성공 alert
-        let alert = UIAlertController(
-            title: "재설정 완료",
-            message: "비밀번호가 재설정되었습니다.",
-            preferredStyle: .alert
-        )
+        guard let password = passwordTextField.text else { return }
 
-        let done = UIAlertAction(title: "완료", style: .default) { _ in
-            let introVC = IntroViewController()
-            let nav = UINavigationController(rootViewController: introVC)
-            
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = nav
-                window.makeKeyAndVisible()
-            }
+        let token = verifiedToken
+
+        guard !token.isEmpty else {
+            let alert = UIAlertController(
+                title: "오류",
+                message: "인증 정보가 없어 비밀번호를 재설정할 수 없습니다.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+            self.present(alert, animated: true)
+            return
         }
 
-        alert.addAction(done)
-        present(alert, animated: true)
+        viewModel.setupEmail(email: email)
+        viewModel.setupPassword(password: password)
+        viewModel.setupVerifiedToken(verifiedToken: token)
+
+        viewModel.resetPassword { [weak self] success, statusCode in
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
+                if success {
+                    let alert = UIAlertController(
+                        title: "재설정 완료",
+                        message: "비밀번호가 재설정되었습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                        KeyChain.shared.delete(key: "verifiedToken")
+
+                        let introViewController = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introViewController)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
+                    })
+
+                    self.present(alert, animated: true)
+                } else {
+                    let alert = UIAlertController(
+                        title: "오류",
+                        message: "비밀번호 재설정에 실패했습니다.",
+                        preferredStyle: .alert
+                    )
+
+                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
     }
 
     // MARK: - Validation
@@ -160,18 +204,17 @@ public final class ChangNewPasswordViewController: BaseViewController {
     // MARK: - Layout
     
     public override func addView() {
-        
-        [passwordTextField, checkPasswordTextField].forEach {
-            textFieldStackView.addArrangedSubview($0)
-        }
+
+        textFieldStackView.addArrangedSubview(passwordTextField)
+        textFieldStackView.addArrangedSubview(passwordWrongRegularExpression)
+        textFieldStackView.addArrangedSubview(checkPasswordTextField)
+        textFieldStackView.addArrangedSubview(passwordErrorLabel)
 
         [
             navigationTitle,
             textFieldStackView,
             conditionsLabel,
-            doneButton,
-            passwordErrorLabel,
-            passwordWrongRegularExpression
+            doneButton
         ].forEach {
             view.addSubview($0)
         }
@@ -180,33 +223,29 @@ public final class ChangNewPasswordViewController: BaseViewController {
     public override func setLayout() {
         
         navigationTitle.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(100)
-            $0.leading.equalToSuperview().offset(20)
+            $0.top.equalToSuperview().offset(124)
+            $0.leading.equalToSuperview().inset(20)
         }
+
+        passwordTextField.snp.makeConstraints { $0.height.equalTo(56) }
+        checkPasswordTextField.snp.makeConstraints { $0.height.equalTo(56) }
 
         textFieldStackView.snp.makeConstraints {
-            $0.top.equalTo(navigationTitle.snp.bottom).offset(32)
-            $0.leading.trailing.equalToSuperview().inset(20)
-        }
-
-        passwordErrorLabel.snp.makeConstraints {
-            $0.top.equalTo(checkPasswordTextField.snp.bottom).offset(8)
-            $0.trailing.equalToSuperview().inset(20)
-        }
-
-        passwordWrongRegularExpression.snp.makeConstraints {
-            $0.top.equalTo(passwordTextField.snp.bottom).offset(8)
+            $0.top.equalTo(navigationTitle.snp.bottom).offset(24)
+            $0.leading.equalToSuperview().inset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
 
         conditionsLabel.snp.makeConstraints {
-            $0.top.equalTo(textFieldStackView.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().offset(20)
+            $0.top.equalTo(textFieldStackView.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().inset(20)
+            $0.trailing.equalToSuperview().inset(20)
         }
 
         doneButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.leading.equalTo(view.safeAreaLayoutGuide).inset(24)
+            $0.trailing.equalTo(view.safeAreaLayoutGuide).inset(24)
             $0.height.equalTo(48)
         }
     }
