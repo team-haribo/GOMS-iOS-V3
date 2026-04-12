@@ -75,6 +75,10 @@ public final class ChangNewPasswordViewController: BaseViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        if verifiedToken.isEmpty {
+            verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+        }
         
         passwordTextField.delegate = self
         checkPasswordTextField.delegate = self
@@ -101,8 +105,24 @@ public final class ChangNewPasswordViewController: BaseViewController {
 
         guard let password = passwordTextField.text else { return }
 
+        let token = verifiedToken.isEmpty
+            ? UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+            : verifiedToken
+
+        guard !token.isEmpty else {
+            let alert = UIAlertController(
+                title: "오류",
+                message: "인증 정보가 없어 비밀번호를 재설정할 수 없습니다.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+            self.present(alert, animated: true)
+            return
+        }
+
         viewModel.setupEmail(email: email)
         viewModel.setupPassword(password: password)
+        viewModel.setupVerifiedToken(verifiedToken: token)
 
         viewModel.resetPassword { [weak self] success, statusCode in
             guard let self = self else { return }
