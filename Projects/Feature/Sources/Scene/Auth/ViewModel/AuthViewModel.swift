@@ -99,7 +99,6 @@ public final class AuthViewModel: BaseViewModel {
 
                             let signInResponse = try result.map(SignInResponse.self)
 
-                            UserDefaults.standard.set(self.email, forKey: "localEmail")
                             self.keyChain.create(key: Const.KeyChainKey.accessToken, token: signInResponse.accessToken)
                             self.keyChain.create(key: Const.KeyChainKey.refreshToken, token: signInResponse.refreshToken)
                             
@@ -248,7 +247,7 @@ public final class AuthViewModel: BaseViewModel {
                 do {
                     let data = try result.map(VerifyAuthResponse.self)
                     self.verifiedToken = data.verifiedToken
-                    UserDefaults.standard.set(data.verifiedToken, forKey: "verifiedToken")
+                    self.keyChain.create(key: "verifiedToken", token: data.verifiedToken)
                     completion(true)
 
                 } catch {

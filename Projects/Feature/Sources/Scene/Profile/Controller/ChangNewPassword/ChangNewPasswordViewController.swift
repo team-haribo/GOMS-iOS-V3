@@ -77,7 +77,7 @@ public final class ChangNewPasswordViewController: BaseViewController {
         super.viewDidLoad()
 
         if verifiedToken.isEmpty {
-            verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+            verifiedToken = KeyChain.shared.read(key: "verifiedToken") ?? ""
         }
         
         passwordTextField.delegate = self
@@ -106,7 +106,7 @@ public final class ChangNewPasswordViewController: BaseViewController {
         guard let password = passwordTextField.text else { return }
 
         let token = verifiedToken.isEmpty
-            ? UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+            ? KeyChain.shared.read(key: "verifiedToken") ?? ""
             : verifiedToken
 
         guard !token.isEmpty else {
@@ -136,7 +136,7 @@ public final class ChangNewPasswordViewController: BaseViewController {
                     )
 
                     alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-                        UserDefaults.standard.removeObject(forKey: "verifiedToken")
+                        KeyChain.shared.delete(key: "verifiedToken")
 
                         let introViewController = IntroViewController()
                         let nav = UINavigationController(rootViewController: introViewController)
