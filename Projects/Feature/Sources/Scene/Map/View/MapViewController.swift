@@ -26,16 +26,16 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private var mapController: KMController?
     private let mapWrapperView = UIView()
     
+    private var allPlaces: [MapPlaceData] = []
     private var dummyRecentSearches: [MapPlaceData] = [] {
         didSet { self.recentSearchView.tableView.reloadData() }
     }
     
     private var dummyReviews: [MapReview] = [] {
         didSet {
-            self.placeDetailView.updateReviewCount(
-                dummyReviews.count,
-                recommendCount: MapMockData.detailExample.recommendCount
-            )
+            if let currentDetail = self.currentPlaceDetail {
+                self.placeDetailView.updateReviewCount(dummyReviews.count, recommendCount: currentDetail.recommendCount)
+            }
             self.placeDetailView.tableView.reloadData()
         }
     }
@@ -58,23 +58,24 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private let defaultHeight: CGFloat = 240
     private let detailMinHeight: CGFloat = 225
     private var selectedPlaceId: Int = -1
+    private var currentPlaceDetail: MapPlaceDetailModel?
 
     // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
+        print("[DEBUG] MapViewController viewDidLoad")
         setupView()
         setupLayout()
         setupDelegate()
         setupGesture()
         setupActions()
         setupReviewWriteAction()
-        
-        syncPlaces()
         fetchRecommendedCount()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        print("[DEBUG] MapViewController viewDidAppear")
         if mapController == nil {
             setupMap()
         } else {
@@ -84,6 +85,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        print("[DEBUG] MapViewController viewDidDisappear")
         mapController?.pauseEngine()
     }
 
@@ -91,55 +93,39 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private func setupView() {
         view.backgroundColor = .color.background.color
         view.addSubview(mapWrapperView)
-        [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach {
-            view.addSubview($0)
-        }
+        [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach { view.addSubview($0) }
     }
 
     private func setupLayout() {
         mapWrapperView.snp.makeConstraints { $0.edges.equalToSuperview() }
         routeSelectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        
-        routeSelectionView.recommendationStackView.snp.remakeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-20)
-            $0.height.equalTo(106)
-        }
-        
         searchBar.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
         }
-        
+        bottomSheetView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+        }
+        placeDetailView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            self.detailSheetHeight = $0.height.equalTo(0).priority(.high).constraint
+        }
         recentSearchView.snp.makeConstraints { $0.edges.equalToSuperview() }
         recentSearchView.titleStack.snp.remakeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(24)
         }
-
         recentSearchView.tableView.snp.remakeConstraints {
             $0.top.equalTo(recentSearchView.titleStack.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
-        
-        bottomSheetView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
-        }
-        
-        placeDetailView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            self.detailSheetHeight = $0.height.equalTo(0).priority(.high).constraint
-        }
     }
 
     private func setupDelegate() {
-        [recentSearchView.tableView, placeDetailView.tableView].forEach {
-            $0.delegate = self
-            $0.dataSource = self
-        }
+        [recentSearchView.tableView, placeDetailView.tableView].forEach { $0.delegate = self; $0.dataSource = self }
     }
     
     private func setupActions() {
@@ -147,73 +133,85 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         placeDetailView.arriveButton.addTarget(self, action: #selector(didTapArriveRoute), for: .touchUpInside)
         placeDetailView.startRouteButton.addTarget(self, action: #selector(didTapStartRoute), for: .touchUpInside)
         routeSelectionView.backButton.addTarget(self, action: #selector(backFromRouteSelection), for: .touchUpInside)
-        
         bottomSheetView.onCardTapped = { [weak self] in self?.showDetailView() }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.textField.addTarget(self, action: #selector(performSearch), for: .editingDidEndOnExit)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
-
         placeDetailView.onHeartToggled = { [weak self] isSelected in
             guard let self = self, self.selectedPlaceId != -1 else { return }
-            let service: PlaceServices = isSelected ?
-                .recommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken) :
-                .cancelRecommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken)
-            
-            self.placeProvider.request(service) { [weak self] _ in
-                self?.fetchRecommendedCount()
-            }
+            let service: PlaceServices = isSelected ? .recommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken) : .cancelRecommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken)
+            self.placeProvider.request(service) { [weak self] _ in self?.fetchRecommendedCount() }
         }
-
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
-            let detailVC = MapRouteDetailViewController()
-            detailVC.routeTypeTitle = routeTitle
-            detailVC.modalPresentationStyle = .overFullScreen
+            let detailVC = MapRouteDetailViewController(); detailVC.routeTypeTitle = routeTitle; detailVC.modalPresentationStyle = .overFullScreen
             detailVC.onDismiss = { [weak self] in self?.routeSelectionView.isHidden = false }
-            self?.routeSelectionView.isHidden = true
-            self?.present(detailVC, animated: true)
+            self?.routeSelectionView.isHidden = true; self?.present(detailVC, animated: true)
         }
     }
     
-    private func setupReviewWriteAction() {
-        placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside)
-    }
+    private func setupReviewWriteAction() { placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside) }
 
     // MARK: - Networking
-    private func syncPlaces() {
-        placeProvider.request(.syncPlaces(authorization: accessToken)) { _ in }
+    private func fetchPlaceList() {
+        print("[DEBUG] fetchPlaceList 시작")
+        placeProvider.request(.getAllPlaces(authorization: accessToken)) { [weak self] result in
+            switch result {
+            case .success(let response):
+                if let decodedData = try? JSONDecoder().decode(MapPlaceResponse.self, from: response.data).places {
+                    self?.allPlaces = decodedData
+                    print("[DEBUG] 장소 데이터 로드 성공: \(decodedData.count)개")
+                    self?.renderAllPlaceMarkers()
+                }
+            case .failure(let error):
+                print("[DEBUG] 장소 로드 에러: \(error.localizedDescription)")
+            }
+        }
     }
-
-    private func fetchRecommendedCount() {
-        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in }
-    }
-
+    
+    private func fetchRecommendedCount() { placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in } }
+    
     private func fetchReviews(placeId: Int) {
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: self.accessToken)) { [weak self] result in
-            if case .success(let response) = result {
-                let decodedData = try? JSONDecoder().decode([MapReview].self, from: response.data)
-                self?.dummyReviews = decodedData ?? []
-            }
+            if case .success(let response) = result { self?.dummyReviews = (try? JSONDecoder().decode([MapReview].self, from: response.data)) ?? [] }
         }
     }
 
     @objc private func performSearch() {
         guard let keyword = searchBar.textField.text, !keyword.isEmpty else { return }
         placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
-            guard let self = self else { return }
-            if case .success(let response) = result {
-                let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data)
-                let results = decodedData ?? []
-                self.dummyRecentSearches = results
-                self.recentSearchView.titleLabel.text = results.isEmpty ? "검색 결과가 없습니다" : "'\(keyword)' 검색 결과"
+            if case .success(let response) = result, let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data) {
+                self?.dummyRecentSearches = decodedData; self?.recentSearchView.titleLabel.text = decodedData.isEmpty ? "검색 결과가 없습니다" : "'\(keyword)' 검색 결과"
             }
         }
     }
-    
+
     @objc private func didTapReviewWrite() {
-        guard selectedPlaceId != -1 else { return }
-        let detailData = MapMockData.detailExample
-        let reviewWriteVC = MapReviewWriteViewController(placeData: detailData)
-        self.navigationController?.pushViewController(reviewWriteVC, animated: true)
+        guard let detailData = currentPlaceDetail else { return }
+        self.navigationController?.pushViewController(MapReviewWriteViewController(placeData: detailData), animated: true)
+    }
+
+    // MARK: - Marker Rendering
+    private func renderAllPlaceMarkers() {
+        guard let view = mapController?.getView("mapview") as? KakaoMap else {
+            print("[DEBUG] renderAllPlaceMarkers: 맵 뷰를 찾을 수 없음")
+            return
+        }
+        let manager = view.getLabelManager()
+        guard let layer = manager.getLabelLayer(layerID: "poiLayer") else {
+            print("[DEBUG] renderAllPlaceMarkers: poiLayer를 찾을 수 없음")
+            return
+        }
+        
+        layer.removePois(poiIDs: layer.getAllPois()?.map { $0.itemID } ?? [])
+        print("[DEBUG] 마커 렌더링 시작: \(allPlaces.count)개")
+
+        for place in allPlaces {
+            let option = PoiOptions(styleID: "dotStyle", poiID: "\(place.placeId)")
+            option.clickable = true
+            if let poi = layer.addPoi(option: option, at: MapPoint(longitude: place.longitude, latitude: place.latitude)) {
+                poi.show()
+            }
+        }
     }
 
     // MARK: - Gestures
@@ -248,24 +246,28 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     // MARK: - View Transition
     private func showDetailView(with data: MapPlaceData? = nil) {
+        self.bottomSheetView.isHidden = true
         if let data = data {
             placeProvider.request(.getPlaceDetail(placeId: data.placeId, authorization: accessToken)) { [weak self] result in
-                if case .success(let response) = result {
-                    if let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
-                        self?.selectedPlaceId = detailModel.placeId
-                        self?.placeDetailView.configure(with: detailModel)
-                        self?.fetchReviews(placeId: detailModel.placeId)
-                    }
+                if case .success(let response) = result, let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
+                    self?.selectedPlaceId = detailModel.placeId
+                    self?.currentPlaceDetail = detailModel
+                    self?.placeDetailView.configure(with: detailModel)
+                    self?.fetchReviews(placeId: detailModel.placeId)
+                    self?.updateViewVisibility()
                 }
             }
         } else {
             let detailModel = MapMockData.detailExample
             self.selectedPlaceId = detailModel.placeId
+            self.currentPlaceDetail = detailModel
             fetchReviews(placeId: self.selectedPlaceId)
             placeDetailView.configure(with: detailModel)
+            updateViewVisibility()
         }
-        
-        bottomSheetView.isHidden = true
+    }
+
+    private func updateViewVisibility() {
         placeDetailView.isHidden = false
         searchBar.isHidden = false
         detailSheetHeight?.update(offset: detailMinHeight)
@@ -273,6 +275,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     @objc private func hideDetailView() {
+        if let view = mapController?.getView("mapview") as? KakaoMap, let activeLayer = view.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
+            activeLayer.removePois(poiIDs: activeLayer.getAllPois()?.map { $0.itemID } ?? [])
+        }
         UIView.animate(withDuration: 0.3, animations: {
             self.detailSheetHeight?.update(offset: 0)
             self.view.layoutIfNeeded()
@@ -280,53 +285,27 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             self.placeDetailView.isHidden = true
             self.bottomSheetView.isHidden = false
             self.selectedPlaceId = -1
+            self.currentPlaceDetail = nil
         }
     }
 
-    @objc private func backToHome() {
-        hideDetailView()
-        recentSearchView.isHidden = true
-        searchBar.updateState(.home)
-        searchBar.isHidden = false
-        searchBar.textField.text = ""
-        view.endEditing(true)
-    }
-
-    @objc private func didTapSearchBar() {
-        if !placeDetailView.isHidden { hideDetailView() }
-        searchBar.updateState(.search)
-        recentSearchView.isHidden = false
-        recentSearchView.titleLabel.text = "최근 검색"
-    }
-
-    @objc private func didTapArriveRoute() {
-        routeSelectionView.isHidden = false
-        searchBar.isHidden = true
-        [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
-    }
-
+    @objc private func backToHome() { hideDetailView(); recentSearchView.isHidden = true; searchBar.updateState(.home); searchBar.isHidden = false; searchBar.textField.text = ""; view.endEditing(true) }
+    @objc private func didTapSearchBar() { if !placeDetailView.isHidden { hideDetailView() }; searchBar.updateState(.search); recentSearchView.isHidden = false; recentSearchView.titleLabel.text = "최근 검색" }
+    @objc private func didTapArriveRoute() { routeSelectionView.isHidden = false; searchBar.isHidden = true; [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true } }
     @objc private func didTapStartRoute() { didTapArriveRoute() }
-
-    @objc private func backFromRouteSelection() {
-        routeSelectionView.isHidden = true
-        placeDetailView.isHidden = false
-        searchBar.isHidden = false
-        detailSheetHeight?.update(offset: detailMinHeight)
-        UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() }
-    }
+    @objc private func backFromRouteSelection() { routeSelectionView.isHidden = true; placeDetailView.isHidden = false; searchBar.isHidden = false; detailSheetHeight?.update(offset: detailMinHeight); UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() } }
     
-    // MARK: - Kakao Maps
+    // MARK: - Kakao Maps Setup
     private func setupMap() {
+        print("[DEBUG] setupMap 호출")
         mapWrapperView.layoutIfNeeded()
         let container = KMViewContainer(frame: mapWrapperView.bounds)
         container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         mapWrapperView.addSubview(container)
         self.mapContainer = container
-        
         let controller = KMController(viewContainer: container)
         controller.delegate = self
         self.mapController = controller
-        
         mapController?.prepareEngine()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.mapController?.activateEngine()
@@ -334,135 +313,83 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     public func addViews() {
-        let defaultPosition = MapPoint(longitude: 126.8106, latitude: 35.1461)
-        let mapviewInfo = MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPosition, defaultLevel: 15)
-        mapController?.addView(mapviewInfo)
+        print("[DEBUG] addViews (맵 뷰 추가 시도)")
+        mapController?.addView(MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: MapPoint(longitude: 126.8106, latitude: 35.1461), defaultLevel: 15))
     }
-    
+
     public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
+        print("[DEBUG] addViewSucceeded: \(viewName)")
         guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
         view.eventDelegate = self
-        
         createPoiStyle()
         let manager = view.getLabelManager()
-        let layerOptions = LabelLayerOptions(layerID: "poiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 10000)
-        let _ = manager.addLabelLayer(option: layerOptions)
+        let _ = manager.addLabelLayer(option: LabelLayerOptions(layerID: "poiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 10000))
+        let _ = manager.addLabelLayer(option: LabelLayerOptions(layerID: "activePoiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 10001))
+        fetchPlaceList()
     }
 
     private func createPoiStyle() {
+        print("[DEBUG] createPoiStyle 시작")
         guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
         let manager = view.getLabelManager()
         
-        // 🛠 Fix: Bitmap Rendering (K3fCore Error Solution)
-        guard let rawImage = UIImage(named: "ic_route_location_pin") else { return }
-        let renderer = UIGraphicsImageRenderer(size: rawImage.size)
-        let bitmapImage = renderer.image { _ in
-            rawImage.draw(in: CGRect(origin: .zero, size: rawImage.size))
-        }
+        let pinImage = UIImage(named: "ic_route_location_pin", in: Bundle.module, compatibleWith: nil)
         
-        let iconStyle = PoiIconStyle(symbol: bitmapImage, anchorPoint: CGPoint(x: 0.5, y: 1.0))
-        let poiStyle = PoiStyle(styleID: "customStyle", styles: [PerLevelPoiStyle(iconStyle: iconStyle, level: 0)])
-        manager.addPoiStyle(poiStyle)
+        if let actualPin = pinImage {
+            let dotIconStyle = PoiIconStyle(symbol: actualPin, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+            let poiStyle = PoiStyle(styleID: "dotStyle", styles: [
+                PerLevelPoiStyle(iconStyle: dotIconStyle, level: 0)
+            ])
+            
+            manager.addPoiStyle(poiStyle)
+        }
     }
 
-    public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) {
-        let manager = kakaoMap.getLabelManager()
-        guard let layer = manager.getLabelLayer(layerID: "poiLayer") else { return }
-        
-        if let allPois = layer.getAllPois() {
-            layer.removePois(poiIDs: allPois.map { $0.itemID })
-        }
-        
-        let mapPoint = kakaoMap.getPosition(point)
-        let option = PoiOptions(styleID: "customStyle", poiID: "tappedPoint")
-        option.clickable = true
-        
-        if let poi = layer.addPoi(option: option, at: mapPoint) {
-            poi.show()
-            kakaoMap.animateCamera(
-                cameraUpdate: CameraUpdate.make(target: mapPoint, zoomLevel: 15, mapView: kakaoMap),
-                options: CameraAnimationOptions(autoElevation: false, consecutive: true, durationInMillis: 300)
-            )
-            showDetailView()
-        }
-    }
+    public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) { if !placeDetailView.isHidden { hideDetailView() } }
 
     public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String) {
-        if poiID == "tappedPoint" {
-            showDetailView()
-        } else if let id = Int(poiID) {
-            let selectedData = dummyRecentSearches.first(where: { $0.placeId == id })
-            showDetailView(with: selectedData)
+        print("[DEBUG] poiDidTapped: \(poiID)")
+        guard let id = Int(poiID.replacingOccurrences(of: "active_", with: "")), let selectedData = allPlaces.first(where: { $0.placeId == id }) else { return }
+        showDetailView(with: selectedData)
+        if let activeLayer = kakaoMap.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
+            activeLayer.removePois(poiIDs: activeLayer.getAllPois()?.map { $0.itemID } ?? [])
+            if let activePoi = activeLayer.addPoi(option: PoiOptions(styleID: "activePinStyle", poiID: "active_\(poiID)"), at: MapPoint(longitude: selectedData.longitude, latitude: selectedData.latitude)) {
+                activePoi.show()
+            }
         }
     }
     
-    deinit {
-        mapController?.pauseEngine()
-        mapController?.resetEngine()
-        mapController = nil
-    }
+    deinit { mapController?.pauseEngine(); mapController?.resetEngine(); mapController = nil }
 }
 
-// MARK: - TableView Extensions
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
-    }
-    
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count }
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
-            cell.configure(model: dummyRecentSearches[indexPath.row], date: "26.04.11")
-            cell.backgroundColor = .clear
+            cell.configure(model: dummyRecentSearches[indexPath.row], date: "26.04.11"); cell.backgroundColor = .clear
             cell.onDeleteTap = { [weak self, weak tableView] in
-                guard let self = self, let tableView = tableView,
-                      let currentIndexPath = tableView.indexPath(for: cell) else { return }
-                self.dummyRecentSearches.remove(at: currentIndexPath.row)
-                tableView.deleteRows(at: [currentIndexPath], with: .fade)
+                guard let self = self, let tableView = tableView, let currentIndexPath = tableView.indexPath(for: cell) else { return }
+                self.dummyRecentSearches.remove(at: currentIndexPath.row); tableView.deleteRows(at: [currentIndexPath], with: .fade)
             }
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
-            let data = dummyReviews[indexPath.row]
-            cell.configure(with: data)
-            
-            cell.onDeleteTap = { [weak self, weak tableView] in
-                guard let self = self, let tableView = tableView else { return }
+            cell.configure(with: dummyReviews[indexPath.row])
+            cell.onDeleteTap = { [weak self] in
+                guard let self = self, let currentIndexPath = tableView.indexPath(for: cell) else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
-                    if let currentIndexPath = tableView.indexPath(for: cell) {
-                        let reviewToDelete = self.dummyReviews[currentIndexPath.row]
-                        self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { result in
-                            if case .success = result {
-                                self.dummyReviews.remove(at: currentIndexPath.row)
-                            }
-                        }
-                    }
+                    let reviewToDelete = self.dummyReviews[currentIndexPath.row]
+                    self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { _ in self.dummyReviews.remove(at: currentIndexPath.row) }
                 }
             }
-            
-            cell.onReportTap = { [weak self] in
-                guard let self = self else { return }
-                ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { }
-            }
+            cell.onReportTap = { [weak self] in guard let self = self else { return }; ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { } }
             return cell
         }
     }
-
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView == recentSearchView.tableView {
-            let selectedData = dummyRecentSearches[indexPath.row]
-            recentSearchView.isHidden = true
-            searchBar.updateState(.home)
-            view.endEditing(true)
-            showDetailView(with: selectedData)
-            
-            if let view = mapController?.getView("mapview") as? KakaoMap {
-                let targetPoint = MapPoint(longitude: selectedData.longitude, latitude: selectedData.latitude)
-                view.animateCamera(
-                    cameraUpdate: CameraUpdate.make(target: targetPoint, zoomLevel: 15, mapView: view),
-                    options: CameraAnimationOptions(autoElevation: false, consecutive: true, durationInMillis: 300)
-                )
-            }
+            let selectedData = dummyRecentSearches[indexPath.row]; recentSearchView.isHidden = true; searchBar.updateState(.home); view.endEditing(true); showDetailView(with: selectedData)
         }
     }
 }
