@@ -136,7 +136,16 @@ public final class ChangNewPasswordViewController: BaseViewController {
                     )
 
                     alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-                        self.navigationController?.popViewController(animated: true)
+                        UserDefaults.standard.removeObject(forKey: "verifiedToken")
+
+                        let introViewController = IntroViewController()
+                        let nav = UINavigationController(rootViewController: introViewController)
+
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = nav
+                            window.makeKeyAndVisible()
+                        }
                     })
 
                     self.present(alert, animated: true)
