@@ -7,179 +7,342 @@
 //
 
 import UIKit
-import Combine
-import Moya
 import SnapKit
+import Then
 import Service
 
-public class ProfileChangRePasswordViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+public final class ProfileChangRePasswordViewController: BaseViewController {
     
-    private let viewModel = ProfileViewModel()
+    private let viewModel = AuthViewModel()
+    private var email: String?
+
+    private var limitTime = 300
+    private var resendCooldown = 60
+    private var resendTimer: Timer?
+    private var isRequestingAuthCode = false
+
+    // MARK: - UI Components
     
-    let navigationTitle = UILabel().then {
-        $0.text = "비밀번호 확인"
-        $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 29, weight: .bold)
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
-    
-    let passwordErrorLabel = UILabel().then {
-        $0.text = "잘못된 비밀번호입니다."
+
+    private let pageTitleLabel = UILabel().then {
+        $0.text = "인증번호"
+        $0.font = .suit(size: 28, weight: .bold)
+        $0.textColor = .color.mainText.color
+    }
+
+    private let authCodeTextField = GOMSTextField().then {
+        $0.keyboardType = .numberPad
+        $0.placeholder = "인증번호 입력"
+    }
+
+    private let timeLabel = UILabel().then {
+        $0.font = .suit(size: 15, weight: .medium)
+        $0.textColor = .color.sub2.color
+    }
+
+    private lazy var resendButton = UIButton().then {
+        $0.setTitle("재발송", for: .normal)
+        $0.backgroundColor = .clear
+        $0.titleLabel?.font = UIFont.suit(size: 15, weight: .medium)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.addTarget(self, action: #selector(resendButtonTapped), for: .touchUpInside)
+    }
+
+    private let authErrorLabel = UILabel().then {
+        $0.text = "잘못된 인증번호입니다"
         $0.textColor = .color.gomsNegative.color
         $0.font = .suit(size: 15, weight: .medium)
         $0.textAlignment = .right
         $0.isHidden = true
     }
-    
-    lazy var passwordTextField = GOMSTextField(frame: CGRect(x: 0, y: 0, width: 0, height: 0), placeholder: "현재 비밀번호").then {
-        $0.isSecureTextEntry = true
-        $0.rightView = visiblePasswordButton
-        $0.rightViewMode = .always
-    }
-    
-    lazy var visiblePasswordButton = UIButton().then {
-        $0.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
-        $0.tintColor = UIColor.color.sub2.color
-        $0.adjustsImageWhenHighlighted = false
-        $0.addTarget(self, action: #selector(visiblePasswordButtonTapped), for: .touchUpInside)
-        $0.isEnabled = true
-    }
-    
-    private lazy var doneButton = GOMSButton(frame: CGRect(x: 0, y: 0, width: 0, height: 0), title: "다음으로").then {
+
+    private lazy var doneButton = GOMSButton(frame: .zero, title: "인증").then {
         $0.addTarget(self, action: #selector(doneButtonTapped), for: .touchUpInside)
     }
-    
-    
-    @objc func doneButtonTapped() {
-        let defaults = UserDefaults.standard
-        let localPassword = defaults.string(forKey: "localPass")
-        if localPassword == passwordTextField.text {
-            let newPasswordVC = ChangNewPasswordViewController()
-            navigationController?.pushViewController(newPasswordVC, animated: true)
-        } else {
-            print("비밀번호가 틀렸습니다.")
-            self.passwordErrorUI()
-        }
-    }
-    
-    func passwordErrorUI() {
-        passwordTextField.setPlaceholderColor(UIColor.color.gomsNegative.color)
-        passwordErrorLabel.isHidden = false
-        passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
-        passwordTextField.layer.borderWidth = 1
-    }
-    
-    @objc func visiblePasswordButtonTapped() {
-        passwordTextField.isSecureTextEntry.toggle()
-        passwordTextField.isSelected.toggle()
-        
-        if passwordTextField.isSelected {
-            visiblePasswordButton.setImage(UIImage.image.off.image.withRenderingMode(.alwaysTemplate), for: .normal)
-            visiblePasswordButton.tintColor = UIColor.color.sub2.color
-        } else {
-            visiblePasswordButton.setImage(UIImage.image.on.image.withRenderingMode(.alwaysTemplate), for: .normal)
-            visiblePasswordButton.tintColor = UIColor.color.sub2.color
-        }
-    }
-    
-    @objc private func backButtonTapped() {
-        navigationController?.popViewController(animated: true)
-    }
+
+    // MARK: - Life Cycle
     
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
-        passwordTextField.delegate = self
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+        email = UserDefaults.standard.string(forKey: "localEmail")
+        authCodeTextField.delegate = self
+        authCodeTextField.addTarget(self, action: #selector(authCodeEditingChanged(_:)), for: .editingChanged)
+        getSetTime()
+        startResendCooldown()
+        requestInitialAuthCode()
     }
-    
 
-    
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.view.subviews.forEach {
+            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
+                $0.isHidden = true
+                $0.removeFromSuperview()
+            }
+        }
+    }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    public override func configNavigation() {
+        super.configNavigation()
+        navigationItem.hidesBackButton = true
+        navigationItem.leftBarButtonItem = nil
+        navigationItem.titleView = nil
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
     public override func addView() {
-        [
-            navigationTitle,
-            passwordTextField,
-            doneButton,
-            passwordErrorLabel
-        ].forEach {
-            view.addSubview($0)
-        }
+        [customBackButton, pageTitleLabel, authCodeTextField, timeLabel, resendButton, authErrorLabel, doneButton]
+            .forEach { view.addSubview($0) }
+        
+        view.bringSubviewToFront(customBackButton)
+        view.bringSubviewToFront(doneButton)
     }
-    
+
     public override func setLayout() {
-        navigationTitle.snp.makeConstraints {
-            $0.height.equalTo(48)
-            $0.top.equalToSuperview().inset(100)
-            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
-            $0.trailing.lessThanOrEqualToSuperview().inset(24)
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
         }
 
-        passwordTextField.snp.makeConstraints {
-            $0.height.equalTo(64)
-            $0.width.equalTo(335)
-            $0.bottom.equalTo(navigationTitle.snp.bottom).offset(90)
-            $0.leading.equalToSuperview().inset(bounds.width * 0.05)
-            $0.trailing.equalToSuperview().inset(bounds.width * 0.05)
+        pageTitleLabel.snp.makeConstraints {
+            $0.top.equalTo(customBackButton.snp.bottom).offset(20)
+            $0.leading.equalTo(20)
         }
 
-        passwordErrorLabel.snp.makeConstraints {
-            $0.height.equalTo(48)
-            $0.top.equalTo(passwordTextField.snp.bottom)
-            $0.leading.equalTo(passwordTextField.snp.leading)
-            $0.trailing.equalTo(passwordTextField.snp.trailing)
+        authCodeTextField.snp.makeConstraints {
+            $0.height.equalTo(56)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.top.equalTo(pageTitleLabel.snp.bottom).offset(24)
+        }
+
+        authErrorLabel.snp.makeConstraints {
+            $0.trailing.equalTo(authCodeTextField.snp.trailing)
+            $0.top.equalTo(authCodeTextField.snp.bottom).offset(8)
+            $0.height.equalTo(0)
+        }
+
+        timeLabel.snp.makeConstraints {
+            $0.leading.equalTo(24)
+            $0.top.equalTo(authCodeTextField.snp.bottom).offset(12)
+        }
+
+        resendButton.snp.makeConstraints {
+            $0.top.equalTo(authCodeTextField.snp.bottom).offset(12)
+            $0.trailing.equalTo(-24)
         }
 
         doneButton.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).offset(24)
-            $0.trailing.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
     }
+
+    // MARK: - Actions
     
-    public override func keyboardWillShow(_ notification: Notification) {
-        guard
-            let userInfo = notification.userInfo,
-            let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
-        else { return }
+    @objc private func backButtonTapped() {
+        navigationController?.popViewController(animated: true)
+    }
 
-        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
-
-        doneButton.snp.updateConstraints {
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24))
-        }
-
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
+    private func requestInitialAuthCode() {
+        guard let email else { return }
+        viewModel.setupEmail(email: email)
+        viewModel.sendAuthCode { [weak self] success, _ in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if !success {
+                    print("초기 인증번호 요청 실패 또는 지연")
+                }
+            }
         }
     }
 
-    public override func keyboardWillHide(_ notification: Notification) {
-        guard
-            let userInfo = notification.userInfo,
-            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
-        else { return }
+    @objc private func getSetTime() {
+        secToTime(sec: limitTime)
+        if limitTime > 0 { limitTime -= 1 }
+    }
 
-        doneButton.snp.updateConstraints {
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+    @objc private func authCodeEditingChanged(_ textField: UITextField) {
+        let text = textField.text ?? ""
+        if text.isEmpty {
+            authCodeTextField.layer.borderWidth = 0
+            authCodeSuccess()
+        } else {
+            authCodeSuccess()
+        }
+        viewModel.setupAuthCode(authCode: text)
+    }
+
+    @objc private func resendButtonTapped() {
+        if isRequestingAuthCode { return }
+        isRequestingAuthCode = true
+        resendButton.isEnabled = false
+
+        guard let email else {
+            isRequestingAuthCode = false
+            resendButton.isEnabled = true
+            return
         }
 
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
+        viewModel.setupEmail(email: email)
+        viewModel.sendAuthCode { [weak self] success, statusCode in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if statusCode == 429 {
+                    self.startResendCooldown()
+                    self.isRequestingAuthCode = false
+                    self.showAlert(title: "재발송 완료", message: "잠시 후 인증번호가 도착할 수 있습니다.")
+                } else if success {
+                    self.startResendCooldown()
+                    self.limitTime = 300
+                    self.isRequestingAuthCode = false
+                    self.getSetTime()
+                    self.showAlert(title: "재발송 완료", message: "인증번호를 다시 보냈습니다.")
+                } else {
+                    self.isRequestingAuthCode = false
+                    self.resendButton.isEnabled = true
+                    self.showAlert(title: "오류", message: "재발송에 실패했습니다.")
+                }
+            }
         }
+    }
+
+    @objc private func doneButtonTapped() {
+        let code = authCodeTextField.text ?? ""
+        viewModel.setupAuthCode(authCode: code)
+
+        if code.isEmpty {
+            authCodeTextField.layer.borderWidth = 1
+            authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
+            authCodeError()
+            return
+        }
+
+        viewModel.verifyAuthCode { [weak self] success in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if success {
+                    self.authCodeTextField.layer.borderWidth = 0
+                    self.authCodeSuccess()
+
+                    let alert = UIAlertController(title: "인증번호 확인", message: "인증이 완료되었습니다.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                        let newPasswordVC = ChangNewPasswordViewController()
+                        newPasswordVC.email = self.email ?? ""
+                        newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+                        self.navigationController?.pushViewController(newPasswordVC, animated: true)
+                    })
+                    self.present(alert, animated: true)
+                } else {
+                    self.authCodeTextField.layer.borderWidth = 1
+                    self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
+                    self.authCodeError()
+                }
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+        self.present(alert, animated: true)
+    }
+
+    private func startResendCooldown() {
+        resendButton.isEnabled = false
+        resendCooldown = 60
+        resendButton.setTitleColor(.color.sub2.color, for: .normal)
+        resendTimer?.invalidate()
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            guard let self else { return }
+            self.resendCooldown -= 1
+            if self.resendCooldown <= 0 {
+                timer.invalidate()
+                self.resendButton.isEnabled = true
+                self.resendButton.setTitleColor(.color.gomsPrimary.color, for: .normal)
+            }
+        }
+    }
+
+    private func secToTime(sec: Int) {
+        let minute = (sec % 3600) / 60
+        let second = (sec % 3600) % 60
+        timeLabel.text = second < 10 ? "\(minute):0\(second)" : "\(minute):\(second)"
+        if limitTime > 0 {
+            perform(#selector(getSetTime), with: nil, afterDelay: 1.0)
+        } else {
+            timeLabel.text = "00:00"
+        }
+    }
+
+    private func authCodeError() {
+        authErrorLabel.isHidden = false
+        authErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+        timeLabel.snp.remakeConstraints {
+            $0.leading.equalTo(24)
+            $0.top.equalTo(authErrorLabel.snp.bottom).offset(12)
+        }
+        resendButton.snp.remakeConstraints {
+            $0.top.equalTo(authErrorLabel.snp.bottom).offset(12)
+            $0.trailing.equalTo(-24)
+        }
+        view.layoutIfNeeded()
+    }
+
+    private func authCodeSuccess() {
+        authCodeTextField.layer.borderWidth = 0
+        authErrorLabel.isHidden = true
+        authErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+        timeLabel.snp.remakeConstraints {
+            $0.leading.equalTo(24)
+            $0.top.equalTo(authCodeTextField.snp.bottom).offset(12)
+        }
+        resendButton.snp.remakeConstraints {
+            $0.top.equalTo(authCodeTextField.snp.bottom).offset(12)
+            $0.trailing.equalTo(-24)
+        }
+        view.layoutIfNeeded()
+    }
+
+    @objc public override func keyboardWillShow(_ sender: Notification) {
+        guard let userInfo = sender.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
+        doneButton.snp.updateConstraints { $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-(keyboardHeight + 24)) }
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
+    }
+
+    @objc public override func keyboardWillHide(_ sender: Notification) {
+        guard let userInfo = sender.userInfo,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+        doneButton.snp.updateConstraints { $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24) }
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
     }
 }
 
 extension ProfileChangRePasswordViewController: UITextFieldDelegate {
-    
     public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        let currentText = (textField.text ?? "") as NSString
-        let updatedText = currentText.replacingCharacters(in: range, with: string)
-        
-        if updatedText.rangeOfCharacter(from: .whitespaces) != nil { return false }
-        
+        if textField == authCodeTextField {
+            let currentText = textField.text ?? ""
+            guard let stringRange = Range(range, in: currentText) else { return false }
+            let updatedText = currentText.replacingCharacters(in: stringRange, with: string)
+            return updatedText.count <= 6
+        }
         return true
     }
 }
