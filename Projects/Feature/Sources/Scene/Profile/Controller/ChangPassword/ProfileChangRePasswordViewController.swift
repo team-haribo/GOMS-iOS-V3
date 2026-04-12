@@ -74,6 +74,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         email = UserDefaults.standard.string(forKey: "localEmail")
+        viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
         authCodeTextField.delegate = self
         authCodeTextField.addTarget(self, action: #selector(authCodeEditingChanged(_:)), for: .editingChanged)
         getSetTime()
@@ -161,6 +162,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
     private func requestInitialAuthCode() {
         guard let email else { return }
         viewModel.setupEmail(email: email)
+        viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
         viewModel.sendAuthCode { [weak self] success, _ in
             guard let self else { return }
             DispatchQueue.main.async {
@@ -199,6 +201,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
         }
 
         viewModel.setupEmail(email: email)
+        viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
         viewModel.sendAuthCode { [weak self] success, statusCode in
             guard let self else { return }
             DispatchQueue.main.async {
@@ -224,6 +227,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
     @objc private func doneButtonTapped() {
         let code = authCodeTextField.text ?? ""
         viewModel.setupAuthCode(authCode: code)
+        viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
 
         if code.isEmpty {
             authCodeTextField.layer.borderWidth = 1
