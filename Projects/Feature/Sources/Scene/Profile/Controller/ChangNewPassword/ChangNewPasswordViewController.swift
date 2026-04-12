@@ -105,9 +105,7 @@ public final class ChangNewPasswordViewController: BaseViewController {
 
         guard let password = passwordTextField.text else { return }
 
-        let token = verifiedToken.isEmpty
-            ? KeyChain.shared.read(key: "verifiedToken") ?? ""
-            : verifiedToken
+        let token = verifiedToken
 
         guard !token.isEmpty else {
             let alert = UIAlertController(
