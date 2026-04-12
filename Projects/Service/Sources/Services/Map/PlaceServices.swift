@@ -22,6 +22,8 @@ public enum PlaceServices {
     case cancelRecommendPlace(placeId: Int, authorization: String) // 장소 추천 취소
     case writeReview(placeId: Int, content: String, authorization: String) // 리뷰 작성
     case deleteReview(reviewId: Int, authorization: String)    // 리뷰 삭제
+    // MARK: - 장소 전체 목록 조회 추가
+    case getAllPlaces(authorization: String)                   // DB에 저장된 전체 장소 목록 조회
 }
 
 extension PlaceServices: TargetType {
@@ -60,6 +62,9 @@ extension PlaceServices: TargetType {
             return "/api/v3/review/\(placeId)"
         case .deleteReview(let reviewId, _):
             return "/api/v3/review/\(reviewId)"
+        // MARK: - 장소 전체 목록 조회 경로 추가
+        case .getAllPlaces:
+            return "/api/v3/place"
         }
     }
 
@@ -111,7 +116,9 @@ extension PlaceServices: TargetType {
              .recommendPlace(_, let auth),
              .cancelRecommendPlace(_, let auth),
              .writeReview(_, _, let auth),
-             .deleteReview(_, let auth):
+             .deleteReview(_, let auth),
+             // MARK: - 장소 전체 목록 조회 헤더 추가
+             .getAllPlaces(let auth):
             commonHeaders["Authorization"] = auth
         }
         

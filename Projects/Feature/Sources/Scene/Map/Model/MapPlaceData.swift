@@ -60,7 +60,7 @@ public struct MapPlaceData: Codable {
 
 // MARK: - Review Data
 public struct MapReview: Codable {
-    public let reviewId: Int // 오류 해결을 위해 추가됨
+    public let reviewId: Int
     public let name: String
     public let info: String
     public let content: String
@@ -68,7 +68,7 @@ public struct MapReview: Codable {
     public let isMine: Bool
     
     public init(
-        reviewId: Int, // 생성자에도 추가
+        reviewId: Int,
         name: String,
         info: String,
         content: String,
