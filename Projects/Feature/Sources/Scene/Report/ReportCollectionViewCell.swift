@@ -6,6 +6,7 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import UIKit
 import SnapKit
 import Then
@@ -16,7 +17,7 @@ final class ReportCollectionViewCell: UICollectionViewCell {
     private let profileImageView = UIImageView().then {
         $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
         $0.contentMode = .scaleAspectFill
-        $0.layer.cornerRadius = 25
+        $0.layer.cornerRadius = 24
         $0.clipsToBounds = true
     }
     
@@ -109,6 +110,7 @@ final class ReportCollectionViewCell: UICollectionViewCell {
     
     required init?(coder: NSCoder) { fatalError() }
     
+    // MARK: - Configure
     func configure(with data: ReportData) {
         nameLabel.text = data.reviewerName
         infoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
@@ -116,11 +118,15 @@ final class ReportCollectionViewCell: UICollectionViewCell {
         locationLabel.text = data.location
         dateLabel.text = data.reportCreatedAt
         
-        if data.reportStatus == "RECEIVED" {
+        switch data.reportStatus {
+        case .pending:
             statusLabel.text = "처리전"
             statusLabel.textColor = UIColor.color.admin.color
-        } else {
+        case .resolved:
             statusLabel.text = "처리 완료"
+            statusLabel.textColor = UIColor.color.sub2.color
+        case .rejected:
+            statusLabel.text = "기각"
             statusLabel.textColor = UIColor.color.sub2.color
         }
     }
