@@ -32,7 +32,6 @@ public final class ReportDetailViewController: BaseViewController {
 
     private let statusLabel = UILabel().then {
         $0.font = .suit(size: 16, weight: .medium)
-        $0.textColor = UIColor.color.admin.color
     }
 
     private let reporterTitleLabel = UILabel().then {
@@ -162,24 +161,34 @@ public final class ReportDetailViewController: BaseViewController {
         }
     }
     
+    // MARK: - Update UI
     private func updateUI() {
-            guard let data = reportData else { return }
-            if data.reportStatus == "RECEIVED" {
-                statusLabel.text = "처리전 "
-                statusLabel.textColor = UIColor.color.admin.color
-            } else {
-                statusLabel.text = "처리완료"
-                statusLabel.textColor = UIColor.color.sub2.color
-            }
-            reporterNameLabel.text = data.reviewerName
-            reporterInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
-            contentLabel.text = data.reportContent
-            contentTimeLabel.text = data.reportCreatedAt
-            targetNameLabel.text = data.reviewerName
-            targetInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
-            reviewLabel.text = "내용이 비어있습니다."
-            reviewLocationAndTimeLabel.text = "\(data.location) | \(data.reportCreatedAt)"
+        guard let data = reportData else { return }
+        
+        // 신고 상태 처리
+        switch data.reportStatus {
+        case .pending:
+            statusLabel.text = "처리전"
+            statusLabel.textColor = UIColor.color.admin.color
+        case .resolved:
+            statusLabel.text = "처리 완료"
+            statusLabel.textColor = UIColor.color.sub2.color
+        case .rejected:
+            statusLabel.text = "기각"
+            statusLabel.textColor = UIColor.color.sub2.color
         }
+
+        // 신고자 및 대상자 공통 매칭
+        [reporterNameLabel, targetNameLabel].forEach { $0.text = data.reviewerName }
+        let infoText = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
+        [reporterInfoLabel, targetInfoLabel].forEach { $0.text = infoText }
+        
+        // 내용 및 시간 매칭
+        contentLabel.text = data.reportContent
+        contentTimeLabel.text = data.reportCreatedAt
+        reviewLabel.text = data.reviewContent
+        reviewLocationAndTimeLabel.text = "\(data.location) | \(data.reportCreatedAt)"
+    }
     
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
