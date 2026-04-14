@@ -14,8 +14,8 @@ import Service
 public final class ReportFilterBottomSheetVC: BaseViewController {
     
     // MARK: - Properties
-    private var viewModel: ReportListViewModel
-    private var reportListVC: ReportListViewController
+    private let viewModel: ReportListViewModel
+    private weak var reportListVC: ReportListViewController?
             
     init(reportListVC: ReportListViewController, viewModel: ReportListViewModel) {
         self.reportListVC = reportListVC
@@ -28,7 +28,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     }
     
     private lazy var dimmedView = UIView().then {
-        $0.backgroundColor = .clear // 검은빛 필터 제거
+        $0.backgroundColor = .clear
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(closeButtonTapped))
         $0.addGestureRecognizer(tapGesture)
     }
@@ -43,7 +43,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     private let titleLabel = UILabel().then {
         $0.text = "필터"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 20, weight: .bold) // 상태 레이블과 크기 통일
+        $0.font = .suit(size: 20, weight: .bold)
     }
     
     private lazy var closeButton = UIButton().then {
@@ -53,11 +53,10 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - 상태 섹션
     private let statusLabel = UILabel().then {
         $0.text = "상태"
         $0.textColor = .color.mainText.color
-        $0.font = .suit(size: 20, weight: .bold) // 필터 타이틀과 크기 통일
+        $0.font = .suit(size: 20, weight: .bold)
     }
     
     private lazy var pendingButton = BottomSheetButton(frame: .zero, title: "처리전")
@@ -74,6 +73,10 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         self.view.backgroundColor = .clear
     }
     
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
+    
     @objc func closeButtonTapped() {
         self.dismiss(animated: true)
     }
@@ -87,7 +90,9 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     }
     
     private func fetchData() {
-        // TODO: ViewModel 연동 로직
+        let status: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
+        // ViewModel에 필터링된 데이터 요청
+        // viewModel.fetchReportList(status: status)
     }
     
     @objc func resetButtonTapped() {
@@ -115,7 +120,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(276) // 디자인에 맞춰 높이 하향 조정
+            $0.height.equalTo(276)
         }
         
         titleLabel.snp.makeConstraints {
@@ -130,7 +135,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         
         statusLabel.snp.makeConstraints {
             $0.leading.equalTo(titleLabel)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(24) // 간격 조정
+            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
         }
         
         pendingButton.snp.makeConstraints {
@@ -148,7 +153,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         resetButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(52)
-            $0.top.equalTo(pendingButton.snp.bottom).offset(24) // 필터 초기화 버튼과 간격 줄임
+            $0.top.equalTo(pendingButton.snp.bottom).offset(24)
         }
     }
 }
