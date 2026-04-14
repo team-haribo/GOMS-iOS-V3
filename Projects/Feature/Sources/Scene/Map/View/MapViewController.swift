@@ -356,8 +356,15 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     public func addViews() {
-        let defaultPoint = MapPoint(longitude: 126.8106, latitude: 35.1461)
-        mapController?.addView(MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPoint, defaultLevel: 15))
+        let defaultPoint = MapPoint(longitude: 126.8005, latitude: 35.1425)
+        mapController?.addView(
+            MapviewInfo(
+                viewName: "mapview",
+                viewInfoName: "map",
+                defaultPosition: defaultPoint,
+                defaultLevel: 17
+            )
+        )
     }
 
     public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
@@ -367,8 +374,10 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
         view.eventDelegate = self
 
-        let defaultPoint = MapPoint(longitude: 126.8106, latitude: 35.1461)
-        view.moveCamera(CameraUpdate.make(target: defaultPoint, zoomLevel: 15, mapView: view))
+        let defaultPoint = MapPoint(longitude: 126.8005, latitude: 35.1425)
+        view.moveCamera(
+            CameraUpdate.make(target: defaultPoint, zoomLevel: 17, mapView: view)
+        )
 
         createPoiStyle()
         let manager = view.getLabelManager()
