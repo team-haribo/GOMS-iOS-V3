@@ -16,6 +16,8 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     
     // MARK: - Properties
     private let placeProvider = MoyaProvider<PlaceServices>()
+
+    private let distanceThreshold: Double = 0.001
     
     private var accessToken: String {
         guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else { return "" }
@@ -138,7 +140,14 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         placeDetailView.onHeartToggled = { [weak self] isSelected in
             guard let self = self, self.selectedPlaceId != -1 else { return }
             let service: PlaceServices = isSelected ? .recommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken) : .cancelRecommendPlace(placeId: self.selectedPlaceId, authorization: self.accessToken)
-            self.placeProvider.request(service) { [weak self] _ in self?.fetchRecommendedCount() }
+            self.placeProvider.request(service) { [weak self] result in
+                switch result {
+                case .success:
+                    self?.fetchRecommendedCount()
+                case .failure:
+                    print("heart toggle failed")
+                }
+            }
         }
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
             let detailVC = MapRouteDetailViewController(); detailVC.routeTypeTitle = routeTitle; detailVC.modalPresentationStyle = .overFullScreen
@@ -159,9 +168,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
                 do {
                     let decodedResponse = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
                     self.allPlaces = decodedResponse.places
-            
+                    self.renderAllPlaceMarkers()
                 } catch {
-                
+                    print("MapPlaceList decoding error:", error)
                 }
 
             case .failure:
@@ -378,22 +387,18 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         view.moveCamera(
             CameraUpdate.make(target: defaultPoint, zoomLevel: 17, mapView: view)
         )
-
         createPoiStyle()
         let manager = view.getLabelManager()
 
-      
         if let existingLayer = manager.getLabelLayer(layerID: "poiLayer") {
             let ids = existingLayer.getAllPois()?.map { $0.itemID } ?? []
             existingLayer.removePois(poiIDs: ids)
         }
 
-       
         if let existingActiveLayer = manager.getLabelLayer(layerID: "activePoiLayer") {
             let ids = existingActiveLayer.getAllPois()?.map { $0.itemID } ?? []
             existingActiveLayer.removePois(poiIDs: ids)
         }
-
 
         let _ = manager.addLabelLayer(option: LabelLayerOptions(layerID: "activePoiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 20001))
 
@@ -472,7 +477,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
        
         let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
-        if dist > 0.001 {
+        if dist > distanceThreshold {
             return
         }
 
@@ -515,7 +520,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
        
         let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
-        if dist > 0.001 {
+        if dist > distanceThreshold {
           
             return
         }
@@ -582,7 +587,16 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
                 guard let self = self, let currentIndexPath = tableView.indexPath(for: cell) else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
                     let reviewToDelete = self.dummyReviews[currentIndexPath.row]
-                    self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { _ in self.dummyReviews.remove(at: currentIndexPath.row) }
+                    self.placeProvider.request(.deleteReview(reviewId: reviewToDelete.reviewId, authorization: self.accessToken)) { result in
+                        switch result {
+                        case .success(let response):
+                            if (200..<300).contains(response.statusCode) {
+                                self.dummyReviews.remove(at: currentIndexPath.row)
+                            }
+                        case .failure:
+                            print("delete review failed")
+                        }
+                    }
                 }
             }
             cell.onReportTap = { [weak self] in guard let self = self else { return }; ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { } }
