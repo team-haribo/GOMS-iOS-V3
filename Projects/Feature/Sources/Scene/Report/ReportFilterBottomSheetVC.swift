@@ -83,21 +83,35 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     
     // MARK: - Filter Logic
     @objc func statusButtonTapped(sender: BottomSheetButton) {
+        // 단일 선택 로직: 누른 버튼만 선택되고 나머지는 해제
         [pendingButton, completedButton].forEach {
             $0.isSelected = ($0 == sender) ? !sender.isSelected : false
         }
-        fetchData()
+        applyFilter()
     }
     
-    private func fetchData() {
-        let status: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
-        // ViewModel에 필터링된 데이터 요청
-        // viewModel.fetchReportList(status: status)
-    }
+    private func applyFilter() {
+            let selectedStatus: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
+           
+            viewModel.fetchReportList { [weak self] success in
+                guard let self = self else { return }
+                
+                if success {
+                    if let status = selectedStatus {
+                        self.viewModel.reports = self.viewModel.reports.filter { $0.reportStatus == status }
+                    }
+                    DispatchQueue.main.async {
+                        self.reportListVC?.reloadReportList()
+                    }
+                } else {
+                    print("❌ 필터 적용을 위한 데이터 로드 실패")
+                }
+            }
+        }
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        fetchData()
+        applyFilter() 
     }
     
     // MARK: - UI

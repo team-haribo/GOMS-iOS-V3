@@ -6,7 +6,6 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
-
 import UIKit
 import SnapKit
 import Then
@@ -110,7 +109,7 @@ final class ReportCollectionViewCell: UICollectionViewCell {
     
     required init?(coder: NSCoder) { fatalError() }
     
-    // MARK: - Configure
+    // MARK: - Configure (Data Binding)
     func configure(with data: ReportData) {
         nameLabel.text = data.reviewerName
         infoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
