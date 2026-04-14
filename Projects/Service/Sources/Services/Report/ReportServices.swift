@@ -10,26 +10,25 @@ import Foundation
 import Moya
 
 public enum ReportServices {
-    case reportList(authorization: String)
+    case reportList(status: String, authorization: String)
     case reportDetail(reportId: Int, authorization: String)
-    case reportDelete(reviewId: Int, authorization: String) // 리뷰 삭제 처리
-    case reportReject(reportId: Int, authorization: String) // 신고 기각 처리
+    case reportDelete(reviewId: Int, authorization: String)
+    case reportReject(reportId: Int, authorization: String)
 }
 
 extension ReportServices: TargetType {
     public var baseURL: URL {
-        guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String,
-              let url = URL(string: urlString) else {
-            fatalError("ReportAPIㅣURL을 불러올 수 없습니다.")
+        if let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String,
+           let url = URL(string: urlString) {
+            return url
         }
-        return url
+        return URL(string: "")!
     }
 
     public var path: String {
         switch self {
-        case .reportList:
-            
-            return "/api/v3/student-council/report/pending"
+        case .reportList(let status, _):
+            return "/api/v3/student-council/report/\(status)"
         case .reportDetail(let reportId, _):
             return "/api/v3/student-council/report/\(reportId)"
         case .reportDelete(let reviewId, _):
@@ -58,7 +57,7 @@ extension ReportServices: TargetType {
 
     public var headers: [String : String]? {
         switch self {
-        case .reportList(let authorization),
+        case .reportList(_, let authorization),
              .reportDetail(_, let authorization),
              .reportDelete(_, let authorization),
              .reportReject(_, let authorization):
