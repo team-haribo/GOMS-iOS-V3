@@ -71,15 +71,15 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         setupActions()
         setupReviewWriteAction()
         fetchRecommendedCount()
+        setupMap()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if mapController == nil {
-            setupMap()
-        } else {
-            mapController?.activateEngine()
-        }
+    }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
     }
 
     public override func viewDidDisappear(_ animated: Bool) {
@@ -341,6 +341,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     // MARK: - Kakao Maps Setup
     private func setupMap() {
         mapWrapperView.layoutIfNeeded()
+        mapWrapperView.subviews.forEach { $0.removeFromSuperview() }
         let container = KMViewContainer(frame: mapWrapperView.bounds)
         container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         mapWrapperView.addSubview(container)
@@ -365,6 +366,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         }
 
         view.eventDelegate = self
+
+        let defaultPoint = MapPoint(longitude: 126.8106, latitude: 35.1461)
+        view.moveCamera(CameraUpdate.make(target: defaultPoint, zoomLevel: 15, mapView: view))
 
         createPoiStyle()
         let manager = view.getLabelManager()
