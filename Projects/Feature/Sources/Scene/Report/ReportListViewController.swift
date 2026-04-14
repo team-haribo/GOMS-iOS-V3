@@ -12,6 +12,7 @@ import Then
 
 public final class ReportListViewController: BaseViewController {
     
+    // MARK: - Properties
     private let viewModel = ReportListViewModel()
     
     private lazy var customBackButton = UIButton().then {
@@ -45,6 +46,13 @@ public final class ReportListViewController: BaseViewController {
         $0.textColor = UIColor.color.mainText.color
         $0.font = .suit(size: 20, weight: .bold)
     }
+
+    private lazy var filterButton = UIButton().then {
+        $0.setTitle("필터", for: .normal)
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.titleLabel?.font = .suit(size: 15, weight: .medium)
+        $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
+    }
     
     private lazy var reportCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
         $0.backgroundColor = .clear
@@ -69,13 +77,11 @@ public final class ReportListViewController: BaseViewController {
     
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // 네이티브 네비게이션 바 숨김
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // 디테일 뷰에서 사용하신 방식: BaseViewController가 추가한 height 100짜리 navView를 찾아 삭제
         self.view.subviews.forEach {
             if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
                 $0.isHidden = true
@@ -90,17 +96,22 @@ public final class ReportListViewController: BaseViewController {
         reportCollectionView.register(ReportCollectionViewCell.self, forCellWithReuseIdentifier: ReportCollectionViewCell.identifier)
     }
 
+    // MARK: - Selector
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
     }
     
     @objc private func createQRButtonTapped() { }
 
+    @objc private func filterButtonTapped() {
+        let filterVC = ReportFilterBottomSheetVC(reportListVC: self, viewModel: self.viewModel)
+        filterVC.modalPresentationStyle = .overFullScreen
+        self.present(filterVC, animated: true)
+    }
+
     // MARK: - UI
     public override func addView() {
-        [customBackButton, titleLabel, searchBar, resultLabel, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
-        
-        // 내 커스텀 버튼이 가장 앞으로 오도록 보장
+        [customBackButton, titleLabel, searchBar, resultLabel, filterButton, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
         view.bringSubviewToFront(customBackButton)
     }
     
@@ -121,6 +132,10 @@ public final class ReportListViewController: BaseViewController {
         resultLabel.snp.makeConstraints {
             $0.top.equalTo(searchBar.snp.bottom).offset(28)
             $0.leading.equalToSuperview().offset(24)
+        }
+        filterButton.snp.makeConstraints {
+            $0.centerY.equalTo(resultLabel)
+            $0.trailing.equalToSuperview().inset(24)
         }
         reportCollectionView.snp.makeConstraints {
             $0.top.equalTo(resultLabel.snp.bottom).offset(12)
