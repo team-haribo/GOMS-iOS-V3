@@ -13,7 +13,6 @@ import Service
 
 public final class ReportFilterBottomSheetVC: BaseViewController {
     
-    // MARK: - Properties
     private let viewModel: ReportListViewModel
     private weak var reportListVC: ReportListViewController?
             
@@ -67,7 +66,6 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         $0.addTarget(self, action: #selector(resetButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - LifeCycle
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
@@ -81,9 +79,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         self.dismiss(animated: true)
     }
     
-    // MARK: - Filter Logic
     @objc func statusButtonTapped(sender: BottomSheetButton) {
-        // 단일 선택 로직: 누른 버튼만 선택되고 나머지는 해제
         [pendingButton, completedButton].forEach {
             $0.isSelected = ($0 == sender) ? !sender.isSelected : false
         }
@@ -91,30 +87,20 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     }
     
     private func applyFilter() {
-            let selectedStatus: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
-           
-            viewModel.fetchReportList { [weak self] success in
-                guard let self = self else { return }
-                
-                if success {
-                    if let status = selectedStatus {
-                        self.viewModel.reports = self.viewModel.reports.filter { $0.reportStatus == status }
-                    }
-                    DispatchQueue.main.async {
-                        self.reportListVC?.reloadReportList()
-                    }
-                } else {
-                    print("❌ 필터 적용을 위한 데이터 로드 실패")
-                }
-            }
+        let selectedStatus: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
+        
+        viewModel.filterReportsByStatus(status: selectedStatus)
+        
+        DispatchQueue.main.async {
+            self.reportListVC?.reloadReportList()
         }
+    }
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        applyFilter() 
+        applyFilter()
     }
     
-    // MARK: - UI
     public override func addView() {
         view.addSubview(dimmedView)
         view.addSubview(bottomSheetView)
