@@ -78,19 +78,6 @@ public struct ReportData {
         self.reviewContent = dto.reviewContent ?? "리뷰 본문이 없습니다."
         self.location = dto.placeName ?? "알 수 없는 장소"
     }
-
-    public init(reportId: Int, reviewId: Int, reviewerName: String, reviewerGrade: Int, reviewerDepartment: String, reportCreatedAt: String, reportStatus: ReportStatusType, reportContent: String, reviewContent: String, location: String) {
-        self.reportId = reportId
-        self.reviewId = reviewId
-        self.reviewerName = reviewerName
-        self.reviewerGrade = reviewerGrade
-        self.reviewerDepartment = reviewerDepartment
-        self.reportCreatedAt = reportCreatedAt
-        self.reportStatus = reportStatus
-        self.reportContent = reportContent
-        self.reviewContent = reviewContent
-        self.location = location
-    }
 }
 
 public final class ReportListViewModel {
@@ -98,18 +85,19 @@ public final class ReportListViewModel {
     public var reports: [ReportData] = []
     private let reportProvider = MoyaProvider<ReportServices>()
     
+    public var filterStatus: String = "pending"
+    
     public init() {}
     
     public func fetchReportList(completion: @escaping (Bool) -> Void) {
         guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
-            self.loadMockData()
-            completion(true)
+            completion(false)
             return
         }
         
         let authorization = "Bearer \(token)"
         
-        reportProvider.request(.reportList(authorization: authorization)) { result in
+        reportProvider.request(.reportList(status: filterStatus, authorization: authorization)) { result in
             switch result {
             case let .success(response):
                 if response.statusCode == 200 {
@@ -119,16 +107,15 @@ public final class ReportListViewModel {
                         self.reports = self.allReports
                         completion(true)
                     } catch {
-                        self.loadMockData()
-                        completion(true)
+                        print("Decoding Error: \(error)")
+                        completion(false)
                     }
                 } else {
-                    self.loadMockData()
-                    completion(true)
+                    completion(false)
                 }
-            case .failure:
-                self.loadMockData()
-                completion(true)
+            case .failure(let error):
+                print("Network Error: \(error)")
+                completion(false)
             }
         }
     }
@@ -138,18 +125,17 @@ public final class ReportListViewModel {
             reports = allReports
         } else {
             reports = allReports.filter {
-                $0.reviewerName.contains(text) || $0.reportContent.contains(text)
+                $0.reviewerName.localizedCaseInsensitiveContains(text) ||
+                $0.reportContent.localizedCaseInsensitiveContains(text)
             }
         }
     }
-    
-    public func loadMockData() {
-        let mock = [
-            ReportData(reportId: 1, reviewId: 101, reviewerName: "김민솔", reviewerGrade: 1, reviewerDepartment: "SW", reportCreatedAt: "26.04.14 23:10", reportStatus: .pending, reportContent: "부적절한 단어", reviewContent: "리뷰 내용", location: "짬뽕관"),
-            ReportData(reportId: 2, reviewId: 102, reviewerName: "이승제", reviewerGrade: 2, reviewerDepartment: "iOS", reportCreatedAt: "26.04.14 22:05", reportStatus: .rejected, reportContent: "공격적인 리뷰", reviewContent: "리뷰 내용", location: "맥도날드"),
-            ReportData(reportId: 3, reviewId: 103, reviewerName: "최희진", reviewerGrade: 3, reviewerDepartment: "Design", reportCreatedAt: "26.04.14 21:30", reportStatus: .resolved, reportContent: "허위 사실", reviewContent: "리뷰 내용", location: "스타벅스")
-        ]
-        allReports = mock
-        reports = mock
+
+    public func filterReportsByStatus(status: ReportStatusType?) {
+        guard let status = status else {
+            self.reports = self.allReports
+            return
+        }
+        self.reports = self.allReports.filter { $0.reportStatus == status }
     }
 }
