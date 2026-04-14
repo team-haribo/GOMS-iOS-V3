@@ -161,11 +161,9 @@ public final class ReportDetailViewController: BaseViewController {
         }
     }
     
-    // MARK: - Update UI
     private func updateUI() {
         guard let data = reportData else { return }
         
-        // 신고 상태 처리
         switch data.reportStatus {
         case .pending:
             statusLabel.text = "처리전"
@@ -178,12 +176,12 @@ public final class ReportDetailViewController: BaseViewController {
             statusLabel.textColor = UIColor.color.sub2.color
         }
 
-        // 신고자 및 대상자 공통 매칭
-        [reporterNameLabel, targetNameLabel].forEach { $0.text = data.reviewerName }
-        let infoText = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
-        [reporterInfoLabel, targetInfoLabel].forEach { $0.text = infoText }
+        reporterNameLabel.text = "신고자"
+        reporterInfoLabel.text = "정보 없음"
         
-        // 내용 및 시간 매칭
+        targetNameLabel.text = data.reviewerName
+        targetInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
+        
         contentLabel.text = data.reportContent
         contentTimeLabel.text = data.reportCreatedAt
         reviewLabel.text = data.reviewContent
