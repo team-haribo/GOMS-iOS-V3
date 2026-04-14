@@ -60,6 +60,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private var selectedPlaceId: Int = -1
     private var currentPlaceDetail: MapPlaceDetailModel?
 
+
     // MARK: - Life Cycle
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -151,31 +152,50 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     // MARK: - Networking
     private func fetchPlaceList() {
         placeProvider.request(.getAllPlaces(authorization: accessToken)) { [weak self] result in
+            guard let self = self else { return }
+
             switch result {
             case .success(let response):
-                if let decodedData = try? JSONDecoder().decode(MapPlaceResponse.self, from: response.data).places {
-                    self?.allPlaces = decodedData
-                    self?.renderAllPlaceMarkers()
+                do {
+                    let decodedResponse = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
+                    self.allPlaces = decodedResponse.places
+            
+                } catch {
+                
                 }
-            case .failure(let error):
-                print("[DEBUG] 장소 로드 에러: \(error.localizedDescription)")
+
+            case .failure:
+                break
             }
         }
     }
     
-    private func fetchRecommendedCount() { placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in } }
+    private func fetchRecommendedCount() {
+        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in }
+    }
     
     private func fetchReviews(placeId: Int) {
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: self.accessToken)) { [weak self] result in
-            if case .success(let response) = result { self?.dummyReviews = (try? JSONDecoder().decode([MapReview].self, from: response.data)) ?? [] }
+            switch result {
+            case .success(let response):
+                self?.dummyReviews = (try? JSONDecoder().decode([MapReview].self, from: response.data)) ?? []
+            case .failure:
+                break
+            }
         }
     }
 
     @objc private func performSearch() {
         guard let keyword = searchBar.textField.text, !keyword.isEmpty else { return }
         placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
-            if case .success(let response) = result, let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data) {
-                self?.dummyRecentSearches = decodedData; self?.recentSearchView.titleLabel.text = decodedData.isEmpty ? "검색 결과가 없습니다" : "'\(keyword)' 검색 결과"
+            switch result {
+            case .success(let response):
+                if let decodedData = try? JSONDecoder().decode([MapPlaceData].self, from: response.data) {
+                    self?.dummyRecentSearches = decodedData
+                    self?.recentSearchView.titleLabel.text = decodedData.isEmpty ? "검색 결과가 없습니다" : "'\(keyword)' 검색 결과"
+                }
+            case .failure:
+                break
             }
         }
     }
@@ -190,17 +210,41 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
         let manager = view.getLabelManager()
         guard let layer = manager.getLabelLayer(layerID: "poiLayer") else { return }
-        
-        layer.removePois(poiIDs: layer.getAllPois()?.map { $0.itemID } ?? [])
+
+        let existingPoiIDs = layer.getAllPois()?.map { $0.itemID } ?? []
+        layer.removePois(poiIDs: existingPoiIDs)
 
         for place in allPlaces {
-            let option = PoiOptions(styleID: "dotStyle", poiID: "\(place.placeId)")
-            option.clickable = true
+            let styleID = styleIDForCategory(place.categoryName)
+            guard !styleID.isEmpty else { continue }
+            let option = PoiOptions(styleID: styleID, poiID: "\(place.placeId)")
+            option.clickable = false
             option.rank = 0
             if let poi = layer.addPoi(option: option, at: MapPoint(longitude: place.longitude, latitude: place.latitude)) {
                 poi.show()
             }
         }
+    }
+
+    private func styleIDForCategory(_ category: String) -> String {
+        if category.contains("편의점") {
+            return "CS2"
+        } else if category.contains("슈퍼") {
+            return "MT1"
+        } else if category.contains("문화") || category.contains("공연") || category.contains("미술관") {
+            return "CT1"
+        } else if category.contains("음식점") || category.contains("치킨") || category.contains("피자") || category.contains("한식") || category.contains("중식") || category.contains("일식") {
+            return "FD6"
+        } else if category.contains("카페") || category.contains("베이커리") {
+            return "CE7"
+        } else if category.contains("병원") {
+            return "HP8"
+        } else if category.contains("약국") {
+            return "PM9"
+        } else if category.contains("관광") || category.contains("명소") {
+            return "AT4"
+        }
+        return ""
     }
 
     // MARK: - Gestures
@@ -236,14 +280,24 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     // MARK: - View Transition
     private func showDetailView(with data: MapPlaceData? = nil) {
         self.bottomSheetView.isHidden = true
+
         if let data = data {
+           
             placeProvider.request(.getPlaceDetail(placeId: data.placeId, authorization: accessToken)) { [weak self] result in
-                if case .success(let response) = result, let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
-                    self?.selectedPlaceId = detailModel.placeId
-                    self?.currentPlaceDetail = detailModel
-                    self?.placeDetailView.configure(with: detailModel)
-                    self?.fetchReviews(placeId: detailModel.placeId)
-                    self?.updateViewVisibility()
+                switch result {
+                case .success(let response):
+                    if let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
+                       
+                        self?.selectedPlaceId = detailModel.placeId
+                        self?.currentPlaceDetail = detailModel
+                        self?.placeDetailView.configure(with: detailModel)
+                        self?.fetchReviews(placeId: detailModel.placeId)
+                        self?.updateViewVisibility()
+                    } else {
+                        
+                    }
+                case .failure:
+                    break
                 }
             }
         } else {
@@ -301,65 +355,190 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     public func addViews() {
-        mapController?.addView(MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: MapPoint(longitude: 126.8106, latitude: 35.1461), defaultLevel: 15))
+        let defaultPoint = MapPoint(longitude: 126.8106, latitude: 35.1461)
+        mapController?.addView(MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPoint, defaultLevel: 15))
     }
 
     public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
-        guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
+        guard let view = mapController?.getView("mapview") as? KakaoMap else {
+            return
+        }
+
         view.eventDelegate = self
+
         createPoiStyle()
         let manager = view.getLabelManager()
-        
-        // competitionType을 none으로 설정하여 터치 간섭 방지
-        let _ = manager.addLabelLayer(option: LabelLayerOptions(layerID: "poiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 20000))
+
+      
+        if let existingLayer = manager.getLabelLayer(layerID: "poiLayer") {
+            let ids = existingLayer.getAllPois()?.map { $0.itemID } ?? []
+            existingLayer.removePois(poiIDs: ids)
+        }
+
+       
+        if let existingActiveLayer = manager.getLabelLayer(layerID: "activePoiLayer") {
+            let ids = existingActiveLayer.getAllPois()?.map { $0.itemID } ?? []
+            existingActiveLayer.removePois(poiIDs: ids)
+        }
+
+
         let _ = manager.addLabelLayer(option: LabelLayerOptions(layerID: "activePoiLayer", competitionType: .none, competitionUnit: .poi, orderType: .rank, zOrder: 20001))
-        
+
         fetchPlaceList()
     }
 
     private func createPoiStyle() {
-        guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
-        let manager = view.getLabelManager()
-        
-        // 정규화된 이미지 로드 방식 (모듈 이슈 방지)
-        let pinImage = UIImage(named: "ic_route_location_pin") ?? UIImage(systemName: "mappin.and.ellipse")!
-        
-        // 비트맵 정규화 (엔진 호환성 확보)
-        UIGraphicsBeginImageContextWithOptions(pinImage.size, false, pinImage.scale)
-        pinImage.draw(in: CGRect(origin: .zero, size: pinImage.size))
-        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        if let actualPin = normalizedImage {
-            let dotIconStyle = PoiIconStyle(symbol: actualPin, anchorPoint: CGPoint(x: 0.5, y: 1.0))
-            let poiStyle = PoiStyle(styleID: "dotStyle", styles: [PerLevelPoiStyle(iconStyle: dotIconStyle, level: 0)])
-            manager.addPoiStyle(poiStyle)
-            
-            // active 스타일 추가 (누락 방지)
-            let activeIconStyle = PoiIconStyle(symbol: actualPin, anchorPoint: CGPoint(x: 0.5, y: 1.0))
-            let activeStyle = PoiStyle(styleID: "activePinStyle", styles: [PerLevelPoiStyle(iconStyle: activeIconStyle, level: 0)])
-            manager.addPoiStyle(activeStyle)
+       
+        func resizedImage(_ image: UIImage, size: CGSize) -> UIImage {
+            let renderer = UIGraphicsImageRenderer(size: size)
+            return renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: size))
+            }
         }
+
+        guard let view = mapController?.getView("mapview") as? KakaoMap else {
+            return
+        }
+
+        let manager = view.getLabelManager()
+
+        let categories: [String] = [
+            "MT1",
+            "CS2",
+            "AT4",
+            "CT1",
+            "FD6",
+            "CE7",
+            "HP8",
+            "PM9"
+        ]
+
+        for styleID in categories {
+            let image: UIImage
+            switch styleID {
+            case "MT1": image = FeatureAsset.Images.mt1.image
+            case "CS2": image = FeatureAsset.Images.mt1.image
+            case "AT4": image = FeatureAsset.Images.at4.image
+            case "CT1": image = FeatureAsset.Images.ct1.image
+            case "FD6": image = FeatureAsset.Images.fd6.image
+            case "CE7": image = FeatureAsset.Images.ce7.image
+            case "HP8": image = FeatureAsset.Images.hp8.image
+            case "PM9": image = FeatureAsset.Images.pm9.image
+            default: continue
+            }
+            let resized = resizedImage(image, size: CGSize(width: 32, height: 32))
+            let iconStyle = PoiIconStyle(symbol: resized, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+            let poiStyle = PoiStyle(styleID: styleID, styles: [PerLevelPoiStyle(iconStyle: iconStyle, level: 0)])
+            manager.addPoiStyle(poiStyle)
+        }
+
+
+        let defaultImage = UIImage(systemName: "mappin.and.ellipse")!
+        let activeIconStyle = PoiIconStyle(symbol: defaultImage, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+        let activeStyle = PoiStyle(styleID: "activePinStyle", styles: [PerLevelPoiStyle(iconStyle: activeIconStyle, level: 0)])
+        manager.addPoiStyle(activeStyle)
     }
 
     public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) {
-        if !placeDetailView.isHidden { hideDetailView() }
+       
+        return
     }
 
-    public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String) {
-        let cleanID = poiID.replacingOccurrences(of: "active_", with: "")
-        guard let id = Int(cleanID), let selectedData = allPlaces.first(where: { $0.placeId == id }) else { return }
-        
-        showDetailView(with: selectedData)
-        
+    // MARK: - Kakao 기본 POI 클릭 처리
+    public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
+
+        let coord = poi.position
+        let wgs = coord.wgsCoord
+
+        guard let nearestPlace = findNearestPlace(
+            latitude: wgs.latitude,
+            longitude: wgs.longitude
+        ) else {
+            return
+        }
+
+       
+        let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
+        if dist > 0.001 {
+            return
+        }
+
+
+        showDetailView(with: nearestPlace)
+
         if let activeLayer = kakaoMap.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
-            activeLayer.removePois(poiIDs: activeLayer.getAllPois()?.map { $0.itemID } ?? [])
-            let option = PoiOptions(styleID: "activePinStyle", poiID: "active_\(cleanID)")
-            option.clickable = true
-            if let activePoi = activeLayer.addPoi(option: option, at: MapPoint(longitude: selectedData.longitude, latitude: selectedData.latitude)) {
-                activePoi.show()
+            let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
+            activeLayer.removePois(poiIDs: ids)
+
+            let styleID = styleIDForCategory(nearestPlace.categoryName)
+            let option = PoiOptions(styleID: styleID, poiID: "active_\(nearestPlace.placeId)")
+            option.clickable = false
+
+            if let poi = activeLayer.addPoi(
+                option: option,
+                at: MapPoint(longitude: nearestPlace.longitude, latitude: nearestPlace.latitude)
+            ) {
+                poi.show()
             }
         }
+    }
+
+    public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, position: MapPoint) {
+       
+        
+        if layerID == "activePoiLayer" || poiID.hasPrefix("active_") {
+            
+            return
+        }
+
+       
+        let wgs = position.wgsCoord
+        guard let nearestPlace = findNearestPlace(
+            latitude: wgs.latitude,
+            longitude: wgs.longitude
+        ) else {
+            return
+        }
+
+       
+        let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
+        if dist > 0.001 {
+          
+            return
+        }
+
+     
+        showDetailView(with: nearestPlace)
+
+        if let activeLayer = kakaoMap.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
+            let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
+            activeLayer.removePois(poiIDs: ids)
+
+            let styleID = styleIDForCategory(nearestPlace.categoryName)
+            let option = PoiOptions(styleID: styleID, poiID: "active_\(nearestPlace.placeId)")
+            option.clickable = false
+
+            if let poi = activeLayer.addPoi(
+                option: option,
+                at: MapPoint(longitude: nearestPlace.longitude, latitude: nearestPlace.latitude)
+            ) {
+                poi.show()
+            }
+        }
+    }
+
+    private func findNearestPlace(latitude: Double, longitude: Double) -> MapPlaceData? {
+        return allPlaces.min(by: {
+            let d1 = distance(lat1: latitude, lon1: longitude, lat2: $0.latitude, lon2: $0.longitude)
+            let d2 = distance(lat1: latitude, lon1: longitude, lat2: $1.latitude, lon2: $1.longitude)
+            return d1 < d2
+        })
+    }
+
+    private func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
+        let dx = lat1 - lat2
+        let dy = lon1 - lon2
+        return sqrt(dx * dx + dy * dy)
     }
     
     deinit {
@@ -370,7 +549,10 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 }
 
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { return tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count }
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        let count = tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
+        return count
+    }
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == recentSearchView.tableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
