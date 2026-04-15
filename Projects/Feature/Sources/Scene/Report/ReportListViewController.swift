@@ -21,7 +21,7 @@ public final class ReportListViewController: BaseViewController {
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
     
@@ -60,9 +60,9 @@ public final class ReportListViewController: BaseViewController {
     }
 
     private let createQRButton = AdminQRButton(
-        frame: .zero,
+        frame: CGRect(x: 0, y: 0, width: 64, height: 64),
         backgroundColor: UIColor.color.admin.color,
-        icon: UIImage(systemName: "qrcode") ?? UIImage()
+        icon: UIImage(named: "qrIcon", in: Bundle.module, compatibleWith: nil) ?? UIImage()
     ).then {
         $0.layer.cornerRadius = 32
         $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
@@ -129,7 +129,15 @@ public final class ReportListViewController: BaseViewController {
         self.navigationController?.popViewController(animated: true)
     }
     
-    @objc private func createQRButtonTapped() { }
+    @objc private func createQRButtonTapped() {
+        createQRButton.isUserInteractionEnabled = false
+        let adminQRVC = AdminQRViewController()
+        self.navigationController?.pushViewController(adminQRVC, animated: true)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.createQRButton.isUserInteractionEnabled = true
+        }
+    }
 
     @objc private func filterButtonTapped() {
         let filterVC = ReportFilterBottomSheetVC(reportListVC: self, viewModel: self.viewModel)
@@ -138,9 +146,17 @@ public final class ReportListViewController: BaseViewController {
     }
 
     // MARK: - UI
+    public override func configureUI() {
+        createQRButton.layer.shadowColor = UIColor.color.admin.color.cgColor
+        createQRButton.layer.shadowOpacity = 0.8
+        createQRButton.layer.shadowRadius = 13
+        createQRButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
+    }
+
     public override func addView() {
         [customBackButton, titleLabel, searchBar, resultLabel, filterButton, reportCollectionView, createQRButton].forEach { view.addSubview($0) }
         view.bringSubviewToFront(customBackButton)
+        view.bringSubviewToFront(createQRButton)
     }
     
     public override func setLayout() {
