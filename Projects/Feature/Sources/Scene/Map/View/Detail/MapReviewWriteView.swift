@@ -55,6 +55,8 @@ public final class MapReviewWriteView: UIView {
     public let placeNameLabel = UILabel().then {
         $0.font = .suit(size: 20, weight: .semibold)
         $0.textColor = .color.mainText.color
+        $0.numberOfLines = 2
+        $0.lineBreakMode = .byWordWrapping
     }
     
     public let categoryLabel = UILabel().then {
@@ -151,6 +153,7 @@ public final class MapReviewWriteView: UIView {
         placeInfoStack.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(24)
             $0.leading.equalToSuperview().offset(24)
+            $0.trailing.lessThanOrEqualTo(heartButton.snp.leading).offset(-8)
         }
         heartButton.snp.makeConstraints {
             $0.centerY.equalTo(placeNameLabel)

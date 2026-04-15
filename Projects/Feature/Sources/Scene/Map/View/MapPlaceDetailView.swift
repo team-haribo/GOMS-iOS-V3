@@ -158,7 +158,8 @@ public final class MapPlaceDetailView: UIView {
     // MARK: - Configure
     public func configure(with data: MapPlaceDetailModel) {
         titleLabel.text = data.placeName
-        categoryLabel.text = data.categoryName
+        let categories = data.categoryName.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
+        categoryLabel.text = categories.last
         addressLabel.text = data.address
         infoLabel.text = data.roadAddress
         heartButton.isSelected = data.recommended
