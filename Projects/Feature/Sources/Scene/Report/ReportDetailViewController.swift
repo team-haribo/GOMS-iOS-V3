@@ -205,9 +205,9 @@ public final class ReportDetailViewController: BaseViewController {
         guard let reportId = reportData?.reportId else { return }
         viewModel?.rejectReport(reportId: reportId) { [weak self] success in
             if success {
-                self?.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.")
+                self?.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.", isSuccess: true)
             } else {
-                self?.showAlert(title: "오류", message: "처리에 실패했습니다.")
+                self?.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
             }
         }
     }
@@ -216,17 +216,19 @@ public final class ReportDetailViewController: BaseViewController {
         guard let reviewId = reportData?.reviewId else { return }
         viewModel?.deleteReview(reviewId: reviewId) { [weak self] success in
             if success {
-                self?.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.")
+                self?.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.", isSuccess: true)
             } else {
-                self?.showAlert(title: "오류", message: "처리에 실패했습니다.")
+                self?.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
             }
         }
     }
 
-    private func showAlert(title: String, message: String) {
+    private func showAlert(title: String, message: String, isSuccess: Bool) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-            self.navigationController?.popViewController(animated: true)
+            if isSuccess {
+                self.navigationController?.popViewController(animated: true)
+            }
         })
         self.present(alert, animated: true)
     }
