@@ -121,7 +121,10 @@ public final class ReportListViewModel {
     }
 
     public func deleteReview(reviewId: Int, completion: @escaping (Bool) -> Void) {
-        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else { return }
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
+            completion(false)
+            return
+        }
         let authorization = "Bearer \(token)"
         
         reportProvider.request(.reportDelete(reviewId: reviewId, authorization: authorization)) { result in
@@ -135,7 +138,10 @@ public final class ReportListViewModel {
     }
 
     public func rejectReport(reportId: Int, completion: @escaping (Bool) -> Void) {
-        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else { return }
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
+            completion(false)
+            return
+        }
         let authorization = "Bearer \(token)"
         
         reportProvider.request(.reportReject(reportId: reportId, authorization: authorization)) { result in
