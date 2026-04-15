@@ -13,6 +13,7 @@ import Then
 public final class ReportDetailViewController: BaseViewController {
     
     public var reportData: ReportData?
+    public var viewModel: ReportListViewModel?
     
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
@@ -20,7 +21,7 @@ public final class ReportDetailViewController: BaseViewController {
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
 
@@ -125,20 +126,22 @@ public final class ReportDetailViewController: BaseViewController {
         $0.textAlignment = .right
     }
 
-    private let rejectButton = UIButton().then {
+    private lazy var rejectButton = UIButton().then {
         $0.setTitle("기각", for: .normal)
         $0.setTitleColor(UIColor.color.sub2.color, for: .normal)
         $0.backgroundColor = UIColor.color.surface.color
         $0.titleLabel?.font = .suit(size: 16, weight: .semibold)
         $0.layer.cornerRadius = 12
+        $0.addTarget(self, action: #selector(rejectButtonTapped), for: .touchUpInside)
     }
 
-    private let deleteButton = UIButton().then {
+    private lazy var deleteButton = UIButton().then {
         $0.setTitle("리뷰 삭제", for: .normal)
         $0.setTitleColor(.white, for: .normal)
         $0.backgroundColor = UIColor.color.gomsNegative.color
         $0.titleLabel?.font = .suit(size: 16, weight: .semibold)
         $0.layer.cornerRadius = 12
+        $0.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
     }
 
     public override func viewDidLoad() {
@@ -168,12 +171,18 @@ public final class ReportDetailViewController: BaseViewController {
         case .pending:
             statusLabel.text = "처리전"
             statusLabel.textColor = UIColor.color.admin.color
+            rejectButton.isHidden = false
+            deleteButton.isHidden = false
         case .resolved:
             statusLabel.text = "처리 완료"
             statusLabel.textColor = UIColor.color.sub2.color
+            rejectButton.isHidden = true
+            deleteButton.isHidden = true
         case .rejected:
             statusLabel.text = "기각"
             statusLabel.textColor = UIColor.color.sub2.color
+            rejectButton.isHidden = true
+            deleteButton.isHidden = true
         }
 
         reporterNameLabel.text = "신고자"
@@ -190,6 +199,36 @@ public final class ReportDetailViewController: BaseViewController {
     
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
+    }
+
+    @objc private func rejectButtonTapped() {
+        guard let reportId = reportData?.reportId else { return }
+        viewModel?.rejectReport(reportId: reportId) { [weak self] success in
+            if success {
+                self?.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.")
+            } else {
+                self?.showAlert(title: "오류", message: "처리에 실패했습니다.")
+            }
+        }
+    }
+
+    @objc private func deleteButtonTapped() {
+        guard let reviewId = reportData?.reviewId else { return }
+        viewModel?.deleteReview(reviewId: reviewId) { [weak self] success in
+            if success {
+                self?.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.")
+            } else {
+                self?.showAlert(title: "오류", message: "처리에 실패했습니다.")
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            self.navigationController?.popViewController(animated: true)
+        })
+        self.present(alert, animated: true)
     }
 
     public override func addView() {
