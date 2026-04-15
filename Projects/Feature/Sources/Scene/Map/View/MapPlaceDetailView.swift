@@ -36,10 +36,8 @@ public final class MapPlaceDetailView: UIView {
     public let titleLabel = UILabel().then {
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
-        // MARK: - FIX (Text Fitting)
-        $0.adjustsFontSizeToFitWidth = true
-        $0.minimumScaleFactor = 0.7
-        $0.lineBreakMode = .byTruncatingTail
+        $0.numberOfLines = 2
+        $0.lineBreakMode = .byWordWrapping
     }
     
     public let categoryLabel = UILabel().then {
