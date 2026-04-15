@@ -60,7 +60,7 @@ public final class ReportListViewController: BaseViewController {
     }
 
     private let createQRButton = AdminQRButton(
-        frame: CGRect(x: 0, y: 0, width: 64, height: 64),
+        frame: .zero,
         backgroundColor: UIColor.color.admin.color,
         icon: UIImage(named: "qrIcon", in: Bundle.module, compatibleWith: nil) ?? UIImage()
     ).then {
@@ -217,6 +217,7 @@ extension ReportListViewController: UICollectionViewDataSource, UICollectionView
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let detailVC = ReportDetailViewController()
         detailVC.reportData = viewModel.reports[indexPath.row]
+        detailVC.viewModel = self.viewModel
         self.navigationController?.pushViewController(detailVC, animated: true)
     }
 }
