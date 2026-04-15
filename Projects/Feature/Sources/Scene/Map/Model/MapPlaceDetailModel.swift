@@ -1,24 +1,16 @@
 //
-//  MapPlaceData.swift
+//  MapPlaceDetailModel.swift
 //  Feature
 //
-//  Created by 김민선 on 3/13/26.
+//  Created by 김민선 on 4/9/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import Foundation
+import Service
 
-// MARK: - Search Response
-public struct MapPlaceResponse: Codable {
-    public let places: [MapPlaceData]
-    
-    public init(places: [MapPlaceData]) {
-        self.places = places
-    }
-}
-
-// MARK: - Place Data
-public struct MapPlaceData: Codable {
+// MARK: - Place Detail Data
+public struct MapPlaceDetailModel: Codable {
     public let placeId: Int
     public let placeName: String
     public let address: String
@@ -27,6 +19,8 @@ public struct MapPlaceData: Codable {
     public let longitude: Double
     public let categoryGroupName: String
     public let categoryName: String
+    public let phone: String
+    public let placeUrl: String
     public let reviewCount: Int
     public let recommendCount: Int
     public let recommended: Bool
@@ -40,6 +34,8 @@ public struct MapPlaceData: Codable {
         longitude: Double,
         categoryGroupName: String,
         categoryName: String,
+        phone: String,
+        placeUrl: String,
         reviewCount: Int,
         recommendCount: Int,
         recommended: Bool
@@ -52,34 +48,15 @@ public struct MapPlaceData: Codable {
         self.longitude = longitude
         self.categoryGroupName = categoryGroupName
         self.categoryName = categoryName
+        self.phone = phone
+        self.placeUrl = placeUrl
         self.reviewCount = reviewCount
         self.recommendCount = recommendCount
         self.recommended = recommended
     }
 }
 
-// MARK: - Review Data
-public struct MapReview: Codable {
-    public let reviewId: Int
-    public let name: String
-    public let info: String
-    public let content: String
-    public let date: String
-    public let isMine: Bool
-    
-    public init(
-        reviewId: Int,
-        name: String,
-        info: String,
-        content: String,
-        date: String,
-        isMine: Bool = false
-    ) {
-        self.reviewId = reviewId
-        self.name = name
-        self.info = info
-        self.content = content
-        self.date = date
-        self.isMine = isMine
-    }
+// MARK: - Review List Response
+public struct MapPlaceReviewResponse: Codable {
+    public let reviews: [MapReview]
 }

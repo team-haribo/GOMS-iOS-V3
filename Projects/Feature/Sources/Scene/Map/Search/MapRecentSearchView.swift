@@ -11,13 +11,15 @@ import SnapKit
 import Then
 
 public final class MapRecentSearchView: UIView {
+    
+    // MARK: - UI Components
     public let titleStack = UIStackView().then {
         $0.axis = .horizontal
         $0.spacing = 6
         $0.alignment = .center
     }
     
-    private let titleLabel = UILabel().then {
+    public let titleLabel = UILabel().then {
         $0.text = "최근 검색"
         $0.textColor = UIColor.color.sub2.color
         $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
@@ -35,19 +37,27 @@ public final class MapRecentSearchView: UIView {
         $0.rowHeight = 56
     }
     
+    // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        setLayout()
     }
     
     required init?(coder: NSCoder) { fatalError() }
     
+    // MARK: - Setup
     private func setupView() {
         self.backgroundColor = UIColor.color.surface.color
+        
         [titleStack, tableView].forEach { addSubview($0) }
         [titleLabel, clockIcon].forEach { titleStack.addArrangedSubview($0) }
-        
-        clockIcon.snp.makeConstraints { $0.size.equalTo(18) }
+    }
+    
+    private func setLayout() {
+        clockIcon.snp.makeConstraints {
+            $0.size.equalTo(18)
+        }
         
         titleStack.snp.makeConstraints {
             $0.top.equalToSuperview().offset(134)
@@ -58,6 +68,14 @@ public final class MapRecentSearchView: UIView {
         tableView.snp.makeConstraints {
             $0.top.equalTo(titleStack.snp.bottom).offset(10)
             $0.leading.trailing.bottom.equalToSuperview()
+        }
+    }
+    
+    // MARK: - Public Methods
+    public func updateTitle(to text: String, icon: UIImage? = nil) {
+        titleLabel.text = text
+        if let icon = icon {
+            clockIcon.image = icon.withRenderingMode(.alwaysTemplate)
         }
     }
 }

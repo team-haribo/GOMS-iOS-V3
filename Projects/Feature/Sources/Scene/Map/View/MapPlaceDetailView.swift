@@ -12,6 +12,7 @@ import Then
 
 public final class MapPlaceDetailView: UIView {
     
+    // MARK: - Metric
     private enum Metric {
         static let topMargin: CGFloat = 34
         static let sideMargin: CGFloat = 24
@@ -35,11 +36,17 @@ public final class MapPlaceDetailView: UIView {
     public let titleLabel = UILabel().then {
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
+        // MARK: - FIX (Text Fitting)
+        $0.adjustsFontSizeToFitWidth = true
+        $0.minimumScaleFactor = 0.7
+        $0.lineBreakMode = .byTruncatingTail
     }
     
     public let categoryLabel = UILabel().then {
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
+        // MARK: - FIX (Compression Resistance)
+        $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
     
     public let heartButton = UIButton().then {
@@ -67,7 +74,7 @@ public final class MapPlaceDetailView: UIView {
         $0.font = .suit(size: 16, weight: .medium)
     }
     
-    private let infoLabel = UILabel().then {
+    public let infoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 16, weight: .medium)
     }
@@ -119,7 +126,7 @@ public final class MapPlaceDetailView: UIView {
         $0.axis = .vertical
         $0.spacing = 12
         $0.alignment = .center
-        $0.isHidden = true // 기본은 숨김
+        $0.isHidden = true
     }
 
     private let emptyIconView = UIImageView().then {
@@ -137,8 +144,10 @@ public final class MapPlaceDetailView: UIView {
         $0.textColor = .color.sub2.color
     }
 
+    // MARK: - Properties
     public var onHeartToggled: ((Bool) -> Void)?
 
+    // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -148,19 +157,24 @@ public final class MapPlaceDetailView: UIView {
     
     required init?(coder: NSCoder) { fatalError() }
     
-    public func configure(with data: MapPlaceDetailData) {
-        titleLabel.text = data.title
-        categoryLabel.text = data.category
+    // MARK: - Configure
+    public func configure(with data: MapPlaceDetailModel) {
+        titleLabel.text = data.placeName
+        categoryLabel.text = data.categoryName
         addressLabel.text = data.address
-        infoLabel.text = "\(data.distance) | \(data.time)"
+        infoLabel.text = data.roadAddress
+        heartButton.isSelected = data.recommended
+        heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
+        updateReviewCount(data.reviewCount, recommendCount: data.recommendCount)
         
-        updateReviewCount(data.reviews.count)
+        // MARK: - FIXED (Data Sync)
         tableView.reloadData()
+        self.layoutIfNeeded() // 데이터 갱신 후 레이아웃 즉시 재계산
     }
 
-    public func updateReviewCount(_ count: Int) {
-        reviewCountLabel.text = "학생 후기 \(count) | 추천 17"
+    public func updateReviewCount(_ count: Int, recommendCount: Int) {
+        reviewCountLabel.text = "학생 후기 \(count) | 추천 \(recommendCount)"
         
         let fullText = "학생 후기 \(count)건"
         let attributedString = NSMutableAttributedString(string: fullText)
@@ -178,6 +192,7 @@ public final class MapPlaceDetailView: UIView {
         emptyReviewStackView.isHidden = hasReviews
     }
 
+    // MARK: - Setup
     private func setupView() {
         self.backgroundColor = .color.surface.color
         self.layer.cornerRadius = 20
@@ -219,6 +234,7 @@ public final class MapPlaceDetailView: UIView {
         categoryLabel.snp.makeConstraints {
             $0.leading.equalTo(titleLabel.snp.trailing).offset(8)
             $0.bottom.equalTo(titleLabel.snp.bottom).offset(-2)
+            $0.trailing.lessThanOrEqualTo(heartButton.snp.leading).offset(-8)
         }
 
         closeButton.snp.makeConstraints {
@@ -236,11 +252,13 @@ public final class MapPlaceDetailView: UIView {
         addressLabel.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
         infoLabel.snp.makeConstraints {
             $0.top.equalTo(addressLabel.snp.bottom).offset(4)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
         reviewCountLabel.snp.makeConstraints {
@@ -286,6 +304,7 @@ public final class MapPlaceDetailView: UIView {
         }
     }
 
+    // MARK: - Actions
     private func bindActions() {
         heartButton.addTarget(self, action: #selector(heartButtonTapped), for: .touchUpInside)
     }

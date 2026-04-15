@@ -21,7 +21,6 @@ public final class MapRecentSearchCell: UITableViewCell {
     
     private let titleLabel = UILabel().then {
         $0.textColor = UIColor.color.sub1.color
-        // [수정] 장소 글자 크기 16
         $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
     }
     
@@ -55,13 +54,13 @@ public final class MapRecentSearchCell: UITableViewCell {
         pinIcon.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(24)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(24) // [고정] 24x24
+            $0.size.equalTo(24)
         }
         
         deleteButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-24)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(20) // [고정] 20x20
+            $0.size.equalTo(20)
         }
         
         dateLabel.snp.makeConstraints {
@@ -78,8 +77,8 @@ public final class MapRecentSearchCell: UITableViewCell {
     
     @objc private func deleteButtonTapped() { onDeleteTap?() }
     
-    public func configure(title: String, date: String) {
-        titleLabel.text = title
+    public func configure(model: MapPlaceData, date: String) {
+        titleLabel.text = model.placeName
         dateLabel.text = date
     }
 }

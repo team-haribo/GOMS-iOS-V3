@@ -10,14 +10,16 @@ import UIKit
 
 public final class MapReviewWriteViewController: UIViewController {
     
+    // MARK: - Properties
     private let mainView = MapReviewWriteView()
-    private let viewModel = MapReviewWriteViewModel()
-    private let placeData: MapPlaceDetailData // 데이터를 담을 변수 추가
+    private let viewModel: MapReviewWriteViewModel
+    private let placeData: MapPlaceDetailModel
     private var isHeartSelected = false
     
-    // 초기화 시점에 데이터를 주입받습니다.
-    public init(placeData: MapPlaceDetailData) {
+    // MARK: - Life Cycle
+    public init(placeData: MapPlaceDetailModel) {
         self.placeData = placeData
+        self.viewModel = MapReviewWriteViewModel(placeId: placeData.placeId)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -35,10 +37,14 @@ public final class MapReviewWriteViewController: UIViewController {
         setupActions()
         bindViewModel()
         
-        // 주입받은 데이터를 뷰에 적용
         mainView.configure(with: placeData)
+        
+        isHeartSelected = placeData.recommended
+        mainView.heartButton.isSelected = isHeartSelected
+        mainView.heartButton.tintColor = isHeartSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub2.color
     }
     
+    // MARK: - Setup
     private func setupDelegate() {
         mainView.textView.delegate = self
     }
@@ -50,10 +56,12 @@ public final class MapReviewWriteViewController: UIViewController {
     }
     
     private func bindViewModel() {
+        // 버튼 활성화 상태 업데이트
         viewModel.onNextButtonStateChanged = { [weak self] isEnabled in
             self?.mainView.updateButtonState(isEnabled: isEnabled)
         }
         
+        // 서버 등록 성공 시 처리
         viewModel.onReviewSuccess = { [weak self] in
             guard let self = self else { return }
             ReviewAlert.show(
@@ -61,12 +69,20 @@ public final class MapReviewWriteViewController: UIViewController {
                 title: "후기 등록 완료",
                 message: "후기를 성공적으로 등록했습니다!",
                 completion: { [weak self] in
+                    // 이전 화면(상세보기)으로 돌아가기
                     self?.navigationController?.popViewController(animated: true)
                 }
             )
         }
+        
+        // 에러 발생 시 알림 처리
+        viewModel.onErrorOccurred = { [weak self] errorMessage in
+            guard let self = self else { return }
+            print("에러 발생: \(errorMessage)")
+        }
     }
     
+    // MARK: - Actions
     @objc private func didTapBack() {
         self.navigationController?.popViewController(animated: true)
     }
@@ -84,12 +100,14 @@ public final class MapReviewWriteViewController: UIViewController {
             title: "후기 등록",
             message: "이 후기를 등록하시겠습니까?",
             completion: { [weak self] in
+                // 뷰모델의 서버 등록 함수 호출 (writeReview 실행)
                 self?.viewModel.postReview()
             }
         )
     }
 }
 
+// MARK: - UITextViewDelegate
 extension MapReviewWriteViewController: UITextViewDelegate {
     public func textViewDidChange(_ textView: UITextView) {
         viewModel.updateText(textView.text)

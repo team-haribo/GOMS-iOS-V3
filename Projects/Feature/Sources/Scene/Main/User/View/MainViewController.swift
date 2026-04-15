@@ -235,9 +235,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     private func setupMap() {
+       
         if let existingMapVC = mapVC {
-         
-            return
+            existingMapVC.willMove(toParent: nil)
+            existingMapVC.view.removeFromSuperview()
+            existingMapVC.removeFromParent()
+            mapVC = nil
         }
 
         let mapVC = MapViewController()
