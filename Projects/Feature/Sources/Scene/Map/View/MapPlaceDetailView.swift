@@ -160,8 +160,8 @@ public final class MapPlaceDetailView: UIView {
         titleLabel.text = data.placeName
         let categories = data.categoryName.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
         categoryLabel.text = categories.last
-        addressLabel.text = data.address
-        infoLabel.text = data.roadAddress
+        addressLabel.text = data.roadAddress
+        infoLabel.isHidden = true
         heartButton.isSelected = data.recommended
         heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
@@ -254,14 +254,10 @@ public final class MapPlaceDetailView: UIView {
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
         
-        infoLabel.snp.makeConstraints {
-            $0.top.equalTo(addressLabel.snp.bottom).offset(4)
-            $0.leading.equalToSuperview().inset(Metric.sideMargin)
-            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
-        }
+    
         
         reviewCountLabel.snp.makeConstraints {
-            $0.top.equalTo(infoLabel.snp.bottom).offset(4)
+            $0.top.equalTo(addressLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
         }
         
