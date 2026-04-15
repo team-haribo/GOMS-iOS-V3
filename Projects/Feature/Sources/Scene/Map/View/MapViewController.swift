@@ -291,19 +291,38 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         self.bottomSheetView.isHidden = true
 
         if let data = data {
-           
             placeProvider.request(.getPlaceDetail(placeId: data.placeId, authorization: accessToken)) { [weak self] result in
                 switch result {
                 case .success(let response):
                     if let detailModel = try? JSONDecoder().decode(MapPlaceDetailModel.self, from: response.data) {
-                       
                         self?.selectedPlaceId = detailModel.placeId
                         self?.currentPlaceDetail = detailModel
-                        self?.placeDetailView.configure(with: detailModel)
+
+                        let schoolLat = 35.1425
+                        let schoolLng = 126.8005
+
+                        let dist = self?.distance(
+                            lat1: schoolLat,
+                            lon1: schoolLng,
+                            lat2: detailModel.latitude,
+                            lon2: detailModel.longitude
+                        ) ?? 0
+
+                        let meters = dist * 111000
+                        let minutes = Int(meters / 80)
+
+                        let distanceText = "\(Int(meters))m"
+                        let timeText = "\(minutes)분"
+
+                        self?.placeDetailView.configure(
+                            with: detailModel,
+                            distanceText: distanceText,
+                            timeText: timeText
+                        )
                         self?.fetchReviews(placeId: detailModel.placeId)
                         self?.updateViewVisibility()
                     } else {
-                        
+                        // handle decode failure (optional)
                     }
                 case .failure:
                     break
@@ -314,7 +333,28 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             self.selectedPlaceId = detailModel.placeId
             self.currentPlaceDetail = detailModel
             fetchReviews(placeId: self.selectedPlaceId)
-            placeDetailView.configure(with: detailModel)
+
+            let schoolLat = 35.1425
+            let schoolLng = 126.8005
+
+            let dist = distance(
+                lat1: schoolLat,
+                lon1: schoolLng,
+                lat2: detailModel.latitude,
+                lon2: detailModel.longitude
+            )
+
+            let meters = dist * 111000
+            let minutes = Int(meters / 80)
+
+            let distanceText = "\(Int(meters))m"
+            let timeText = "\(minutes)분"
+
+            placeDetailView.configure(
+                with: detailModel,
+                distanceText: distanceText,
+                timeText: timeText
+            )
             updateViewVisibility()
         }
     }

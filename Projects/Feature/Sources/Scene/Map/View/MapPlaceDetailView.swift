@@ -156,12 +156,13 @@ public final class MapPlaceDetailView: UIView {
     required init?(coder: NSCoder) { fatalError() }
     
     // MARK: - Configure
-    public func configure(with data: MapPlaceDetailModel) {
+    public func configure(with data: MapPlaceDetailModel, distanceText: String, timeText: String) {
         titleLabel.text = data.placeName
         let categories = data.categoryName.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
         categoryLabel.text = categories.last
         addressLabel.text = data.roadAddress
-        infoLabel.isHidden = true
+        infoLabel.isHidden = false
+        infoLabel.text = "\(distanceText) | \(timeText)"
         heartButton.isSelected = data.recommended
         heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
@@ -253,11 +254,15 @@ public final class MapPlaceDetailView: UIView {
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
-        
-    
-        
+
+        infoLabel.snp.makeConstraints {
+            $0.top.equalTo(addressLabel.snp.bottom).offset(4)
+            $0.leading.equalToSuperview().inset(Metric.sideMargin)
+            $0.trailing.equalToSuperview().inset(Metric.sideMargin)
+        }
+
         reviewCountLabel.snp.makeConstraints {
-            $0.top.equalTo(addressLabel.snp.bottom).offset(8)
+            $0.top.equalTo(infoLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
         }
         
