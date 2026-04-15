@@ -120,6 +120,40 @@ public final class ReportListViewModel {
         }
     }
 
+    public func deleteReview(reviewId: Int, completion: @escaping (Bool) -> Void) {
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
+            completion(false)
+            return
+        }
+        let authorization = "Bearer \(token)"
+        
+        reportProvider.request(.reportDelete(reviewId: reviewId, authorization: authorization)) { result in
+            switch result {
+            case .success(let response):
+                completion(response.statusCode == 200 || response.statusCode == 204)
+            case .failure:
+                completion(false)
+            }
+        }
+    }
+
+    public func rejectReport(reportId: Int, completion: @escaping (Bool) -> Void) {
+        guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
+            completion(false)
+            return
+        }
+        let authorization = "Bearer \(token)"
+        
+        reportProvider.request(.reportReject(reportId: reportId, authorization: authorization)) { result in
+            switch result {
+            case .success(let response):
+                completion(response.statusCode == 200 || response.statusCode == 204)
+            case .failure:
+                completion(false)
+            }
+        }
+    }
+
     public func filterReports(with text: String) {
         if text.isEmpty {
             reports = allReports
