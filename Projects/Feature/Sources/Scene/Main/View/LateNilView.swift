@@ -52,7 +52,7 @@ final class LateNilView: UIView {
 
         stack.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.centerY.equalToSuperview().offset(15)
+            $0.centerY.equalToSuperview().offset(10)
         }
 
         icon.snp.makeConstraints {
