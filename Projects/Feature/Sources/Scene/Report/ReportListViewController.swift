@@ -68,11 +68,19 @@ public final class ReportListViewController: BaseViewController {
         $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
     }
 
+    // MARK: - Public Method
+    public func reloadReportList() {
+        DispatchQueue.main.async {
+            self.reportCollectionView.reloadData()
+        }
+    }
+    
     // MARK: - LifeCycle
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
-        viewModel.loadMockData()
+        setupSearchBar()
+        fetchData()
     }
     
     public override func viewWillAppear(_ animated: Bool) {
@@ -90,13 +98,33 @@ public final class ReportListViewController: BaseViewController {
         }
     }
 
+    // MARK: - Method
     private func setupCollectionView() {
         reportCollectionView.dataSource = self
         reportCollectionView.delegate = self
         reportCollectionView.register(ReportCollectionViewCell.self, forCellWithReuseIdentifier: ReportCollectionViewCell.identifier)
     }
 
+    private func setupSearchBar() {
+        searchBar.textField.addTarget(self, action: #selector(searchBarTextFieldDidChange), for: .editingChanged)
+    }
+
+    private func fetchData() {
+        viewModel.fetchReportList { [weak self] success in
+            if success {
+                DispatchQueue.main.async {
+                    self?.reportCollectionView.reloadData()
+                }
+            }
+        }
+    }
+
     // MARK: - Selector
+    @objc private func searchBarTextFieldDidChange(_ textField: UITextField) {
+        viewModel.filterReports(with: textField.text ?? "")
+        reportCollectionView.reloadData()
+    }
+
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
     }
@@ -150,6 +178,7 @@ public final class ReportListViewController: BaseViewController {
     }
 }
 
+// MARK: - Extension
 extension ReportListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.reports.count

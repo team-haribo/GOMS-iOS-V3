@@ -13,7 +13,6 @@ import Service
 
 public final class ReportFilterBottomSheetVC: BaseViewController {
     
-    // MARK: - Properties
     private let viewModel: ReportListViewModel
     private weak var reportListVC: ReportListViewController?
             
@@ -67,7 +66,6 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         $0.addTarget(self, action: #selector(resetButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - LifeCycle
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
@@ -81,26 +79,28 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         self.dismiss(animated: true)
     }
     
-    // MARK: - Filter Logic
     @objc func statusButtonTapped(sender: BottomSheetButton) {
         [pendingButton, completedButton].forEach {
             $0.isSelected = ($0 == sender) ? !sender.isSelected : false
         }
-        fetchData()
+        applyFilter()
     }
     
-    private func fetchData() {
-        let status: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
-        // ViewModel에 필터링된 데이터 요청
-        // viewModel.fetchReportList(status: status)
+    private func applyFilter() {
+        let selectedStatus: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
+        
+        viewModel.filterReportsByStatus(status: selectedStatus)
+        
+        DispatchQueue.main.async {
+            self.reportListVC?.reloadReportList()
+        }
     }
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        fetchData()
+        applyFilter()
     }
     
-    // MARK: - UI
     public override func addView() {
         view.addSubview(dimmedView)
         view.addSubview(bottomSheetView)
