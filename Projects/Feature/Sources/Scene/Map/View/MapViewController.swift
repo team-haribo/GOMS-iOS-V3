@@ -139,6 +139,12 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
                 self.showDetailView(with: selected)
             }
         }
+        bottomSheetView.onHeartTapped = { [weak self] placeId, isSelected in
+            guard let self = self else { return }
+            self.viewModel.toggleRecommend(placeId: placeId, isSelected: isSelected) {
+                self.viewModel.fetchHotPlaces()
+            }
+        }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
         searchBar.textField.addTarget(self, action: #selector(performSearch), for: .editingDidEndOnExit)
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
