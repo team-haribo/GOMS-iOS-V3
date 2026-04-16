@@ -17,14 +17,13 @@ public final class StudentManagementViewController: BaseViewController {
         didSet { studentCollectionView.reloadData() }
     }
     
-    
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
     
@@ -65,7 +64,7 @@ public final class StudentManagementViewController: BaseViewController {
     private let createQRButton = AdminQRButton(
         frame: .zero,
         backgroundColor: UIColor.color.admin.color,
-        icon: UIImage(systemName: "qrcode") ?? UIImage()
+        icon: UIImage(named: "qrIcon", in: Bundle.module, compatibleWith: nil) ?? UIImage()
     ).then {
         $0.layer.cornerRadius = 32
         $0.addTarget(self, action: #selector(createQRButtonTapped), for: .touchUpInside)
@@ -75,7 +74,6 @@ public final class StudentManagementViewController: BaseViewController {
         super.viewDidLoad()
         setupCollectionView()
         setupSearchBar()
-        
         
         viewModel.getUserList { [weak self] in
             guard let self = self else { return }
@@ -131,13 +129,26 @@ public final class StudentManagementViewController: BaseViewController {
     }
 
     @objc private func createQRButtonTapped() {
+        createQRButton.isUserInteractionEnabled = false
         let qrVC = AdminQRViewController()
         self.navigationController?.pushViewController(qrVC, animated: true)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.createQRButton.isUserInteractionEnabled = true
+        }
+    }
+
+    public override func configureUI() {
+        createQRButton.layer.shadowColor = UIColor.color.admin.color.cgColor
+        createQRButton.layer.shadowOpacity = 0.8
+        createQRButton.layer.shadowRadius = 13
+        createQRButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
     }
     
     public override func addView() {
         [customBackButton, titleLabel, searchBar, resultLabel, filterButton, studentCollectionView, createQRButton].forEach { view.addSubview($0) }
         view.bringSubviewToFront(customBackButton)
+        view.bringSubviewToFront(createQRButton)
     }
     
     public override func setLayout() {
