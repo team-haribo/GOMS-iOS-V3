@@ -18,7 +18,6 @@ public final class SignUpViewController: BaseViewController {
 
     // MARK: - UI Components
     
-    // 커스텀 뒤로가기 버튼
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
@@ -30,7 +29,7 @@ public final class SignUpViewController: BaseViewController {
     }
 
     private let pageTitleLabel = UILabel().then {
-        $0.text = "회원가입"
+        $0.text = "회원가입 하기"
         $0.font = .suit(size: 28, weight: .bold)
         $0.textColor = .color.mainText.color
     }
@@ -78,7 +77,7 @@ public final class SignUpViewController: BaseViewController {
     private let privacyCheckbox = UIButton().then {
         $0.setImage(UIImage(systemName: "square"), for: .normal)
         $0.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
-        $0.tintColor = .color.sub2.color // 기본 색상
+        $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(privacyCheckboxTapped), for: .touchUpInside)
     }
 
@@ -115,8 +114,6 @@ public final class SignUpViewController: BaseViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         
-        updateAuthCodeButtonState(isEnabled: false)
-
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
 
@@ -125,7 +122,7 @@ public final class SignUpViewController: BaseViewController {
         nameTextField.addTarget(self, action: #selector(nameEditingChanged(_:)), for: .editingChanged)
         emailTextField.addTarget(self, action: #selector(emailEditingChanged(_:)), for: .editingChanged)
 
-        authCodeButton.isEnabled = true
+        validateFields()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -135,12 +132,44 @@ public final class SignUpViewController: BaseViewController {
 
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // BaseViewController에서 추가된 불필요한 뷰(높이 100 등) 제거 로직
         self.view.subviews.forEach {
             if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
                 $0.isHidden = true
                 $0.removeFromSuperview()
             }
+        }
+    }
+
+    // MARK: - Logic
+    private func validateFields() {
+        let name = nameTextField.text ?? ""
+        let email = emailTextField.text ?? ""
+        
+        let emailRegex = "^s[0-9]{5}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        let isEmailValid = emailPredicate.evaluate(with: email)
+        
+        let isGenderSelected = genderTextField.title(for: .normal) != "성별"
+        let isMajorSelected = majorTextField.title(for: .normal) != "과"
+        let isGradeSelected = gradeTextField.title(for: .normal) != "기수"
+        let isPrivacyAgreed = privacyCheckbox.isSelected
+        
+        let isAllValid = !name.isEmpty && isEmailValid && isGenderSelected && isMajorSelected && isGradeSelected && isPrivacyAgreed
+        
+        updateAuthCodeButtonState(isEnabled: isAllValid)
+    }
+
+    private func updateAuthCodeButtonState(isEnabled: Bool) {
+        authCodeButton.isEnabled = isEnabled
+        
+        if isEnabled {
+            privacyCheckbox.tintColor = .color.gomsPrimary.color
+            authCodeButton.backgroundColor = .color.gomsPrimary.color
+            authCodeButton.setTitleColor(.white, for: .normal)
+        } else {
+            privacyCheckbox.tintColor = .color.sub2.color
+            authCodeButton.backgroundColor = .color.button.color
+            authCodeButton.setTitleColor(.color.sub2.color, for: .normal)
         }
     }
 
@@ -157,18 +186,21 @@ public final class SignUpViewController: BaseViewController {
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.viewModel.setupGrade(grade: 10)
+            self.validateFields()
         }
         let nineAction = UIAlertAction(title: "9기", style: .default) { _ in
             self.gradeTextField.setTitle("9기", for: .normal)
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.viewModel.setupGrade(grade: 9)
+            self.validateFields()
         }
         let eightAction = UIAlertAction(title: "8기", style: .default) { _ in
             self.gradeTextField.setTitle("8기", for: .normal)
             self.gradeTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.gradeTextField.layer.borderWidth = 0
             self.viewModel.setupGrade(grade: 8)
+            self.validateFields()
         }
         [tenAction, nineAction, eightAction].forEach { alert.addAction($0) }
         present(alert, animated: true)
@@ -182,52 +214,36 @@ public final class SignUpViewController: BaseViewController {
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupGender(gender: .male)
             self.genderTextField.layer.borderWidth = 0
+            self.validateFields()
         }
         let womanAction = UIAlertAction(title: "여성", style: .default) { _ in
             self.genderTextField.setTitle("여성", for: .normal)
             self.genderTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupGender(gender: .female)
             self.genderTextField.layer.borderWidth = 0
+            self.validateFields()
         }
         [menAction, womanAction].forEach { alert.addAction($0) }
         present(alert, animated: true)
     }
     
-    // MARK: - Selectors
     @objc private func privacyCheckboxTapped() {
-            if privacyCheckbox.isSelected {
-                updateAuthCodeButtonState(isEnabled: false)
-            } else {
-                presentPrivacyPolicy()
-            }
+        if privacyCheckbox.isSelected {
+            privacyCheckbox.isSelected = false
+            validateFields()
+        } else {
+            presentPrivacyPolicy()
+        }
     }
 
     @objc private func presentPrivacyPolicy() {
-            let privacyVC = PrivacyPolicyViewController()
-            privacyVC.onAgreeCompletion = { [weak self] in
-                // 약관 동의 완료 시 -> 버튼 활성화 처리
-                self?.updateAuthCodeButtonState(isEnabled: true)
-            }
-            privacyVC.modalPresentationStyle = .fullScreen
-            self.present(privacyVC, animated: true)
-    }
-
-        /// 버튼의 상태(활성/비활성)와 그에 따른 디자인(배경색, 글자색, 체크박스 색상)을 한 번에 관리하는 로직이야!
-    private func updateAuthCodeButtonState(isEnabled: Bool) {
-            privacyCheckbox.isSelected = isEnabled
-            authCodeButton.isEnabled = isEnabled
-            
-            if isEnabled {
-                // [활성화 상태]
-                privacyCheckbox.tintColor = .color.gomsPrimary.color
-                authCodeButton.backgroundColor = .color.gomsPrimary.color // 주황색
-                authCodeButton.setTitleColor(.white, for: .normal)        // 흰색 글자
-            } else {
-                // [비활성화 상태 - 네가 말한 조건!]
-                privacyCheckbox.tintColor = .color.sub2.color
-                authCodeButton.backgroundColor = .color.button.color     // 배경: button 색상
-                authCodeButton.setTitleColor(.color.sub2.color, for: .normal) // 글자: sub2 색상
-            }
+        let privacyVC = PrivacyPolicyViewController()
+        privacyVC.onAgreeCompletion = { [weak self] in
+            self?.privacyCheckbox.isSelected = true
+            self?.validateFields()
+        }
+        privacyVC.modalPresentationStyle = .fullScreen
+        self.present(privacyVC, animated: true)
     }
     
     @objc private func departmentButtonTapped() {
@@ -238,73 +254,30 @@ public final class SignUpViewController: BaseViewController {
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: .sw)
             self.majorTextField.layer.borderWidth = 0
+            self.validateFields()
         }
         let iotAction = UIAlertAction(title: "스마트IoT과", style: .default) { _ in
             self.majorTextField.setTitle("스마트IoT과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: .iot)
             self.majorTextField.layer.borderWidth = 0
+            self.validateFields()
         }
         let aiAction = UIAlertAction(title: "AI개발과", style: .default) { _ in
             self.majorTextField.setTitle("AI개발과", for: .normal)
             self.majorTextField.setTitleColor(.color.mainText.color, for: .normal)
             self.viewModel.setupMajor(major: .ai)
             self.majorTextField.layer.borderWidth = 0
+            self.validateFields()
         }
         [swAction, iotAction, aiAction].forEach { alert.addAction($0) }
         present(alert, animated: true)
     }
 
     @objc private func authCodeButtonTapped() {
-        let name = nameTextField.text ?? ""
         let email = emailTextField.text ?? ""
         viewModel.setupEmail(email: email)
         viewModel.setupEmailStatus(status: "SIGNUP")
-
-        nameErrorLabel.isHidden = true
-        emailErrorLabel.isHidden = true
-        nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
-        emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
-        defaultDomain.textColor = .color.sub2.color
-
-        if name.isEmpty {
-            nameErrorLabel.isHidden = false
-            nameErrorLabel.text = "이름을 입력해주세요."
-            nameErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
-            nameTextField.layer.borderWidth = 1
-            nameTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
-            view.layoutIfNeeded()
-            return
-        }
-
-        if email.isEmpty {
-            emailErrorLabel.isHidden = false
-            emailErrorLabel.text = "이메일을 입력해주세요."
-            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
-            emailTextField.layer.borderWidth = 1
-            emailTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor
-            defaultDomain.textColor = .color.gomsNegative.color
-            view.layoutIfNeeded()
-            return
-        }
-
-        let emailRegex = "^s[0-9]{5}$"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        if !emailPredicate.evaluate(with: email) {
-            emailErrorLabel.isHidden = false
-            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
-            emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
-            view.layoutIfNeeded()
-            return
-        }
-
-        let gender = genderTextField.title(for: .normal) ?? ""
-        let major = majorTextField.title(for: .normal) ?? ""
-        let grade = gradeTextField.title(for: .normal) ?? ""
-
-        if gender == "성별" { genderTextField.layer.borderWidth = 1; genderTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor; return }
-        if major == "과" { majorTextField.layer.borderWidth = 1; majorTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor; return }
-        if grade == "기수" { gradeTextField.layer.borderWidth = 1; gradeTextField.layer.borderColor = UIColor.color.gomsNegative.color.cgColor; return }
 
         loader.modalPresentationStyle = .overFullScreen
         present(loader, animated: false)
@@ -420,6 +393,7 @@ public final class SignUpViewController: BaseViewController {
         nameErrorLabel.isHidden = true
         nameErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
         viewModel.setupName(name: name)
+        validateFields()
         view.layoutIfNeeded()
     }
 
@@ -434,7 +408,7 @@ public final class SignUpViewController: BaseViewController {
         if email.isEmpty {
             emailErrorLabel.isHidden = true
             emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
-        } else if !emailPredicate.evaluate(with: email) {
+        } else if !emailPredicate.evaluate(with: email) && email.count == 6 {
             emailErrorLabel.isHidden = false
             emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
             emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
@@ -444,6 +418,7 @@ public final class SignUpViewController: BaseViewController {
         }
 
         viewModel.setupEmail(email: email)
+        validateFields()
         view.layoutIfNeeded()
     }
 
@@ -475,6 +450,7 @@ extension SignUpViewController: UITextFieldDelegate {
         } else if textField == emailTextField {
             viewModel.setupEmail(email: emailTextField.text ?? "")
         }
+        validateFields()
     }
 
     public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
