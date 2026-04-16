@@ -170,7 +170,7 @@ public final class MapPlaceDetailView: UIView {
         
         // MARK: - FIXED (Data Sync)
         tableView.reloadData()
-        self.layoutIfNeeded() // 데이터 갱신 후 레이아웃 즉시 재계산
+        self.layoutIfNeeded()
     }
 
     public func updateReviewCount(_ count: Int, recommendCount: Int) {
@@ -178,12 +178,26 @@ public final class MapPlaceDetailView: UIView {
         
         let fullText = "학생 후기 \(count)건"
         let attributedString = NSMutableAttributedString(string: fullText)
-        let font = UIFont.suit(size: 20, weight: .bold)
         
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "\(count)"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
-        attributedString.addAttribute(.font, value: font, range: NSRange(location: 0, length: fullText.count))
+        
+        let titleFont = UIFont.suit(size: 18, weight: .semibold)
+        let countFont = UIFont.suit(size: 15, weight: .medium)
+        let unitFont = UIFont.suit(size: 15, weight: .medium)
+
+        let nsString = fullText as NSString
+
+        attributedString.addAttribute(.font, value: titleFont, range: nsString.range(of: "학생 후기"))
+        attributedString.addAttribute(.font, value: countFont, range: nsString.range(of: "\(count)"))
+        attributedString.addAttribute(.font, value: unitFont, range: nsString.range(of: "건"))
+
+        
+        let baselineOffset: CGFloat = (titleFont.lineHeight - countFont.lineHeight) / 2
+
+        attributedString.addAttribute(.baselineOffset, value: baselineOffset, range: nsString.range(of: "\(count)"))
+        attributedString.addAttribute(.baselineOffset, value: baselineOffset, range: nsString.range(of: "건"))
         
         reviewHeaderLabel.attributedText = attributedString
         

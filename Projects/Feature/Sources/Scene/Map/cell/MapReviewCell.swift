@@ -101,8 +101,8 @@ public final class MapReviewCell: UITableViewCell {
         
         [reportButton, deleteButton].forEach {
             $0.snp.makeConstraints {
-                $0.top.equalTo(nameLabel)
-                $0.trailing.equalToSuperview().inset(24)
+                $0.centerY.equalToSuperview()
+                $0.trailing.equalToSuperview().inset(36)
                 $0.size.equalTo(24)
             }
         }
