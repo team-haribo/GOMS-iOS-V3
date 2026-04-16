@@ -17,6 +17,7 @@ public enum StudentCouncilServices {
     case editAuthority(authorization: String, memberId: Int, param: AuthorityRequest)
     case outingAllowed(authorization: String, memberId: Int, param: OutingAllowedRequest)
     case forceOuting(authorization: String, memberId: Int)
+    case deleteOuting(authorization: String, memberId: Int)
     case searchStudent(authorization: String, param: SearchStudentRequest)
     case filterStudent(authorization: String, param: SearchStudentRequest)
     case lateList(authorization: String, date: String)
@@ -47,6 +48,8 @@ extension StudentCouncilServices: TargetType {
             return "/api/v3/student-council/outing-allowed/\(memberId)"
         case .forceOuting(_, let memberId):
             return "/api/v3/student-council/status/out/\(memberId)"
+        case .deleteOuting(_, let memberId):
+            return "/api/v3/student-council/status/in/\(memberId)"
         case .searchStudent:
             return "/api/v3/student-council/search"
         case .filterStudent:
@@ -61,7 +64,8 @@ extension StudentCouncilServices: TargetType {
         case .makeQRCode,
              .statusOut,
              .statusIn,
-             .forceOuting:
+             .forceOuting,
+             .deleteOuting:
             return .post
 
         case .outingAllowed:
@@ -100,6 +104,7 @@ extension StudentCouncilServices: TargetType {
         case .makeQRCode,
              .studentList,
              .forceOuting,
+             .deleteOuting,
              .statusOut,
              .statusIn:
             return .requestPlain
@@ -126,6 +131,7 @@ extension StudentCouncilServices: TargetType {
         case .editAuthority(let authorization, _, _),
              .outingAllowed(let authorization, _, _),
              .forceOuting(let authorization, _),
+             .deleteOuting(let authorization, _),
              .searchStudent(let authorization, _),
              .filterStudent(let authorization, _),
              .lateList(let authorization, _),
