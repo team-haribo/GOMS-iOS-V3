@@ -26,6 +26,8 @@ public final class MapCardView: UIView {
     private let categoryLabel = UILabel().then {
         $0.textColor = UIColor.color.sub1.color
         $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.numberOfLines = 1
+        $0.lineBreakMode = .byTruncatingHead
     }
     
     private let addressLabel = UILabel().then {
@@ -118,7 +120,8 @@ public final class MapCardView: UIView {
 
     public func configure(title: String, address: String, category: String, meta: String) {
         titleLabel.text = title
-        categoryLabel.text = category
+        let components = category.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
+        categoryLabel.text = components.last ?? category
         addressLabel.text = address
         statusLabel.text = meta
     }
