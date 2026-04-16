@@ -116,6 +116,13 @@ public final class MapCardView: UIView {
         }
     }
 
+    public func configure(title: String, address: String, category: String, meta: String) {
+        titleLabel.text = title
+        categoryLabel.text = category
+        addressLabel.text = address
+        statusLabel.text = meta
+    }
+
     private func configureData(type: MapCardType) {
         titleLabel.text = "메가MGC커피 광주송정시장점"
         categoryLabel.text = "카페"

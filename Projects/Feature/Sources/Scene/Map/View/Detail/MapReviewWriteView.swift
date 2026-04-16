@@ -183,7 +183,8 @@ public final class MapReviewWriteView: UIView {
 
     public func configure(with data: MapPlaceDetailModel) {
         placeNameLabel.text = data.placeName
-        categoryLabel.text = data.categoryName
+        let categories = data.categoryName.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
+        categoryLabel.text = categories.last.map { String($0) }
         addressLabel.text = data.address
         statsLabel.text = "학생 후기 \(data.reviewCount) | 추천 \(data.recommendCount)"
         heartButton.isSelected = data.recommended

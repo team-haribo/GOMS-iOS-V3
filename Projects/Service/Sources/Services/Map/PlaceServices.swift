@@ -16,7 +16,7 @@ public enum PlaceServices {
     case getPlaceDetail(placeId: Int, authorization: String)   // 장소 상세 조회
     case getPlaceReviews(placeId: Int, authorization: String)  // 장소 리뷰 목록 조회
     case getPlaceReviewCount(placeId: Int, authorization: String) // 장소 리뷰 개수 조회
-    case getHotPlaces(authorization: String)                   // 핫플레이스(최근 인기 장소) 조회
+    case getHotPlaces(days: Int, authorization: String)                   // 핫플레이스(최근 인기 장소) 조회
     case syncPlaces(authorization: String)                     // 장소 동기화
     case recommendPlace(placeId: Int, authorization: String)   // 장소 추천 (하트 클릭)
     case cancelRecommendPlace(placeId: Int, authorization: String) // 장소 추천 취소
@@ -95,6 +95,11 @@ extension PlaceServices: TargetType {
                 parameters: ["content": content],
                 encoding: JSONEncoding.default
             )
+        case let .getHotPlaces(days, _):
+            return .requestParameters(
+                parameters: ["days": days],
+                encoding: URLEncoding.queryString
+            )
         default:
             return .requestPlain
         }
@@ -111,7 +116,7 @@ extension PlaceServices: TargetType {
              .getPlaceDetail(_, let auth),
              .getPlaceReviews(_, let auth),
              .getPlaceReviewCount(_, let auth),
-             .getHotPlaces(let auth),
+             .getHotPlaces(_, let auth),
              .syncPlaces(let auth),
              .recommendPlace(_, let auth),
              .cancelRecommendPlace(_, let auth),
