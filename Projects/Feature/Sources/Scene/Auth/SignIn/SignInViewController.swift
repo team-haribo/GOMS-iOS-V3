@@ -394,10 +394,9 @@ extension SignInViewController: UITextFieldDelegate {
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         let isEmailValid = emailPredicate.evaluate(with: email)
         
-        let isButtonEnabled = (email.count == 6 && isEmailValid) && !password.isEmpty
+        let isButtonEnabled = isEmailValid && !password.isEmpty
         signInButton.isEnabled = isButtonEnabled
         
-        // 버튼 활성화 여부에 따른 색상 변경
         signInButton.backgroundColor = isButtonEnabled ? .color.gomsPrimary.color : .color.button.color
         
         if textField == emailTextField {
