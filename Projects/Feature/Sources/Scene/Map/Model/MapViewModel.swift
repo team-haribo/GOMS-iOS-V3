@@ -30,6 +30,7 @@ public final class MapViewModel {
     public private(set) var selectedPlaceId: Int = -1
     public private(set) var distanceText: String = ""
     public private(set) var timeText: String = ""
+    public private(set) var hotPlaces: [MapPlaceData] = []
 
     // MARK: - Binding
     public var onPlacesUpdated: (() -> Void)?
@@ -37,6 +38,7 @@ public final class MapViewModel {
     public var onReviewsUpdated: (() -> Void)?
     public var onDetailUpdated: (() -> Void)?
     public var onError: ((String) -> Void)?
+    public var onHotPlacesUpdated: (() -> Void)?
 
     // MARK: - API
 
@@ -53,6 +55,23 @@ public final class MapViewModel {
                 }
             case .failure:
                 self?.onError?("장소 리스트 요청 실패")
+            }
+        }
+    }
+
+    public func fetchHotPlaces(days: Int = 7) {
+        placeProvider.request(.getHotPlaces(days: days, authorization: accessToken)) { [weak self] result in
+            switch result {
+            case .success(let response):
+                do {
+                    let decoded = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
+                    self?.hotPlaces = decoded.places
+                    self?.onHotPlacesUpdated?()
+                } catch {
+                    self?.onError?("핫플레이스 디코딩 실패")
+                }
+            case .failure:
+                self?.onError?("핫플레이스 요청 실패")
             }
         }
     }

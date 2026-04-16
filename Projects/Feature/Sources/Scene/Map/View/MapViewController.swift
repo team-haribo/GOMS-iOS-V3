@@ -156,7 +156,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     // MARK: - Networking
     private func fetchPlaceList() {
-        viewModel.fetchAllPlaces()
+        viewModel.fetchHotPlaces()
     }
     
     
@@ -333,6 +333,13 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
             self.updateViewVisibility()
         }
+
+        viewModel.onHotPlacesUpdated = { [weak self] in
+            guard let self = self else { return }
+            self.allPlaces = self.viewModel.hotPlaces
+            self.renderAllPlaceMarkers()
+            self.updateBottomSheet()
+        }
     }
 
     private func setupBottomSheetBinding() {
@@ -341,19 +348,19 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     private func updateBottomSheet() {
-        let popular: [MapCardData] = viewModel.allPlaces.prefix(5).map { place in
+        let popular: [MapCardData] = viewModel.hotPlaces.prefix(5).map { place in
             return MapCardData(
                 id: place.placeId,
                 name: place.placeName,
                 address: place.address,
                 category: place.categoryName,
-                reviewCount: 0,
-                recommendCount: 0,
-                isFavorite: false
+                reviewCount: place.reviewCount,
+                recommendCount: place.recommendCount,
+                isFavorite: place.recommended
             )
         }
 
-        let recommended: [MapCardData] = [] // TODO: API 연결 시 교체
+        let recommended: [MapCardData] = []
 
         let reviews: [MapCardData] = dummyReviews.map { review in
             return MapCardData(
