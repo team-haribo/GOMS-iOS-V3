@@ -152,6 +152,7 @@ public final class MapViewModel {
             switch result {
             case .success:
                 self?.fetchRecommendedCount {
+                    self?.fetchHotPlaces()
                     completion()
                 }
             case .failure:

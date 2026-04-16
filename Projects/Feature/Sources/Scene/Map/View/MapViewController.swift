@@ -73,6 +73,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         bindViewModel()
         setupBottomSheetBinding()
         fetchPlaceList()
+        viewModel.fetchHotPlaces()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -143,7 +144,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
         placeDetailView.onHeartToggled = { [weak self] isSelected in
             guard let self = self, self.selectedPlaceId != -1 else { return }
-            self.viewModel.toggleRecommend(placeId: self.selectedPlaceId, isSelected: isSelected) { }
+            self.viewModel.toggleRecommend(placeId: self.selectedPlaceId, isSelected: isSelected) {
+                self.viewModel.fetchHotPlaces()
+            }
         }
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
             let detailVC = MapRouteDetailViewController(); detailVC.routeTypeTitle = routeTitle; detailVC.modalPresentationStyle = .overFullScreen
@@ -156,7 +159,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     // MARK: - Networking
     private func fetchPlaceList() {
-        viewModel.fetchHotPlaces()
+        viewModel.fetchAllPlaces()
     }
     
     
@@ -333,12 +336,8 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
             self.updateViewVisibility()
         }
-
         viewModel.onHotPlacesUpdated = { [weak self] in
-            guard let self = self else { return }
-            self.allPlaces = self.viewModel.hotPlaces
-            self.renderAllPlaceMarkers()
-            self.updateBottomSheet()
+            self?.updateBottomSheet()
         }
     }
 
