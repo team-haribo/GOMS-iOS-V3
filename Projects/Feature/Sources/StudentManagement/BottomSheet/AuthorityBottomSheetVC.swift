@@ -146,16 +146,16 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         
         let sheetHeight: CGFloat
         if visibleViewsCount == 3 {
-            sheetHeight = 342.0 / 812.0
+            sheetHeight = 342
         } else if visibleViewsCount == 2 {
-            sheetHeight = 266.0 / 812.0
+            sheetHeight = 266
         } else {
-            sheetHeight = 190.0 / 812.0
+            sheetHeight = 190
         }
 
         bottomSheetView.snp.remakeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalToSuperview().multipliedBy(sheetHeight)
+            $0.height.equalTo(sheetHeight)
         }
         
         UIView.animate(withDuration: 0.25) {
@@ -261,8 +261,8 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         blackListSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
         
         let aStack = createOptionStack(title: "학생회 권한 부여", description: "이 학생은 학생회 권한을 가지게 돼요")
-        adminContainer.addSubview(aStack)
         adminContainer.addSubview(adminSwitch)
+        adminContainer.addSubview(aStack)
         aStack.snp.makeConstraints { $0.leading.centerY.equalToSuperview() }
         adminSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
     }
