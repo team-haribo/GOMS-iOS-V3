@@ -31,6 +31,7 @@ public final class MapViewModel {
     public private(set) var distanceText: String = ""
     public private(set) var timeText: String = ""
     public private(set) var hotPlaces: [MapPlaceData] = []
+    public private(set) var recommendedPlaces: [MapPlaceData] = []
 
     // MARK: - Binding
     public var onPlacesUpdated: (() -> Void)?
@@ -39,6 +40,7 @@ public final class MapViewModel {
     public var onDetailUpdated: (() -> Void)?
     public var onError: ((String) -> Void)?
     public var onHotPlacesUpdated: (() -> Void)?
+    public var onRecommendedPlacesUpdated: (() -> Void)?
 
     // MARK: - API
 
@@ -72,6 +74,23 @@ public final class MapViewModel {
                 }
             case .failure:
                 self?.onError?("핫플레이스 요청 실패")
+            }
+        }
+    }
+
+    public func fetchRecommendedPlaces() {
+        placeProvider.request(.getRecommendedPlaces(authorization: accessToken)) { [weak self] result in
+            switch result {
+            case .success(let response):
+                do {
+                    let decoded = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
+                    self?.recommendedPlaces = decoded.places
+                    self?.onRecommendedPlacesUpdated?()
+                } catch {
+                    self?.onError?("추천 장소 디코딩 실패")
+                }
+            case .failure:
+                self?.onError?("추천 장소 요청 실패")
             }
         }
     }
@@ -138,8 +157,15 @@ public final class MapViewModel {
     }
     
     public func fetchRecommendedCount(completion: (() -> Void)? = nil) {
-        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { _ in
-            completion?()
+        placeProvider.request(.getRecommendedPlacesCount(authorization: accessToken)) { [weak self] result in
+            switch result {
+            case .success:
+                self?.fetchRecommendedPlaces()
+                completion?()
+            case .failure:
+                self?.onError?("추천 개수 요청 실패")
+                completion?()
+            }
         }
     }
 
@@ -151,10 +177,9 @@ public final class MapViewModel {
         placeProvider.request(service) { [weak self] result in
             switch result {
             case .success:
-                self?.fetchRecommendedCount {
-                    self?.fetchHotPlaces()
-                    completion()
-                }
+                self?.fetchHotPlaces()
+                self?.fetchRecommendedPlaces()
+                completion()
             case .failure:
                 self?.onError?("추천 상태 변경 실패")
                 completion()

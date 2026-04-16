@@ -74,6 +74,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         setupBottomSheetBinding()
         fetchPlaceList()
         viewModel.fetchHotPlaces()
+        viewModel.fetchRecommendedPlaces()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -345,6 +346,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         viewModel.onHotPlacesUpdated = { [weak self] in
             self?.updateBottomSheet()
         }
+        viewModel.onRecommendedPlacesUpdated = { [weak self] in
+            self?.updateBottomSheet()
+        }
     }
 
     private func setupBottomSheetBinding() {
@@ -365,7 +369,17 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             )
         }
 
-        let recommended: [MapCardData] = []
+        let recommended: [MapCardData] = viewModel.recommendedPlaces.map { place in
+            return MapCardData(
+                id: place.placeId,
+                name: place.placeName,
+                address: place.address,
+                category: place.categoryName,
+                reviewCount: place.reviewCount,
+                recommendCount: place.recommendCount,
+                isFavorite: place.recommended
+            )
+        }
 
         let reviews: [MapCardData] = dummyReviews.map { review in
             return MapCardData(
