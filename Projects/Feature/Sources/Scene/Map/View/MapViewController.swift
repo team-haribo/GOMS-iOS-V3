@@ -87,7 +87,6 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        mapController?.pauseEngine()
     }
 
     // MARK: - Setup
