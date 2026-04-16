@@ -11,7 +11,6 @@ import Kingfisher
 import Service
 import Combine
 
-
 public final class MainViewController: BaseViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     // MARK: - Properties
     private var cancellables = Set<AnyCancellable>()
@@ -40,7 +39,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     let content = UIView()
 
-    
     private let logo = UIImageView().then {
         $0.image = UIImage(
             named: "graylogo",
@@ -99,7 +97,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         $0.isScrollEnabled = true
         $0.showsHorizontalScrollIndicator = false
         $0.showsVerticalScrollIndicator = true
-       
         $0.backgroundColor = .clear
     }
 
@@ -145,7 +142,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         navigationController?.pushViewController(outingVC, animated: true)
     }
 
-    
     @objc func qrButtonTapped() {
         qrButton.isUserInteractionEnabled = false
 
@@ -235,7 +231,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     }
 
     private func setupMap() {
-       
         if let existingMapVC = mapVC {
             existingMapVC.willMove(toParent: nil)
             existingMapVC.view.removeFromSuperview()
@@ -298,7 +293,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         configureRefreshControl()
         updateSelectedTab()
         
-      
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleClockChanged),
@@ -307,15 +301,45 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         )
     }
 
-    public override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-    }
-
     func configureRefreshControl() {
         scrollView.refreshControl = refreshControl
         refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
         refreshControl.tintColor = .color.gomsPrimary.color
+    }
+    
+    func updateLateView(hasLateStudents: Bool) {
+        if hasLateStudents {
+            lateNilView.isHidden = true
+            latecomerCollectionView.isHidden = false
+            
+            latecomerCollectionView.snp.remakeConstraints { make in
+                make.top.equalTo(latecomerLabel.snp.bottom).offset(12)
+                make.leading.trailing.equalToSuperview().inset(20)
+                make.height.equalTo(136)
+            }
+            
+            outingView.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview()
+                make.top.equalTo(latecomerCollectionView.snp.bottom).offset(24)
+                make.bottom.equalTo(contentView.snp.bottom).offset(-100)
+            }
+        } else {
+            lateNilView.isHidden = false
+            latecomerCollectionView.isHidden = true
+            
+            lateNilView.snp.remakeConstraints { make in
+                make.top.equalTo(latecomerLabel.snp.bottom).offset(12)
+                make.leading.trailing.equalToSuperview().inset(20)
+                make.height.equalTo(20)
+            }
+            
+            outingView.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview()
+                make.top.equalTo(lateNilView.snp.bottom).offset(24)
+                make.bottom.equalTo(contentView.snp.bottom).offset(-100)
+            }
+        }
+        view.layoutIfNeeded()
     }
 
     @objc func handleRefreshControl() {
@@ -330,7 +354,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         
         authViewModel.setupEmail(email: isLocalEmail)
         authViewModel.setupPassword(password: isLocalPass)
-        
         
         authViewModel.signIn { [weak self] (statusCode: Int, _) in
             guard let self = self else { return }
@@ -372,32 +395,22 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                                       self.navigationController?.setViewControllers([introVC], animated: false)
                                     }
                                 }
-                            } else {
-                               
                             }
-                            
                             self.refreshControl.endRefreshing()
                         }
                     }
-                    
-                case 400, 404:
-                    
-                    self.refreshControl.endRefreshing()
-                    
                 default:
-                    
                     self.refreshControl.endRefreshing()
                 }
             }
         }
     }
+
     private func fetchData() {
         let group = DispatchGroup()
 
-      
         group.enter()
         mainViewModel.getLateList {
-            
             group.leave()
         }
 
@@ -408,7 +421,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         group.enter()
         mainViewModel.getOutingList {
-          
             group.leave()
         }
 
@@ -417,49 +429,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 self?.refreshControl.endRefreshing()
                 return
             }
-            self.setupProfileView()
             self.setupViewComponents()
-            self.latecomerCollectionView.reloadData()
-            self.outingStatusCollectionView.reloadData()
             self.refreshControl.endRefreshing()
         }
     }
-
-
-
-    private func fetchData1() {
-        let group = DispatchGroup()
-
-        group.enter()
-        mainViewModel.getLateList { [weak self] in
-            group.leave()
-        }
-
-        group.enter()
-        mainViewModel.getProfile { [weak self] _ in
-            group.leave()
-        }
-
-        group.enter()
-        mainViewModel.getOutingList { [weak self] in
-            group.leave()
-        }
-
-        group.notify(queue: .main) { [weak self] in
-            guard let self = self, self.isVisible else {
-                self?.refreshControl.endRefreshing()
-                return
-            }
-            
-          
-            self.setupProfileView()
-            self.setupViewComponents()
-            self.latecomerCollectionView.reloadData()
-            self.outingStatusCollectionView.reloadData()
-            self.refreshControl.endRefreshing()
-        }
-    }
-
 
     private func setupViewComponents() {
         self.setup()
@@ -469,20 +442,14 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         self.setupProfileView()
         self.latecomerCollectionView.reloadData()
         self.outingStatusCollectionView.reloadData()
-
     }
-
 
     // MARK: - Setting
     func setup() {
         let isLateEmpty = self.mainViewModel.lateListDatas.isEmpty
         let isOutingEmpty = self.mainViewModel.outingListDatas.isEmpty
 
-        // 지각자
-        lateNilView.isHidden = !isLateEmpty
-        latecomerCollectionView.isHidden = isLateEmpty
-
-        // 외출자
+        updateLateView(hasLateStudents: !isLateEmpty)
         outingView.isHidden = isOutingEmpty
 
         self.setCollectionView()
@@ -491,53 +458,28 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     func setupProfileView() {
         let profile = mainViewModel.profileData
-
         let grade = profile?.grade ?? 0
         let name = profile?.name ?? "이름 없음"
         let department = profile?.department ?? "정보 없음"
         let lateCount = profile?.lateCount ?? 0
         let status = profile?.status ?? "UNKNOWN"
 
-       
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
-            basicsProfileView.profileImageView.kf.setImage(
-                with: url,
-                placeholder: UIImage.image.profile.image,
-                options: [.forceRefresh]
-            )
+            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
+            profileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
         } else {
             basicsProfileView.profileImageView.image = .image.profile.image
+            profileView.profileImageView.image = .image.profile.image
         }
 
         basicsProfileView.nameLabel.text = name
         profileView.nameLabel.text = name
 
-      
-        if let urlString = profileViewModel.profileInfo?.profileImageUrl,
-           let url = URL(string: urlString) {
-            profileView.profileImageView.kf.setImage(
-                with: url,
-                placeholder: UIImage.image.profile.image,
-                options: [.forceRefresh]
-            )
-        } else {
-            profileView.profileImageView.image = .image.profile.image
-        }
-
-        if department == Major.sw.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | SW"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | SW"
-        } else if department == Major.iot.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | IoT"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | IoT"
-        } else if department == Major.ai.rawValue {
-            profileView.studentInformationLabel.text = "\(grade)기 | AI"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기 | AI"
-        } else {
-            profileView.studentInformationLabel.text = "\(grade)기"
-            basicsProfileView.studentInformationLabel.text = "\(grade)기"
-        }
+        let majorText = department == Major.sw.rawValue ? "SW" : (department == Major.iot.rawValue ? "IoT" : (department == Major.ai.rawValue ? "AI" : ""))
+        let info = majorText.isEmpty ? "\(grade)기" : "\(grade)기 | \(majorText)"
+        profileView.studentInformationLabel.text = info
+        basicsProfileView.studentInformationLabel.text = info
 
         basicsProfileView.lateCountLabel.text = "지각 횟수: \(lateCount)회"
         profileView.lateCountLabel.text = "지각 횟수: \(lateCount)회"
@@ -558,11 +500,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             basicsProfileView.myOutingStatusLabel.text = "외출 대기 중"
             basicsProfileView.myOutingStatusLabel.textColor = .color.sub1.color
         }
-        basicsProfileView.layer.cornerRadius = 16
-        basicsProfileView.layer.masksToBounds = true
-
-        profileView.layer.cornerRadius = 16
-        profileView.layer.masksToBounds = true
     }
 
     private func setCollectionView() {
@@ -576,25 +513,13 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     func setupCountLable() {
         let count = mainViewModel.outingListDatas.count
-
         outingCountLabel.isHidden = count == 0
         guard count > 0 else { return }
 
         let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
         let range = (attributedString.string as NSString).range(of: "\(count)")
-
-        attributedString.addAttribute(
-            .foregroundColor,
-            value: UIColor.color.gomsPrimary.color,
-            range: range
-        )
-
-        attributedString.addAttribute(
-            .font,
-            value: UIFont.suit(size: 14, weight: .medium),
-            range: range
-        )
-
+        attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: range)
+        attributedString.addAttribute(.font, value: UIFont.suit(size: 14, weight: .medium), range: range)
         outingCountLabel.attributedText = attributedString
     }
 
@@ -602,18 +527,17 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public override func configureUI() {
         qrButton.layer.cornerRadius = qrButton.frame.size.width / 2
         qrButton.clipsToBounds = false
-
         qrButton.layer.shadowColor = UIColor.color.gomsPrimary.color.cgColor
         qrButton.layer.shadowOpacity = 0.8
         qrButton.layer.shadowRadius = 13
         qrButton.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
     }
+
     // MARK: - Add View
     public override func addView() {
         view.addSubview(scrollView)
         view.addSubview(mapContainerView)
         scrollView.addSubview(contentView)
-
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { self.outingView.addSubview($0) }
         [logo, settingButton, profileView, basicsProfileView, latecomerLabel, lateNilView, latecomerCollectionView, outingView].forEach { self.contentView.addSubview($0) }
         view.addSubview(qrButton)
@@ -669,7 +593,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         lateNilView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(20)
-            $0.top.equalTo(latecomerLabel.snp.bottom)
+            $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
         }
 
         latecomerCollectionView.snp.makeConstraints {
@@ -729,12 +653,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             $0.top.equalTo(logo.snp.bottom).offset(20)
         }
 
-        basicsProfileView.layer.cornerRadius = 16
-        basicsProfileView.layer.masksToBounds = true
-
-        profileView.layer.cornerRadius = 16
-        profileView.layer.masksToBounds = true
-
         if isClockOn {
             profileView.isHidden = false
             basicsProfileView.isHidden = true
@@ -742,8 +660,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             profileView.isHidden = true
             basicsProfileView.isHidden = false
         }
-
-        profileView.isClockOn = isClockOn
         view.layoutIfNeeded()
     }
 
@@ -754,7 +670,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - UICollectionViewDataSource
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView == latecomerCollectionView {
-            return mainViewModel.lateListDatas.isEmpty ? 3 : mainViewModel.lateListDatas.count
+            return mainViewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
             return mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
         }
@@ -764,23 +680,17 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if collectionView == latecomerCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LateCell.identifier, for: indexPath) as? LateCell else { return UICollectionViewCell() }
-            if mainViewModel.lateListDatas.isEmpty {
-                cell.configureDummy()
-            } else {
-                let data = mainViewModel.lateListDatas[indexPath.row]
-                cell.configure(with: data)
-            }
+            let data = mainViewModel.lateListDatas[indexPath.row]
+            cell.configure(with: data)
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
-
             if mainViewModel.outingListDatas.isEmpty {
                 cell.configureDummy()
             } else {
                 let data = mainViewModel.outingListDatas[indexPath.row]
                 cell.configure(with: data, showTime: false)
             }
-
             return cell
         }
         return UICollectionViewCell()
@@ -791,46 +701,19 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 extension MainViewController {
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if collectionView == latecomerCollectionView {
-            let width = bounds.width * 0.27
-            let height: CGFloat = 136
-            return CGSize(width: width, height: height)
+            let width = UIScreen.main.bounds.width * 0.27
+            return CGSize(width: width, height: 136)
         } else if collectionView == outingStatusCollectionView {
-            let width = collectionView.bounds.width
-            let height: CGFloat = 44
-            return CGSize(width: width, height: height)
+            return CGSize(width: collectionView.bounds.width, height: 44)
         }
-        return CGSize(width: 0, height: 0)
+        return .zero
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-        if collectionView == latecomerCollectionView {
-            return bounds.width * 0.03
-        } else if collectionView == outingStatusCollectionView {
-            return 0
-        }
-        return 0
+        return collectionView == latecomerCollectionView ? UIScreen.main.bounds.width * 0.03 : 0
     }
 
-    public func collectionView(
-        _ collectionView: UICollectionView,
-        layout collectionViewLayout: UICollectionViewLayout,
-        minimumLineSpacingForSectionAt section: Int
-    ) -> CGFloat {
-        if collectionView == outingStatusCollectionView {
-            return 4
-        }
-        return 10
-    }
-
-    public func collectionView(
-        _ collectionView: UICollectionView,
-        layout collectionViewLayout: UICollectionViewLayout,
-        insetForSectionAt section: Int
-    ) -> UIEdgeInsets {
-        if collectionView == outingStatusCollectionView {
-          
-            return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
-        }
-        return .zero
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return collectionView == outingStatusCollectionView ? 4 : 10
     }
 }

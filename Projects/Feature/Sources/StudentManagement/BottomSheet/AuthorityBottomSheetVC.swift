@@ -89,19 +89,17 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     }
 
     private let outingTitleLabel = UILabel().then {
+        $0.text = "외출"
         $0.textColor = UIColor.color.mainText.color
         $0.font = .suit(size: 18, weight: .semibold)
     }
     private let outingDescLabel = UILabel().then {
+        $0.text = "학생을 외출/복귀 시켜요"
         $0.textColor = UIColor.color.sub2.color
         $0.font = .suit(size: 14, weight: .regular)
     }
-    private lazy var outingButton = UIButton().then {
-        $0.contentVerticalAlignment = .fill
-        $0.contentHorizontalAlignment = .fill
-        $0.addTarget(self, action: #selector(outingButtonTapped), for: .touchUpInside)
-    }
-
+    
+    private let outingSwitch = CustomSwitch()
     private let forceOutingContainer = UIView()
     private let blackListContainer = UIView()
     private let adminContainer = UIView()
@@ -127,16 +125,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     private func setupData() {
         guard let data = userData else { return }
 
-        if data.isOuting {
-            outingTitleLabel.text = "강제외출 복귀"
-            outingDescLabel.text = "학생을 강제외출 복귀 시켜요"
-        } else {
-            outingTitleLabel.text = "강제외출"
-            outingDescLabel.text = "학생을 강제외출 시켜요"
-        }
-        outingButton.setImage(UIImage.image.outing.image, for: .normal)
-        outingButton.tintColor = UIColor.color.gomsNegative.color
-
+        outingSwitch.isOn = data.isOuting
         blackListSwitch.isOn = data.isBlackList
         adminSwitch.isOn = (data.authority == "ROLE_STUDENT_COUNCIL")
 
@@ -149,7 +138,6 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     private func updateLayoutForState() {
         let visibleViews = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }
         
-        // 내부 요소들 간격/높이 재조정
         forceOutingContainer.snp.updateConstraints {
             $0.height.equalTo(forceOutingContainer.isHidden ? 0 : 72)
         }
@@ -164,7 +152,6 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             $0.top.equalTo(titleLabel.snp.bottom).offset(adminOffset)
         }
 
-        // MARK: -  높이 조절
         bottomSheetView.snp.remakeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             
@@ -180,25 +167,20 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         view.layoutIfNeeded()
     }
 
-    @objc private func outingButtonTapped() {
+    @objc private func outingSwitchChanged() {
         guard let data = userData else { return }
-        let isOut = data.isOuting
         
-        GOMSAlert.show(
-            in: self,
-            title: isOut ? "강제외출 복귀" : "강제외출",
-            message: isOut ? "학생을 복귀 상태로 변경하시겠습니까?" : "이 학생을 외출 상태로 변경하시겠습니까?",
-            actionTitle: isOut ? "복귀" : "외출",
-            isNegative: true,
-            highlightKeywords: [],
-            action: { [weak self] in
-                self?.viewModel.forceOutingStudent(user: data) { [weak self] in
-                    guard let self = self else { return }
-                    self.studentManagementVC.userList = self.viewModel.userListDatas
-                    self.dismiss(animated: true)
-                }
+        if outingSwitch.isOn {
+            viewModel.forceOutingStudent(user: data) { [weak self] in
+                guard let self = self else { return }
+                self.studentManagementVC.userList = self.viewModel.userListDatas
             }
-        )
+        } else {
+            viewModel.deleteOutingStudent(user: data) { [weak self] in
+                guard let self = self else { return }
+                self.studentManagementVC.userList = self.viewModel.userListDatas
+            }
+        }
     }
     
     @objc private func blackListSwitchChanged() {
@@ -208,7 +190,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         GOMSAlert.show(
             in: self,
             title: "외출금지",
-            message: isOn ? "이 학생을 외출 금지 시키겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
+            message: isOn ? "이 학생을 외출 금지 시겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
             actionTitle: isOn ? "외출 금지" : "외출 해제",
             isNegative: true,
             highlightKeywords: isOn ? ["외출 금지"] : ["해제"],
@@ -244,6 +226,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     }
 
     private func setupActions() {
+        outingSwitch.addTarget(self, action: #selector(outingSwitchChanged), for: .valueChanged)
         blackListSwitch.addTarget(self, action: #selector(blackListSwitchChanged), for: .valueChanged)
         adminSwitch.addTarget(self, action: #selector(adminSwitchChanged), for: .valueChanged)
     }
@@ -261,15 +244,13 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             $0.spacing = 6
         }
         forceOutingContainer.addSubview(outingStack)
-        forceOutingContainer.addSubview(outingButton)
+        forceOutingContainer.addSubview(outingSwitch)
         
         outingStack.snp.makeConstraints {
             $0.leading.centerY.equalToSuperview()
         }
-        outingButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.centerY.equalToSuperview().offset(-4)
-            $0.size.equalTo(32)
+        outingSwitch.snp.makeConstraints {
+            $0.trailing.centerY.equalToSuperview()
         }
         
         let bStack = createOptionStack(title: "외출금지", description: "이 학생은 외출을 할 수 없어요")
@@ -305,7 +286,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     public override func setLayout() {
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(342) // 기본값
+            $0.height.equalTo(342)
         }
         titleLabel.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(24)
