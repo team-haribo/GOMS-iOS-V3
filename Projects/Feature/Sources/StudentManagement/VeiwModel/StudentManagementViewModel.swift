@@ -174,6 +174,25 @@ public final class StudentManagementViewModel: BaseViewModel {
         }
     }
 
+    func deleteOutingStudent(user: UserData, completion: @escaping () -> Void) {
+        studentCouncilProvider.request(.deleteOuting(authorization: accessToken, memberId: user.id)) { response in
+            switch response {
+            case .success(let result):
+                if result.statusCode == 200 || result.statusCode == 205 {
+                    self.getUserList {
+                        completion()
+                    }
+                } else if result.statusCode == 401 {
+                    self.gomsRefreshToken.tokenReissuance { _ in }
+                } else {
+                    print(result)
+                }
+            case .failure(let err):
+                print(err.localizedDescription)
+            }
+        }
+    }
+
     func searchStudent(searchString: String?, completion: @escaping () -> Void) {
 
         let param = SearchStudentRequest(
