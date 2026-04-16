@@ -14,7 +14,8 @@ public final class MapReviewWriteViewController: UIViewController {
     private let mainView = MapReviewWriteView()
     private let viewModel: MapReviewWriteViewModel
     private let placeData: MapPlaceDetailModel
-    private var isHeartSelected = false
+private var isHeartSelected = false
+    public var onReviewCreated: (() -> Void)?
     
     // MARK: - Life Cycle
     public init(placeData: MapPlaceDetailModel) {
@@ -69,8 +70,9 @@ public final class MapReviewWriteViewController: UIViewController {
                 title: "후기 등록 완료",
                 message: "후기를 성공적으로 등록했습니다!",
                 completion: { [weak self] in
-                    // 이전 화면(상세보기)으로 돌아가기
-                    self?.navigationController?.popViewController(animated: true)
+                    guard let self = self else { return }
+                    self.onReviewCreated?()
+                    self.navigationController?.popViewController(animated: true)
                 }
             )
         }

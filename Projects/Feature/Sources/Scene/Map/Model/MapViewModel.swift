@@ -148,8 +148,15 @@ public final class MapViewModel {
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
-                self?.reviews = (try? JSONDecoder().decode([MapReview].self, from: response.data)) ?? []
-                self?.onReviewsUpdated?()
+                do {
+                    let decoder = JSONDecoder()
+                    let decoded = try decoder.decode(MapReviewResponse.self, from: response.data)
+                    self?.reviews = decoded.reviews
+                    self?.onReviewsUpdated?()
+                } catch {
+                    self?.reviews = []
+                    self?.onReviewsUpdated?()
+                }
             case .failure:
                 self?.onError?("리뷰 조회 실패")
             }

@@ -29,14 +29,6 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         didSet { self.recentSearchView.tableView.reloadData() }
     }
     
-    private var dummyReviews: [MapReview] = [] {
-        didSet {
-            if let currentDetail = self.currentPlaceDetail {
-                self.placeDetailView.updateReviewCount(dummyReviews.count, recommendCount: currentDetail.recommendCount)
-            }
-            self.placeDetailView.tableView.reloadData()
-        }
-    }
     
     private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
     private let searchBar = MapSearchBar()
@@ -83,6 +75,11 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        if selectedPlaceId != -1 {
+            viewModel.fetchPlaceDetail(placeId: selectedPlaceId)
+            fetchReviews(placeId: selectedPlaceId)
+        }
     }
 
     public override func viewDidDisappear(_ animated: Bool) {
@@ -189,7 +186,21 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
     @objc private func didTapReviewWrite() {
         guard let detailData = currentPlaceDetail else { return }
-        self.navigationController?.pushViewController(MapReviewWriteViewController(placeData: detailData), animated: true)
+
+        let vc = MapReviewWriteViewController(placeData: detailData)
+
+        vc.onReviewCreated = { [weak self] in
+            guard let self = self else { return }
+
+            // 상세 리뷰 다시 fetch
+            self.fetchReviews(placeId: detailData.placeId)
+
+            // 인기 / 추천 데이터도 최신화
+            self.viewModel.fetchHotPlaces()
+            self.viewModel.fetchRecommendedPlaces()
+        }
+
+        self.navigationController?.pushViewController(vc, animated: true)
     }
 
     // MARK: - Marker Rendering
@@ -324,8 +335,17 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         }
 
         viewModel.onReviewsUpdated = { [weak self] in
-            self?.dummyReviews = self?.viewModel.reviews ?? []
-            self?.updateBottomSheet()
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
+                self.placeDetailView.updateReviewCount(
+                    self.viewModel.reviews.count,
+                    recommendCount: self.currentPlaceDetail?.recommendCount ?? 0
+                )
+
+                self.placeDetailView.tableView.reloadData()
+                self.updateBottomSheet()
+            }
         }
 
         viewModel.onDetailUpdated = { [weak self] in
@@ -380,22 +400,10 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             )
         }
 
-        let reviews: [MapCardData] = dummyReviews.map { review in
-            return MapCardData(
-                id: review.reviewId,
-                name: "",
-                address: "",
-                category: "",
-                reviewCount: 0,
-                recommendCount: 0,
-                isFavorite: false
-            )
-        }
-
         bottomSheetView.configure(
             popular: Array(popular),
             recommended: recommended,
-            reviews: reviews
+            reviews: []
         )
     }
 
@@ -663,7 +671,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
 extension MapViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let count = tableView == recentSearchView.tableView ? dummyRecentSearches.count : dummyReviews.count
+        let count = tableView == recentSearchView.tableView ? dummyRecentSearches.count : viewModel.reviews.count
         return count
     }
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -677,14 +685,14 @@ extension MapViewController: UITableViewDelegate, UITableViewDataSource {
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
-            cell.configure(with: dummyReviews[indexPath.row])
+            cell.configure(with: viewModel.reviews[indexPath.row])
             cell.onDeleteTap = { [weak self] in
                 guard let self = self, let currentIndexPath = tableView.indexPath(for: cell) else { return }
                 ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
-                    let reviewToDelete = self.dummyReviews[currentIndexPath.row]
+                    let reviewToDelete = self.viewModel.reviews[currentIndexPath.row]
                     self.viewModel.deleteReview(reviewId: reviewToDelete.reviewId) { success in
                         if success {
-                            self.dummyReviews.remove(at: currentIndexPath.row)
+                            self.fetchReviews(placeId: self.selectedPlaceId)
                         }
                     }
                 }

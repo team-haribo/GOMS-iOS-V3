@@ -55,7 +55,7 @@ public final class MapReviewCell: UITableViewCell {
         $0.tintColor = .color.sub2.color
         $0.isHidden = true
     }
-
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupView()
@@ -64,7 +64,7 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     required init?(coder: NSCoder) { fatalError() }
-
+    
     override public func prepareForReuse() {
         super.prepareForReuse()
         deleteButton.isHidden = true
@@ -129,10 +129,10 @@ public final class MapReviewCell: UITableViewCell {
     
     public func configure(with data: MapReview) {
         nameLabel.text = data.name
-        infoLabel.text = data.info
+        infoLabel.text = "\(data.grade) · \(data.department)"
         contentLabel.text = data.content
-        dateLabel.text = data.date
-        deleteButton.isHidden = !data.isMine
-        reportButton.isHidden = data.isMine
+        dateLabel.text = data.reviewedAt
+        deleteButton.isHidden = true
+        reportButton.isHidden = false
     }
 }
