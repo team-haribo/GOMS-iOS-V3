@@ -88,6 +88,12 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
     }
 
+    private let contentStackView = UIStackView().then {
+        $0.axis = .vertical
+        $0.spacing = 4
+        $0.distribution = .fill
+    }
+
     private let outingTitleLabel = UILabel().then {
         $0.text = "외출"
         $0.textColor = UIColor.color.mainText.color
@@ -136,35 +142,25 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     }
 
     private func updateLayoutForState() {
-        let visibleViews = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }
+        let visibleViewsCount = [forceOutingContainer, blackListContainer, adminContainer].filter { !$0.isHidden }.count
         
-        forceOutingContainer.snp.updateConstraints {
-            $0.height.equalTo(forceOutingContainer.isHidden ? 0 : 72)
-        }
-        
-        blackListContainer.snp.updateConstraints {
-            $0.height.equalTo(blackListContainer.isHidden ? 0 : 72)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(forceOutingContainer.isHidden ? 28 : 104)
-        }
-        
-        let adminOffset: CGFloat = forceOutingContainer.isHidden && blackListContainer.isHidden ? 28 : (forceOutingContainer.isHidden || blackListContainer.isHidden ? 104 : 180)
-        adminContainer.snp.updateConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(adminOffset)
+        let sheetHeight: CGFloat
+        if visibleViewsCount == 3 {
+            sheetHeight = 342
+        } else if visibleViewsCount == 2 {
+            sheetHeight = 266
+        } else {
+            sheetHeight = 190
         }
 
         bottomSheetView.snp.remakeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            
-            if visibleViews.count == 3 {
-                $0.height.equalToSuperview().multipliedBy(342.0 / 812.0)
-            } else if visibleViews.count == 2 {
-                $0.height.equalToSuperview().multipliedBy(266.0 / 812.0)
-            } else {
-                $0.height.equalToSuperview().multipliedBy(190.0 / 812.0)
-            }
+            $0.height.equalTo(sheetHeight)
         }
         
-        view.layoutIfNeeded()
+        UIView.animate(withDuration: 0.25) {
+            self.view.layoutIfNeeded()
+        }
     }
 
     @objc private func outingSwitchChanged() {
@@ -190,7 +186,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         GOMSAlert.show(
             in: self,
             title: "외출금지",
-            message: isOn ? "이 학생을 외출 금지 시겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
+            message: isOn ? "이 학생을 외출 금지 시키겠습니까?" : "이 학생을 외출 금지 해제 시키겠습니까?",
             actionTitle: isOn ? "외출 금지" : "외출 해제",
             isNegative: true,
             highlightKeywords: isOn ? ["외출 금지"] : ["해제"],
@@ -218,7 +214,8 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
         viewModel.changeAuthority(user: data) { [weak self] in
             guard let self = self else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.studentManagementVC.userList = self.viewModel.userListDatas
                 self.dismiss(animated: true)
             }
@@ -235,8 +232,12 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     public override func addView() {
         view.addSubview(bottomSheetView)
-        [titleLabel, closeButton, forceOutingContainer, blackListContainer, adminContainer].forEach {
+        [titleLabel, closeButton, contentStackView].forEach {
             bottomSheetView.addSubview($0)
+        }
+        
+        [forceOutingContainer, blackListContainer, adminContainer].forEach {
+            contentStackView.addArrangedSubview($0)
         }
         
         let outingStack = UIStackView(arrangedSubviews: [outingTitleLabel, outingDescLabel]).then {
@@ -260,8 +261,8 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         blackListSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
         
         let aStack = createOptionStack(title: "학생회 권한 부여", description: "이 학생은 학생회 권한을 가지게 돼요")
-        adminContainer.addSubview(aStack)
         adminContainer.addSubview(adminSwitch)
+        adminContainer.addSubview(aStack)
         aStack.snp.makeConstraints { $0.leading.centerY.equalToSuperview() }
         adminSwitch.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
     }
@@ -295,20 +296,12 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             $0.top.trailing.equalToSuperview().inset(24)
             $0.size.equalTo(28)
         }
-        forceOutingContainer.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(28)
+        contentStackView.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
             $0.leading.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(72)
         }
-        blackListContainer.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(104)
-            $0.leading.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(72)
-        }
-        adminContainer.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(180)
-            $0.leading.trailing.equalToSuperview().inset(24)
-            $0.height.equalTo(72)
+        [forceOutingContainer, blackListContainer, adminContainer].forEach {
+            $0.snp.makeConstraints { $0.height.equalTo(72) }
         }
     }
 }

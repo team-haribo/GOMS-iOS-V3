@@ -197,6 +197,29 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
                 if statusCode == 200 {
                     self.profileViewModel.loadProfileInfo { success, _ in
                         DispatchQueue.main.async {
+                            guard self.isVisible else {
+                                self.refreshControl.endRefreshing()
+                                return
+                            }
+                            if success {
+                                if let authority = self.profileViewModel.profileInfo?.authority {
+                                    let currentVC = self.navigationController?.viewControllers.last
+                                    switch authority {
+                                    case "ROLE_STUDENT":
+                                        if !(currentVC is MainViewController) {
+                                            let mainVC = MainViewController()
+                                            self.navigationController?.setViewControllers([mainVC], animated: false)
+                                        }
+                                    case "ROLE_STUDENT_COUNCIL":
+                                        if !(currentVC is AdminMainViewController) {
+                                            let adminVC = AdminMainViewController()
+                                            self.navigationController?.setViewControllers([adminVC], animated: false)
+                                        }
+                                    default:
+                                        print("권한이 없습니다.")
+                                    }
+                                }
+                            }
                             self.refreshControl.endRefreshing()
                         }
                     }
@@ -209,10 +232,18 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     private func fetchData() {
         let group = DispatchGroup()
-        group.enter(); viewModel.getLateList { group.leave() }
-        group.enter(); viewModel.getProfile { _ in group.leave() }
-        group.enter(); profileViewModel.loadProfileInfo { _, _ in group.leave() }
-        group.enter(); viewModel.getOutingList { group.leave() }
+        
+        group.enter()
+        viewModel.getLateList { group.leave() }
+        
+        group.enter()
+        viewModel.getProfile { _ in group.leave() }
+        
+        group.enter()
+        profileViewModel.loadProfileInfo { _, _ in group.leave() }
+        
+        group.enter()
+        viewModel.getOutingList { group.leave() }
 
         group.notify(queue: .main) { [weak self] in
             guard let self = self, self.isVisible else { self?.refreshControl.endRefreshing(); return }
@@ -325,19 +356,45 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
     }
 
     @objc public func qrButtonTapped() {
-        navigationController?.pushViewController(StudentManagementViewController(), animated: true)
+        qrButton.isUserInteractionEnabled = false
+        let studentManagementVC = StudentManagementViewController()
+        navigationController?.pushViewController(studentManagementVC, animated: true)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+            self.qrButton.isUserInteractionEnabled = true
+        }
     }
 
     @objc public func codeButtonTapped() {
-        navigationController?.pushViewController(AdminQRViewController(), animated: true)
+        codeButton.isUserInteractionEnabled = false
+        let adminQRVC = AdminQRViewController()
+        self.navigationController?.pushViewController(adminQRVC, animated: true)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.codeButton.isUserInteractionEnabled = true
+        }
     }
     
     @objc func reportButtonTapped() {
-        navigationController?.pushViewController(ReportListViewController(), animated: true)
+        reportButton.isUserInteractionEnabled = false
+        let reportListVC = ReportListViewController()
+        self.navigationController?.pushViewController(reportListVC, animated: true)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.reportButton.isUserInteractionEnabled = true
+        }
     }
 
     @objc func adminMenuButtonTapped() {
-        navigationController?.pushViewController(AdminMenuViewController(), animated: true)
+        adminMenuButton.isUserInteractionEnabled = false
+        let adminMenuVC = AdminMenuViewController()
+        self.navigationController?.pushViewController(adminMenuVC, animated: true)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+            self.adminMenuButton.isUserInteractionEnabled = true
+        }
     }
 
     public override func configureUI() {
@@ -368,7 +425,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         contentView.snp.makeConstraints {
             $0.edges.equalTo(scrollView.contentLayoutGuide)
             $0.width.equalTo(scrollView.frameLayoutGuide)
-            $0.bottom.equalTo(outingView.snp.bottom).offset(40) // 스크롤 하단 여백 보정
+            $0.bottom.equalTo(outingView.snp.bottom).offset(40)
         }
 
         tabBar.snp.makeConstraints {
@@ -428,7 +485,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         }
 
         latecomerLabel.snp.remakeConstraints {
-            // 현재 활성화된 프로필 뷰 하단에 붙도록 수정
             $0.top.equalTo(isClockOn ? profileView.snp.bottom : basicsProfileView.snp.bottom).offset(24)
             $0.leading.equalToSuperview().inset(20)
             $0.height.equalTo(32)
@@ -437,7 +493,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         profileView.isHidden = !isClockOn
         basicsProfileView.isHidden = isClockOn
         
-        // 지각자 리스트 상태에 따른 레이아웃 갱신
         updateLateView(hasLateStudents: !viewModel.lateListDatas.isEmpty)
         view.layoutIfNeeded()
     }
@@ -450,7 +505,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             latecomerCollectionView.snp.remakeConstraints {
                 $0.top.equalTo(latecomerLabel.snp.bottom).offset(12)
                 $0.leading.trailing.equalToSuperview().inset(20)
-                $0.height.equalTo(136) // 높이 강제 지정 (짤림 방지)
+                $0.height.equalTo(136)
             }
             
             outingView.snp.remakeConstraints {
@@ -475,7 +530,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             }
         }
         
-        // 외출현황 내부 레이아웃
         outingStatusLabel.snp.remakeConstraints {
             $0.leading.equalToSuperview().inset(20)
             $0.top.equalToSuperview()
@@ -498,7 +552,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.top.equalTo(outingStatusLabel.snp.bottom).offset(17)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
-            $0.height.equalTo(viewModel.outingListDatas.count * 48 + 20).priority(.low) // 리스트 길이에 따른 유동적 높이
+            $0.height.equalTo(viewModel.outingListDatas.count * 48 + 20).priority(.low)
         }
     }
 
