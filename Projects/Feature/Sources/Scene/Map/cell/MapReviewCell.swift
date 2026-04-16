@@ -127,12 +127,27 @@ public final class MapReviewCell: UITableViewCell {
     @objc private func reportTapped() { onReportTap?() }
     @objc private func deleteTapped() { onDeleteTap?() }
     
+    private func formatDate(_ isoString: String) -> String {
+       
+        let datePart = isoString.split(separator: "T").first ?? Substring(isoString)
+        let components = datePart.split(separator: "-")
+        
+        guard components.count == 3 else { return isoString }
+        
+        let year = components[0].suffix(2)
+        let month = components[1]
+        let day = components[2]
+        
+        return "\(year).\(month).\(day)"
+    }
+
     public func configure(with data: MapReview) {
         nameLabel.text = data.name
-        infoLabel.text = "\(data.grade) · \(data.department)"
+        infoLabel.text = "\(data.grade)기 | \(data.department)"
         contentLabel.text = data.content
-        dateLabel.text = data.reviewedAt
+        dateLabel.text = formatDate(data.reviewedAt)
         deleteButton.isHidden = true
         reportButton.isHidden = false
     }
 }
+    
