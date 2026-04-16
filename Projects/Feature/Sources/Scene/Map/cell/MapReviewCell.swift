@@ -9,6 +9,7 @@
 import UIKit
 import SnapKit
 import Then
+import Kingfisher
 
 public final class MapReviewCell: UITableViewCell {
     public static let identifier = "MapReviewCell"
@@ -146,6 +147,15 @@ public final class MapReviewCell: UITableViewCell {
         infoLabel.text = "\(data.grade)기 | \(data.department)"
         contentLabel.text = data.content
         dateLabel.text = formatDate(data.reviewedAt)
+
+   
+        if let url = URL(string: data.profileImageUrl) {
+            
+            profileImageView.kf.setImage(with: url, placeholder: UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil))
+        } else {
+            profileImageView.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        }
+
         deleteButton.isHidden = true
         reportButton.isHidden = false
     }
