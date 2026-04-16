@@ -21,7 +21,6 @@ public final class SignInViewController: BaseViewController {
 
     private let loader = LoaderViewController()
     
-    // 커스텀 뒤로가기 버튼
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
@@ -106,6 +105,9 @@ public final class SignInViewController: BaseViewController {
     }
     
     private lazy var signInButton = GOMSButton(frame: .zero, title: "로그인").then {
+        $0.isEnabled = false
+        $0.setTitleColor(.color.sub2.color, for: .disabled)
+        $0.backgroundColor = .color.button.color
         $0.addTarget(self, action: #selector(signInButtonTapped), for: .touchUpInside)
     }
     
@@ -121,7 +123,6 @@ public final class SignInViewController: BaseViewController {
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // 참고 코드 방식대로 애니메이션 없이 내비 바 숨김
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
@@ -167,7 +168,7 @@ public final class SignInViewController: BaseViewController {
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
 
         if !emailPredicate.evaluate(with: email) {
-            emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+            emailErrorLabel.text = "잘못된 형식의 이메일입니다"
             showEmailError()
             return
         }
@@ -313,14 +314,12 @@ public final class SignInViewController: BaseViewController {
         view.layoutIfNeeded()
     }
     
-    // MARK: - Add View
     public override func addView() {
         emailTextField.addSubview(defaultDomain)
         [customBackButton, pageTitleLabel, emailTextField, emailErrorLabel, passwordTextField, passwordErrorLabel, findPasswordButton, signInButton].forEach { view.addSubview($0) }
         view.bringSubviewToFront(customBackButton)
     }
     
-    // MARK: - Layout
     public override func setLayout() {
         customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
@@ -386,28 +385,42 @@ public final class SignInViewController: BaseViewController {
     }
 }
 
-// MARK: - Extension
 extension SignInViewController: UITextFieldDelegate {
     public func textFieldDidChange(_ textField: UITextField) {
+        let email = emailTextField.text ?? ""
+        let password = passwordTextField.text ?? ""
+        
+        let emailRegex = "^s[0-9]{5}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        let isEmailValid = emailPredicate.evaluate(with: email)
+        
+        let isButtonEnabled = (email.count == 6 && isEmailValid) && !password.isEmpty
+        signInButton.isEnabled = isButtonEnabled
+        
+        // 버튼 활성화 여부에 따른 색상 변경
+        signInButton.backgroundColor = isButtonEnabled ? .color.gomsPrimary.color : .color.button.color
+        
         if textField == emailTextField {
-            let email = textField.text ?? ""
             viewModel.setupEmail(email: email)
-            let emailRegex = "^s[0-9]{5}$"
-            let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-            
             if email.isEmpty {
                 emailErrorLabel.isHidden = true
                 emailTextField.layer.borderWidth = 0
                 emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
                 view.layoutIfNeeded()
-            } else if !emailPredicate.evaluate(with: email) {
-                emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
+            } else if !isEmailValid && email.count == 6 {
+                emailErrorLabel.text = "잘못된 형식의 이메일입니다"
                 showEmailError()
             } else {
                 showDefaultState()
             }
         } else if textField == passwordTextField {
-            viewModel.setupPassword(password: textField.text ?? "")
+            viewModel.setupPassword(password: password)
+            if !password.isEmpty {
+                passwordErrorLabel.isHidden = true
+                passwordTextField.layer.borderWidth = 0
+                passwordErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
+                view.layoutIfNeeded()
+            }
         }
     }
     
