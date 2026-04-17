@@ -51,10 +51,12 @@ public final class MapRouteDetailView: UIView {
         $0.showsVerticalScrollIndicator = false // 디자인을 위해 스크롤 바 숨김
     }
     
-    let tabBar = TabBar()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
+        self.backgroundColor = .clear
+        
         setupLayout()
     }
     
@@ -62,12 +64,13 @@ public final class MapRouteDetailView: UIView {
     
     private func setupLayout() {
         addSubview(containerView)
-        [tableView, grabberView, closeButton, routeTypeLabel, timeLabel, infoLabel, tabBar].forEach {
+        [tableView, grabberView, closeButton, routeTypeLabel, timeLabel, infoLabel].forEach {
                 containerView.addSubview($0)
             }
         
         containerView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(400)
         }
         
         grabberView.snp.makeConstraints {
@@ -97,15 +100,17 @@ public final class MapRouteDetailView: UIView {
             $0.leading.equalTo(timeLabel)
         }
         
-        tabBar.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(90)
-        }
         
         tableView.snp.makeConstraints {
                 $0.top.equalTo(infoLabel.snp.bottom).offset(24)
                 $0.leading.trailing.equalToSuperview()
                 $0.bottom.equalToSuperview()
             }
+    }
+    // MARK: - Accept touches only inside container (pass through outside to map)
+    public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let converted = containerView.convert(point, from: self)
+   
+        return containerView.bounds.contains(converted)
     }
 }

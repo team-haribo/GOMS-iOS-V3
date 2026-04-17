@@ -15,7 +15,7 @@ public final class MapReviewWriteViewController: UIViewController {
     private let viewModel: MapReviewWriteViewModel
     private let placeData: MapPlaceDetailModel
     private let mapViewModel = MapViewModel()
-private var isHeartSelected = false
+    private var isHeartSelected = false
     public var onReviewCreated: (() -> Void)?
     
     // MARK: - Life Cycle
@@ -58,12 +58,10 @@ private var isHeartSelected = false
     }
     
     private func bindViewModel() {
-        // 버튼 활성화 상태 업데이트
         viewModel.onNextButtonStateChanged = { [weak self] isEnabled in
             self?.mainView.updateButtonState(isEnabled: isEnabled)
         }
         
-        // 서버 등록 성공 시 처리
         viewModel.onReviewSuccess = { [weak self] in
             guard let self = self else { return }
             ReviewAlert.show(
@@ -78,7 +76,6 @@ private var isHeartSelected = false
             )
         }
         
-        // 에러 발생 시 알림 처리
         viewModel.onErrorOccurred = { [weak self] errorMessage in
             guard let self = self else { return }
             print("에러 발생: \(errorMessage)")
@@ -110,7 +107,6 @@ private var isHeartSelected = false
             title: "후기 등록",
             message: "이 후기를 등록하시겠습니까?",
             completion: { [weak self] in
-                // 뷰모델의 서버 등록 함수 호출 (writeReview 실행)
                 self?.viewModel.postReview()
             }
         )

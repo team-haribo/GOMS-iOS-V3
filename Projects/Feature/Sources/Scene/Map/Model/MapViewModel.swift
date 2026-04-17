@@ -33,6 +33,10 @@ public final class MapViewModel {
     public private(set) var hotPlaces: [MapPlaceData] = []
     public private(set) var recommendedPlaces: [MapPlaceData] = []
 
+    // MARK: - Route Data
+    public private(set) var routeResult: MapRouteModel?
+    public var onRouteUpdated: (() -> Void)?
+
     // MARK: - Binding
     public var onPlacesUpdated: (() -> Void)?
     public var onSearchUpdated: (() -> Void)?
@@ -217,6 +221,40 @@ public final class MapViewModel {
         }
     }
 
+    public func fetchRoute(to place: MapPlaceData) {
+        // 학교 좌표 (고정 출발지)
+        let schoolLat = 35.1425
+        let schoolLng = 126.8005
+
+        placeProvider.request(.getRoute(
+            startLat: schoolLat,
+            startLng: schoolLng,
+            endLat: place.latitude,
+            endLng: place.longitude
+        )) { [weak self] result in
+            switch result {
+            case .success(let response):
+                do {
+                    let decoded = try JSONDecoder().decode(MapRouteModel.self, from: response.data)
+                    self?.routeResult = decoded
+
+                    // 거리 / 시간 업데이트 (API 기준)
+                    if let route = decoded.routes.first {
+                        let summary = route.summary
+                        self?.distanceText = "\(summary.distance)m"
+                        self?.timeText = "\(summary.duration / 60)분"
+                    }
+
+                    self?.onRouteUpdated?()
+                } catch {
+                    self?.onError?("경로 디코딩 실패")
+                }
+            case .failure:
+                self?.onError?("경로 요청 실패")
+            }
+        }
+    }
+
     // MARK: - Logic
 
     public func findNearestPlace(lat: Double, lon: Double) -> MapPlaceData? {
@@ -243,5 +281,24 @@ public final class MapViewModel {
         let meters = dist * 111000
         let minutes = Int(meters / 80)
         return ("\(Int(meters))m", "\(minutes)분")
+    }
+    
+    public func getRouteCoordinates() -> [(Double, Double)] {
+        guard let route = routeResult?.routes.first else { return [] }
+        
+        var coords: [(Double, Double)] = []
+        
+        for section in route.sections {
+            for road in section.roads {
+                let v = road.vertexes
+                for i in stride(from: 0, to: v.count, by: 2) {
+                    let lng = v[i]
+                    let lat = v[i + 1]
+                    coords.append((lat, lng))
+                }
+            }
+        }
+        
+        return coords
     }
 }

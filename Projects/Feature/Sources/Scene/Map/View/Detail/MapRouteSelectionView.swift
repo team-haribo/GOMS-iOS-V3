@@ -61,10 +61,24 @@ public final class PathRecommendationCard: UIView {
 }
 
 public final class MapRouteSelectionView: UIView {
+    public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let converted = containerView.convert(point, from: self)
+        if containerView.bounds.contains(converted) {
+            return true
+        }
+
+        let convertedCard = recommendationStackView.convert(point, from: self)
+        if recommendationStackView.bounds.contains(convertedCard) {
+            return true
+        }
+
+        return false
+    }
+    
     private let locations = ["내 위치", "학교"]
     private var destinationName: String = "짬뽕관 광주송정선운점"
     
-    // [추가] 카드 클릭 시 컨트롤러에 알려주기 위한 클로저
+    
     public var onCardTapped: ((String) -> Void)?
     
     private let containerView = UIView().then {

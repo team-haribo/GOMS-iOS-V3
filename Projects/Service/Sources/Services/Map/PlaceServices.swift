@@ -24,18 +24,25 @@ public enum PlaceServices {
     case deleteReview(reviewId: Int, authorization: String)    // 리뷰 삭제
     // MARK: - 장소 전체 목록 조회 추가
     case getAllPlaces(authorization: String)                   // DB에 저장된 전체 장소 목록 조회
+    // MARK: - 카카오 길찾기
+    case getRoute(startLat: Double, startLng: Double, endLat: Double, endLng: Double)
 }
 
 extension PlaceServices: TargetType {
 
     public var baseURL: URL {
-        guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
-            fatalError("SchoolBaseURL을 찾을 수 없습니다")
+        switch self {
+        case .getRoute:
+            return URL(string: "https://apis-navi.kakaomobility.com")!
+        default:
+            guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
+                fatalError("SchoolBaseURL을 찾을 수 없습니다")
+            }
+            guard let url = URL(string: urlString) else {
+                fatalError("Invalid baseURL string: \(urlString)")
+            }
+            return url
         }
-        guard let url = URL(string: urlString) else {
-            fatalError("Invalid baseURL string: \(urlString)")
-        }
-        return url
     }
 
     public var path: String {
@@ -65,6 +72,8 @@ extension PlaceServices: TargetType {
         // MARK: - 장소 전체 목록 조회 경로 추가
         case .getAllPlaces:
             return "/api/v3/place"
+        case .getRoute:
+            return "/v1/directions"
         }
     }
 
@@ -100,6 +109,14 @@ extension PlaceServices: TargetType {
                 parameters: ["days": days],
                 encoding: URLEncoding.queryString
             )
+        case let .getRoute(startLat, startLng, endLat, endLng):
+            return .requestParameters(
+                parameters: [
+                    "origin": "\(startLng),\(startLat)",
+                    "destination": "\(endLng),\(endLat)"
+                ],
+                encoding: URLEncoding.queryString
+            )
         default:
             return .requestPlain
         }
@@ -110,6 +127,8 @@ extension PlaceServices: TargetType {
         var commonHeaders = ["Content-Type": "application/json"]
         
         switch self {
+        case .getRoute:
+            commonHeaders["Authorization"] = "KakaoAK b47f0cac2134d01481d23d13ffa419e6"
         case .getRecommendedPlaces(let auth),
              .getRecommendedPlacesCount(let auth),
              .searchPlace(_, let auth),

@@ -6,13 +6,43 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import UIKit
 import SnapKit
 import Then
 
+final class PassthroughView: UIView {
+    let contentView = MapRouteDetailView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        addSubview(contentView)
+        contentView.frame = bounds
+        contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let targetView = contentView.containerView
+        let convertedPoint = targetView.convert(point, from: self)
+
+        if targetView.bounds.contains(convertedPoint) {
+            return targetView.hitTest(convertedPoint, with: event)
+        }
+        return nil
+    }
+}
+
 public final class MapRouteDetailViewController: UIViewController {
+
+    public override func loadView() {
+        self.view = mainView
+    }
     
-    private let mainView = MapRouteDetailView()
+    private let mainView = PassthroughView()
     private var containerHeightConstraint: Constraint?
     private var isInitialLayout = true
     
@@ -22,7 +52,12 @@ public final class MapRouteDetailViewController: UIViewController {
     public var minSheetHeight: CGFloat = 330
     public var onDismiss: (() -> Void)?
     
-    // 1. 추천 경로 데이터
+    public var routeResult: MapRouteModel? {
+        didSet {
+            configureData()
+        }
+    }
+    
     private let recommendationSteps: [RouteStepModel] = [
         RouteStepModel(turnType: .start, title: "출발", description: "학교"),
         RouteStepModel(turnType: .straight, title: "OO건물", description: "OO건물 까지 100m 이동"),
@@ -30,8 +65,6 @@ public final class MapRouteDetailViewController: UIViewController {
         RouteStepModel(turnType: .right, title: "**건물", description: "**건물 앞에서 오른쪽길로 4m 이동"),
         RouteStepModel(turnType: .end, title: "도착", description: "짬뽕관 광주송정선운점")
     ]
-    
-    // 2. 큰길 우선 데이터
     private let mainRoadSteps: [RouteStepModel] = [
         RouteStepModel(turnType: .start, title: "출발", description: "학교 정문"),
         RouteStepModel(turnType: .straight, title: "큰대로변", description: "대로를 따라 300m 직진"),
@@ -42,6 +75,8 @@ public final class MapRouteDetailViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
+        view.isUserInteractionEnabled = true
+        mainView.isUserInteractionEnabled = true
         setupView()
         setupDelegate()
         setupActions()
@@ -59,35 +94,38 @@ public final class MapRouteDetailViewController: UIViewController {
     }
     
     private func setupView() {
-        view.addSubview(mainView)
-        mainView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        
-        mainView.containerView.snp.remakeConstraints {
+        mainView.isUserInteractionEnabled = true
+        mainView.backgroundColor = .clear
+
+       
+        mainView.contentView.containerView.backgroundColor = .color.surface.color
+
+        mainView.contentView.containerView.snp.remakeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             self.containerHeightConstraint = $0.height.equalTo(minSheetHeight).constraint
         }
     }
 
     private func setupDelegate() {
-        mainView.tableView.delegate = self
-        mainView.tableView.dataSource = self
+        mainView.contentView.tableView.delegate = self
+        mainView.contentView.tableView.dataSource = self
     }
     
     private func setupActions() {
-        mainView.closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
+        mainView.contentView.closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
     }
 
     private func setupGesture() {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-        mainView.containerView.addGestureRecognizer(panGesture)
+        mainView.contentView.containerView.addGestureRecognizer(panGesture)
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: view)
-        let currentHeight = mainView.containerView.frame.height
+        let currentHeight = mainView.contentView.containerView.frame.height
         let newHeight = currentHeight - translation.y
         let maxHeight = view.frame.height * 0.75
-        
+
         if gesture.state == .changed {
             if newHeight >= minSheetHeight && newHeight <= maxHeight {
                 containerHeightConstraint?.update(offset: newHeight)
@@ -103,19 +141,45 @@ public final class MapRouteDetailViewController: UIViewController {
     }
     
     private func configureData() {
-        if routeTypeTitle.contains("추천") {
-            mainView.routeTypeLabel.text = "추천 경로"
-            currentSteps = recommendationSteps
-            mainView.timeLabel.text = "8분"
-            mainView.infoLabel.text = "339m | 25kcal"
-        } else {
-            mainView.routeTypeLabel.text = "큰길 우선 경로"
-            currentSteps = mainRoadSteps
-            mainView.timeLabel.text = "10분"
-            mainView.infoLabel.text = "450m | 30kcal"
+        guard let route = routeResult?.routes.first else {
+            if routeTypeTitle.contains("추천") {
+                mainView.contentView.routeTypeLabel.text = "추천 경로"
+                currentSteps = recommendationSteps
+                mainView.contentView.timeLabel.text = "8분"
+                mainView.contentView.infoLabel.text = "339m | 25kcal"
+            } else {
+                mainView.contentView.routeTypeLabel.text = "큰길 우선 경로"
+                currentSteps = mainRoadSteps
+                mainView.contentView.timeLabel.text = "10분"
+                mainView.contentView.infoLabel.text = "450m | 30kcal"
+            }
+            mainView.contentView.tableView.reloadData()
+            return
         }
-        
-        mainView.tableView.reloadData()
+
+        let summary = route.summary
+
+        mainView.contentView.routeTypeLabel.text = routeTypeTitle
+        mainView.contentView.timeLabel.text = "\(summary.duration / 60)분"
+        mainView.contentView.infoLabel.text = "\(summary.distance)m"
+
+        var steps: [RouteStepModel] = []
+        steps.append(RouteStepModel(turnType: .start, title: "출발", description: "학교"))
+        for section in route.sections {
+            for road in section.roads {
+                let distance = road.vertexes.count / 2
+                steps.append(
+                    RouteStepModel(
+                        turnType: .straight,
+                        title: "이동",
+                        description: "\(distance)m 이동"
+                    )
+                )
+            }
+        }
+        steps.append(RouteStepModel(turnType: .end, title: "도착", description: "목적지"))
+        currentSteps = steps
+        mainView.contentView.tableView.reloadData()
     }
     
     @objc private func didTapCloseButton() {
@@ -123,7 +187,10 @@ public final class MapRouteDetailViewController: UIViewController {
             self?.onDismiss?()
         }
     }
+
+
 }
+
 
 extension MapRouteDetailViewController: UITableViewDelegate, UITableViewDataSource {
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

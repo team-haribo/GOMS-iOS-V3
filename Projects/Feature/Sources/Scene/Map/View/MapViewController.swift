@@ -49,6 +49,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     private let detailMinHeight: CGFloat = 225
     private var selectedPlaceId: Int = -1
     private var currentPlaceDetail: MapPlaceDetailModel?
+    private var routeDetailVC: MapRouteDetailViewController?
 
 
     // MARK: - Life Cycle
@@ -165,9 +166,34 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             }
         }
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
-            let detailVC = MapRouteDetailViewController(); detailVC.routeTypeTitle = routeTitle; detailVC.modalPresentationStyle = .overFullScreen
-            detailVC.onDismiss = { [weak self] in self?.routeSelectionView.isHidden = false }
-            self?.routeSelectionView.isHidden = true; self?.present(detailVC, animated: true)
+            guard let self = self else { return }
+            guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else { return }
+
+            let detailVC = MapRouteDetailViewController()
+            detailVC.routeTypeTitle = routeTitle
+            detailVC.modalPresentationStyle = .overFullScreen
+            detailVC.onDismiss = { [weak self] in
+                self?.routeSelectionView.isHidden = false
+            }
+
+            self.routeDetailVC = detailVC
+
+            // Move isHidden assignment immediately before addChild
+            self.routeSelectionView.isHidden = true
+
+            // ✅ present 대신 addChild 방식으로 추가
+            self.addChild(detailVC)
+
+            self.view.addSubview(detailVC.view)
+            detailVC.view.frame = self.view.bounds
+            detailVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            detailVC.view.backgroundColor = .clear
+
+            self.view.bringSubviewToFront(detailVC.view)
+
+            detailVC.didMove(toParent: self)
+
+            self.viewModel.fetchRoute(to: selectedPlace)
         }
     }
     
@@ -228,7 +254,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             let styleID = styleIDForCategory(place.categoryName)
             guard !styleID.isEmpty else { continue }
             let option = PoiOptions(styleID: styleID, poiID: "\(place.placeId)")
-            option.clickable = false
+            option.clickable = true
             option.rank = 0
             if let poi = layer.addPoi(option: option, at: MapPoint(longitude: place.longitude, latitude: place.latitude)) {
                 poi.show()
@@ -380,6 +406,14 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         viewModel.onRecommendedPlacesUpdated = { [weak self] in
             self?.updateBottomSheet()
         }
+        viewModel.onRouteUpdated = { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.routeDetailVC?.routeResult = self.viewModel.routeResult
+                self.routeDetailVC?.perform(#selector(MapRouteDetailViewController.viewDidLoad))
+                self.drawRoute()
+            }
+        }
     }
 
     private func setupBottomSheetBinding() {
@@ -488,6 +522,24 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             CameraUpdate.make(target: defaultPoint, zoomLevel: 17, mapView: view)
         )
         createPoiStyle()
+   
+        let shapeManager = view.getShapeManager()
+
+        let perLevelStyle = PerLevelPolylineStyle(
+            bodyColor: UIColor.systemBlue,
+            bodyWidth: 6,
+            strokeColor: UIColor.clear,
+            strokeWidth: 0,
+            level: 0
+        )
+
+        let polylineStyle = PolylineStyle(styles: [perLevelStyle])
+        let styleSet = PolylineStyleSet(styleSetID: "routeStyle", styles: [polylineStyle])
+
+        shapeManager.addPolylineStyleSet(styleSet)
+
+      
+        _ = shapeManager.addShapeLayer(layerID: "routeLayer", zOrder: 9999)
         let manager = view.getLabelManager()
 
         if let existingLayer = manager.getLabelLayer(layerID: "poiLayer") {
@@ -580,7 +632,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         let manager = map.getLabelManager()
         guard let activeLayer = manager.getLabelLayer(layerID: "activePoiLayer") else { return }
 
-        // 기존 제거
+        
         let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
         activeLayer.removePois(poiIDs: ids)
 
@@ -597,13 +649,10 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) {
-       
-        return
     }
 
     // MARK: - Kakao 기본 POI 클릭 처리
     public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
-
         let coord = poi.position
         let wgs = coord.wgsCoord
 
@@ -636,10 +685,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
     }
 
     public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, position: MapPoint) {
-       
-        
         if layerID == "activePoiLayer" || poiID.hasPrefix("active_") {
-            
             return
         }
 
@@ -673,6 +719,47 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         }
     }
 
+    
+    private func drawRoute() {
+        guard let map = mapController?.getView("mapview") as? KakaoMap,
+              let route = viewModel.routeResult?.routes.first else { return }
+
+        let manager = map.getShapeManager()
+
+        guard let layer = manager.getShapeLayer(layerID: "routeLayer") else { return }
+
+        
+        layer.removeMapPolylineShape(shapeID: "routeShape")
+
+        var points: [MapPoint] = []
+
+        for section in route.sections {
+            for road in section.roads {
+                let vertexes = road.vertexes
+                for i in stride(from: 0, to: vertexes.count, by: 2) {
+                    guard i + 1 < vertexes.count else { continue }
+                    let lng = vertexes[i]
+                    let lat = vertexes[i + 1]
+                    points.append(MapPoint(longitude: lng, latitude: lat))
+                }
+            }
+        }
+
+        guard !points.isEmpty else { return }
+
+        let polyline = MapPolyline(line: points, styleIndex: 0)
+
+        let options = MapPolylineShapeOptions(
+            shapeID: "routeShape",
+            styleID: "routeStyle",
+            zOrder: 9999
+        )
+        options.polylines = [polyline]
+
+        if let shape = layer.addMapPolylineShape(options) {
+            shape.show()
+        }
+    }
     
     deinit {
         mapController?.pauseEngine()
