@@ -164,10 +164,14 @@ public final class MapRouteSelectionView: UIView {
         $0.tintColor = .color.gomsPrimary.color
     }
 
+    private let scrollView = UIScrollView().then {
+        $0.showsHorizontalScrollIndicator = false
+    }
+
     public let recommendationStackView = UIStackView().then {
         $0.axis = .horizontal
         $0.spacing = 12
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
     }
 
     override init(frame: CGRect) {
@@ -185,7 +189,8 @@ public final class MapRouteSelectionView: UIView {
             containerView.addSubview($0)
         }
         [myLocationBtn, schoolLocationBtn, line].forEach { selectionBox.addSubview($0) }
-        addSubview(recommendationStackView)
+        addSubview(scrollView)
+        scrollView.addSubview(recommendationStackView)
         
         containerView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
@@ -249,11 +254,15 @@ public final class MapRouteSelectionView: UIView {
             $0.height.equalTo(52)
         }
 
-        recommendationStackView.snp.makeConstraints {
+        scrollView.snp.makeConstraints {
             $0.bottom.equalTo(self.safeAreaLayoutGuide).inset(12)
-            $0.leading.equalToSuperview().offset(20)
+            $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(106)
-            $0.width.equalTo(192 * 2 + 12)
+        }
+
+        recommendationStackView.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+            $0.height.equalToSuperview()
         }
     }
 
@@ -289,6 +298,9 @@ public final class MapRouteSelectionView: UIView {
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapCard(_:)))
             card.addGestureRecognizer(tapGesture)
             recommendationStackView.addArrangedSubview(card)
+            card.snp.makeConstraints {
+                $0.width.equalTo(192)
+            }
         }
     }
     
