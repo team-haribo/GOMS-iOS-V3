@@ -11,6 +11,8 @@ import Combine
 import Moya
 import Service
 import Kingfisher
+import SnapKit
+import Then
 
 public class UserProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -18,7 +20,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     let profileViewModel = ProfileViewModel()
     var cancellables = Set<AnyCancellable>()
     let refreshControl = UIRefreshControl()
-    
     
     let logo = UIImageView().then {
         $0.image = UIImage(
@@ -108,8 +109,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.font = .suit(size: 16, weight: .regular)
     }
     
- 
-    
     let themeSettingImg = UIImageView().then {
         $0.image = .image.under.image
     }
@@ -127,12 +126,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    
-    let alarmsettingButton: UISwitch = UISwitch().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
+    let alarmsettingButton = GOMSSwitch().then {
         $0.onTintColor = .color.gomsPrimary.color
-        $0.tintColor = .color.sub2.color
-        $0.addTarget(self, action: #selector(switchQROn(_:)), for: .valueChanged)
+        $0.addTarget(self, action: #selector(switchAlarmOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
     
@@ -149,11 +145,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    let cameraNowOntoggleButton: UISwitch = UISwitch().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
+    let cameraNowOntoggleButton = GOMSSwitch().then {
         $0.onTintColor = .color.gomsPrimary.color
-        $0.tintColor = .color.sub2.color
-        $0.addTarget(self, action: #selector(switchQROn(_:)), for: .valueChanged)
+        $0.addTarget(self, action: #selector(switchCameraOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
     
@@ -170,10 +164,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    let clockToggleButton: UISwitch = UISwitch().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
+    let clockToggleButton = GOMSSwitch().then {
         $0.onTintColor = .color.gomsPrimary.color
-        $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchClockOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
@@ -209,18 +201,16 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         self.present(alert, animated: true)
     }
     
-    @objc func switchQROn(_ sender: UISwitch) {
-        UserDefaults.standard.set(sender.isOn, forKey: "isSwitchOn")
-        
-        let defaults = UserDefaults.standard
-        let isSwitchOn = defaults.bool(forKey: "isSwitchOn")
+    @objc func switchAlarmOn(_ sender: GOMSSwitch) {
+        UserDefaults.standard.set(sender.isOn, forKey: "isAlarmOn")
+    }
+
+    @objc func switchCameraOn(_ sender: GOMSSwitch) {
+        UserDefaults.standard.set(sender.isOn, forKey: "isCameraOn")
     }
     
-    @objc func switchClockOn(_ sender: UISwitch) {
-       
+    @objc func switchClockOn(_ sender: GOMSSwitch) {
         UserDefaults.standard.set(sender.isOn, forKey: "isClockOn")
-
-   
         NotificationCenter.default.post(name: Notification.Name("clockChanged"), object: nil)
     }
     
@@ -228,7 +218,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         updateImage(isActionSheetShowing: true)
 
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
         actionSheet.view.tintColor = .color.blue.color
 
         let darkAction = UIAlertAction(title: "다크(기본)", style: .default) { [weak self] _ in
@@ -253,21 +242,20 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         present(actionSheet, animated: true)
     }
 
-    
     private func applySavedTheme() {
         let savedThemeValue = UserDefaults.standard.integer(forKey: "selectedTheme")
         
         let savedTheme: UIUserInterfaceStyle
         switch savedThemeValue {
-        case 1: savedTheme = .light
-        case 2: savedTheme = .dark
-        default: savedTheme = .unspecified
+        case 1:
+            savedTheme = .light
+        case 2:
+            savedTheme = .dark
+        default:
+            savedTheme = .unspecified
         }
         
-        guard let window = UIApplication.shared.windows.first else {
-            return
-        }
-        
+        guard let window = UIApplication.shared.windows.first else { return }
         window.overrideUserInterfaceStyle = savedTheme
         updateThemeText()
     }
@@ -276,7 +264,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         if let window = UIApplication.shared.windows.first {
             window.overrideUserInterfaceStyle = style
             themeSettingText.text = themeText
-            
             UserDefaults.standard.set(style.rawValue, forKey: "selectedTheme")
             UserDefaults.standard.set(themeText, forKey: "themeText")
         }
@@ -312,11 +299,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
                     if success {
                         let introVC = IntroViewController()
                         let nav = UINavigationController(rootViewController: introVC)
-
                         if let window = UIApplication.shared.connectedScenes
                             .compactMap({ $0 as? UIWindowScene })
                             .first?.windows.first {
-
                             window.rootViewController = nav
                             window.makeKeyAndVisible()
                         }
@@ -327,11 +312,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             }
         }
         
-        
         alertController.addAction(confirmAction)
-        
         alertController.view.subviews.first?.subviews.first?.subviews.first?.backgroundColor = .color.gomsTheme.color
-        
         self.present(alertController, animated: true, completion: nil)
     }
     
@@ -341,7 +323,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     func performLogout() {
-        let alertController = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
+        let _ = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
@@ -368,7 +350,6 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         }))
         actionSheet.addAction(UIAlertAction(title: "기본 프로필 사용", style: .default, handler: { [weak self] (ACTION:UIAlertAction) in
             guard let self = self else { return }
-
             self.profileViewModel.deleteProfileImage()
                 .sink(receiveCompletion: { [weak self] _ in
                     self?.profileViewModel.loadProfileInfo { _, _ in }
@@ -379,17 +360,14 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-      
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
             popover.permittedArrowDirections = .any
         }
-
         self.present(actionSheet, animated: true, completion: nil)
     }
 
-    
     func presentGallery() {
         if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
             imagePickerController.sourceType = .photoLibrary
@@ -406,28 +384,17 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         
         if let selectedImage = info[.originalImage] as? UIImage {
             userProfile.image = selectedImage
-
             if let jpegData = selectedImage.jpegData(compressionQuality: 0.5) {
                 profileViewModel.updateProfileImage(imageData: jpegData)
-                    .sink { [weak self] completion in
-                        switch completion {
-                        case .finished:
-                            print("이미지 PATCH 성공")
-                        case .failure(let error):
-                            print("이미지 PATCH 실패: \(error)")
-                        }
+                    .sink { completion in
+                        if case .failure(let error) = completion { print("이미지 PATCH 실패: \(error)") }
                     } receiveValue: { [weak self] response in
-                        let urlString = response.imageUrl
-                        if let url = URL(string: urlString) {
+                        if let url = URL(string: response.imageUrl) {
                             self?.userProfile.kf.setImage(with: url)
                         }
                     }
                     .store(in: &cancellables)
-            } else {
-                print("이미지를 JPEG 데이터로 변환하는데 실패했습니다.")
             }
-        } else {
-            print("선택한 이미지를 가져오는데 실패했습니다.")
         }
     }
     
@@ -435,24 +402,15 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         dismiss(animated: true, completion: nil)
     }
 
-
     public override func viewDidLoad() {
         super.viewDidLoad()
         applySavedTheme()
         self.navigationController?.navigationBar.prefersLargeTitles = false
-        profileViewModel.loadProfileInfo { success, authority in
-            if success {
-                print("완료")
-            } else {
-                print("Failed to load profile information.")
-            }
-        }
+        profileViewModel.loadProfileInfo { _, _ in }
 
-        let isSwitchOn = UserDefaults.standard.bool(forKey: "isSwitchOn")
-        cameraNowOntoggleButton.isOn = isSwitchOn
-        
-        let isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
-        clockToggleButton.isOn = isClockOn
+        alarmsettingButton.isOn = UserDefaults.standard.bool(forKey: "isAlarmOn")
+        cameraNowOntoggleButton.isOn = UserDefaults.standard.bool(forKey: "isCameraOn")
+        clockToggleButton.isOn = UserDefaults.standard.bool(forKey: "isClockOn")
         
         profileViewModel.$profileInfo.sink { [weak self] profileInfo in
             guard let profileInfo = profileInfo else { return }
@@ -470,10 +428,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
                     majorText = "AI"
                 }
                 
-                let finalText = "\(profileInfo.grade)기 | \(majorText)"
-                self?.userGradeDepartment.text = finalText
-                if let urlString = profileInfo.profileImageUrl,
-                   let url = URL(string: urlString) {
+                self?.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
+                if let urlString = profileInfo.profileImageUrl, let url = URL(string: urlString) {
                     self?.userProfile.kf.setImage(
                         with: url,
                         placeholder: self?.userProfile.image,
@@ -487,13 +443,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         .store(in: &cancellables)
         
         view.backgroundColor = .color.background.color
-        
-        
         imagePickerController.delegate = self
-        
         configureRefreshControl()
-
-        
     }
     
     func configureRefreshControl () {
@@ -505,58 +456,21 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     @objc func handleRefreshControl() {
-        profileViewModel.loadProfileInfo { success, authority in
-            if success {
-                print("완료")
-            } else {
-                print("Failed to load profile information.")
-            }
-        }
-        
-        let offset = CGPoint(x: 0, y: 0)
-        self.view.frame.origin.y += offset.y
-        
+        profileViewModel.loadProfileInfo { _, _ in }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.refreshControl.endRefreshing()
-            self.view.frame.origin.y = 0
         }
     }
     
     public override func addView() {
         [
-            logo,
-            userProfile,
-            userName,
-            userGradeDepartment,
-            perceptionCount,
-            perceptionNum,
-            perceptionText,
-            userProfilePencil,
-            passwordResetButton,
-            themeTopLine,
-            themeBottomLine,
-            alarmText,
-            alarmDescription,
-            alarmsettingButton,
-            cameraNowOnText,
-            cameraNowOnDescription,
-            cameraNowOntoggleButton,
-            clockText,
-            clockDescription,
-            clockToggleButton,
-            logoutButton,
-            themeChangText,
-            themeChangRec,
-            themeSettingImg,
-            themeSettingText,
-            themeChangLine,
-            withdrawalButton
-        ].forEach {
-            self.view.addSubview($0)
-        }
+            logo, userProfile, userName, userGradeDepartment, perceptionCount, perceptionNum,
+            perceptionText, userProfilePencil, passwordResetButton, themeTopLine, themeBottomLine,
+            alarmText, alarmDescription, alarmsettingButton, cameraNowOnText, cameraNowOnDescription,
+            cameraNowOntoggleButton, clockText, clockDescription, clockToggleButton, logoutButton,
+            themeChangText, themeChangRec, themeSettingImg, themeSettingText, themeChangLine, withdrawalButton
+        ].forEach { self.view.addSubview($0) }
     }
-
-    //Layout
     
     public override func setLayout() {
         logo.snp.makeConstraints {
@@ -571,95 +485,78 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.leading.equalToSuperview().inset(20)
             $0.top.equalTo(logo.snp.bottom).offset(16)
         }
-
         userProfilePencil.snp.makeConstraints {
             $0.top.equalTo(userGradeDepartment.snp.top)
             $0.trailing.equalTo(userProfile.snp.trailing)
         }
-
         userName.snp.makeConstraints {
             $0.leading.equalTo(userProfile.snp.trailing).offset(12)
             $0.trailing.lessThanOrEqualTo(perceptionCount.snp.leading).offset(-8)
             $0.top.equalTo(userProfile.snp.top).offset(12)
         }
-
         userGradeDepartment.snp.makeConstraints {
             $0.leading.equalTo(userName.snp.leading)
             $0.top.equalTo(userName.snp.bottom).offset(4)
         }
-
         perceptionCount.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(userName.snp.top)
         }
-
         perceptionNum.snp.makeConstraints {
             $0.trailing.equalTo(perceptionText.snp.leading).inset(-1)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
-
         perceptionText.snp.makeConstraints {
             $0.width.equalTo(17)
             $0.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
-
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().offset(20)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
         }
-
         themeBottomLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(cameraNowOnDescription.snp.bottom).offset(24)
         }
-
         themeChangText.snp.makeConstraints {
             $0.width.equalTo(93)
             $0.height.equalTo(28)
             $0.top.equalTo(themeTopLine.snp.top).offset(24)
             $0.leading.equalToSuperview().inset(28)
         }
-
         themeChangRec.snp.makeConstraints {
             $0.height.equalTo(64)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
-
         themeSettingText.snp.makeConstraints {
             $0.width.equalTo(106)
             $0.height.equalTo(28)
             $0.top.equalTo(themeChangRec.snp.top).offset(18)
             $0.leading.equalTo(themeChangRec.snp.leading).offset(12)
         }
-
         themeSettingImg.snp.makeConstraints {
             $0.width.equalTo(24)
             $0.height.equalTo(24)
             $0.top.equalTo(themeChangRec.snp.top).offset(20)
             $0.trailing.equalToSuperview().inset(32)
         }
-
         clockText.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(28)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
-
         clockDescription.snp.makeConstraints {
             $0.leading.equalTo(clockText.snp.leading)
             $0.trailing.lessThanOrEqualTo(clockToggleButton.snp.leading).offset(-8)
             $0.top.equalTo(clockText.snp.bottom).offset(4)
         }
-
         clockToggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
             $0.centerY.equalTo(clockText)
         }
-
         alarmText.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(28)
             $0.top.equalTo(clockDescription.snp.bottom).offset(24)
@@ -669,43 +566,35 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.trailing.lessThanOrEqualTo(alarmsettingButton.snp.leading).offset(-8)
             $0.top.equalTo(alarmText.snp.bottom).offset(4)
         }
-        
         alarmsettingButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
             $0.centerY.equalTo(alarmText)
         }
-        
-            
         cameraNowOnText.snp.makeConstraints {
             $0.width.equalTo(184)
             $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
             $0.top.equalTo(alarmDescription.snp.bottom).offset(25.5)
         }
-
         cameraNowOnDescription.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(28)
             $0.trailing.lessThanOrEqualTo(cameraNowOntoggleButton.snp.leading).offset(-8)
             $0.top.equalTo(cameraNowOnText.snp.bottom).offset(4)
         }
-
         cameraNowOntoggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(28)
             $0.centerY.equalTo(cameraNowOnText)
         }
-
         passwordResetButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
         }
-
         logoutButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
             $0.top.equalTo(passwordResetButton.snp.bottom).offset(0)
         }
-
         withdrawalButton.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
