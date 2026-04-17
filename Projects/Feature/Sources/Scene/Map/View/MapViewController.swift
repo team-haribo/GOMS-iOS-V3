@@ -136,6 +136,13 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         bottomSheetView.onCardTapped = { [weak self] placeId in
             guard let self = self else { return }
             if let selected = self.allPlaces.first(where: { $0.placeId == placeId }) {
+
+            
+                self.moveCamera(to: selected)
+
+                
+                self.showActiveMarker(for: selected)
+
                 self.showDetailView(with: selected)
             }
         }
