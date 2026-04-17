@@ -126,10 +126,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    // MARK: - GOMSSwitch 적용
     let alarmsettingButton = GOMSSwitch().then {
         $0.onTintColor = .color.gomsPrimary.color
-        $0.addTarget(self, action: #selector(switchQROn(_:)), for: .valueChanged)
+        $0.addTarget(self, action: #selector(switchAlarmOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
     
@@ -148,7 +147,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     
     let cameraNowOntoggleButton = GOMSSwitch().then {
         $0.onTintColor = .color.gomsPrimary.color
-        $0.addTarget(self, action: #selector(switchQROn(_:)), for: .valueChanged)
+        $0.addTarget(self, action: #selector(switchCameraOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
     
@@ -202,8 +201,12 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         self.present(alert, animated: true)
     }
     
-    @objc func switchQROn(_ sender: GOMSSwitch) {
-        UserDefaults.standard.set(sender.isOn, forKey: "isSwitchOn")
+    @objc func switchAlarmOn(_ sender: GOMSSwitch) {
+        UserDefaults.standard.set(sender.isOn, forKey: "isAlarmOn")
+    }
+
+    @objc func switchCameraOn(_ sender: GOMSSwitch) {
+        UserDefaults.standard.set(sender.isOn, forKey: "isCameraOn")
     }
     
     @objc func switchClockOn(_ sender: GOMSSwitch) {
@@ -320,7 +323,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     func performLogout() {
-        let alertController = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
+        let _ = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
@@ -405,7 +408,8 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         self.navigationController?.navigationBar.prefersLargeTitles = false
         profileViewModel.loadProfileInfo { _, _ in }
 
-        cameraNowOntoggleButton.isOn = UserDefaults.standard.bool(forKey: "isSwitchOn")
+        alarmsettingButton.isOn = UserDefaults.standard.bool(forKey: "isAlarmOn")
+        cameraNowOntoggleButton.isOn = UserDefaults.standard.bool(forKey: "isCameraOn")
         clockToggleButton.isOn = UserDefaults.standard.bool(forKey: "isClockOn")
         
         profileViewModel.$profileInfo.sink { [weak self] profileInfo in
