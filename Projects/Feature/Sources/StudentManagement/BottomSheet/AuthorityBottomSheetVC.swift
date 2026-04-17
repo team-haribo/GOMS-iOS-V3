@@ -10,57 +10,6 @@ import UIKit
 import SnapKit
 import Then
 
-class CustomSwitch: UIControl {
-    private let toggleThumb = UIView().then {
-        $0.backgroundColor = UIColor.color.gomsLine.color
-        $0.layer.cornerRadius = 14
-        $0.isUserInteractionEnabled = false
-    }
-    
-    var isOn: Bool = false {
-        didSet { setupState() }
-    }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) { fatalError() }
-    
-    private func setupUI() {
-        self.snp.makeConstraints {
-            $0.width.equalTo(52)
-            $0.height.equalTo(32)
-        }
-        self.layer.cornerRadius = 16
-        self.backgroundColor = UIColor.color.gomsSwitchBg.color
-        
-        addSubview(toggleThumb)
-        toggleThumb.snp.makeConstraints {
-            $0.size.equalTo(28)
-            $0.centerY.equalToSuperview()
-            $0.leading.equalToSuperview().offset(2)
-        }
-        self.addTarget(self, action: #selector(toggle), for: .touchUpInside)
-    }
-    
-    @objc private func toggle() {
-        isOn.toggle()
-        sendActions(for: .valueChanged)
-    }
-    
-    private func setupState() {
-        let color = isOn ? UIColor.color.admin.color : UIColor.color.gomsSwitchBg.color
-        let xPosition = isOn ? 20 : 0
-        
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
-            self.backgroundColor = color
-            self.toggleThumb.transform = CGAffineTransform(translationX: CGFloat(xPosition), y: 0)
-        }
-    }
-}
-
 public final class AuthorityBottomSheetVC: BaseViewController {
 
     private var viewModel: StudentManagementViewModel
@@ -105,12 +54,18 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         $0.font = .suit(size: 14, weight: .regular)
     }
     
-    private let outingSwitch = CustomSwitch()
+    private let outingSwitch = GOMSSwitch().then {
+        $0.onTintColor = UIColor.color.admin.color
+    }
     private let forceOutingContainer = UIView()
     private let blackListContainer = UIView()
     private let adminContainer = UIView()
-    private let blackListSwitch = CustomSwitch()
-    private let adminSwitch = CustomSwitch()
+    private let blackListSwitch = GOMSSwitch().then {
+        $0.onTintColor = UIColor.color.admin.color
+    }
+    private let adminSwitch = GOMSSwitch().then {
+        $0.onTintColor = UIColor.color.admin.color
+    }
 
     init(studentManagementVC: StudentManagementViewController, viewModel: StudentManagementViewModel) {
         self.studentManagementVC = studentManagementVC
