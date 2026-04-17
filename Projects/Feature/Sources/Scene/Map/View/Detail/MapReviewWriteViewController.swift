@@ -14,6 +14,7 @@ public final class MapReviewWriteViewController: UIViewController {
     private let mainView = MapReviewWriteView()
     private let viewModel: MapReviewWriteViewModel
     private let placeData: MapPlaceDetailModel
+    private let mapViewModel = MapViewModel()
 private var isHeartSelected = false
     public var onReviewCreated: (() -> Void)?
     
@@ -92,7 +93,14 @@ private var isHeartSelected = false
     @objc private func didTapHeart() {
         isHeartSelected.toggle()
         mainView.heartButton.isSelected = isHeartSelected
-        mainView.heartButton.tintColor = isHeartSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub2.color
+        mainView.heartButton.tintColor = isHeartSelected
+            ? UIColor.color.gomsPrimary.color
+            : UIColor.color.sub2.color
+
+        mapViewModel.toggleRecommend(
+            placeId: placeData.placeId,
+            isSelected: isHeartSelected
+        ) { }
     }
     
     @objc private func didTapNext() {

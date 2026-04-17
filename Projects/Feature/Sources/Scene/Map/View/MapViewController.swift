@@ -77,8 +77,11 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         super.viewWillAppear(animated)
 
         if selectedPlaceId != -1 {
-            viewModel.fetchPlaceDetail(placeId: selectedPlaceId)
+           
             fetchReviews(placeId: selectedPlaceId)
+            viewModel.fetchPlaceDetail(placeId: selectedPlaceId)
+            viewModel.fetchHotPlaces()
+            viewModel.fetchRecommendedPlaces()
         }
     }
 
@@ -140,6 +143,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             guard let self = self else { return }
             self.viewModel.toggleRecommend(placeId: placeId, isSelected: isSelected) {
                 self.viewModel.fetchHotPlaces()
+                self.viewModel.fetchRecommendedPlaces()
             }
         }
         searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
@@ -149,6 +153,8 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
             guard let self = self, self.selectedPlaceId != -1 else { return }
             self.viewModel.toggleRecommend(placeId: self.selectedPlaceId, isSelected: isSelected) {
                 self.viewModel.fetchHotPlaces()
+                self.viewModel.fetchRecommendedPlaces()
+                self.viewModel.fetchPlaceDetail(placeId: self.selectedPlaceId)
             }
         }
         routeSelectionView.onCardTapped = { [weak self] routeTitle in
@@ -175,12 +181,12 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
 
         viewModel.searchPlace(keyword: keyword)
 
-        // UI 상태 변경
+       
         recentSearchView.isHidden = false
         bottomSheetView.isHidden = true
         placeDetailView.isHidden = true
 
-        // 키보드 내리기
+        
         view.endEditing(true)
     }
 
@@ -192,10 +198,9 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         vc.onReviewCreated = { [weak self] in
             guard let self = self else { return }
 
-            // 상세 리뷰 다시 fetch
+            /
             self.fetchReviews(placeId: detailData.placeId)
-
-            // 인기 / 추천 데이터도 최신화
+            self.viewModel.fetchPlaceDetail(placeId: detailData.placeId)
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
         }

@@ -156,8 +156,10 @@ public final class MapReviewCell: UITableViewCell {
             profileImageView.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
         }
 
-        deleteButton.isHidden = true
-        reportButton.isHidden = false
+    
+        let isMine = data.isMine ?? false
+        deleteButton.isHidden = !isMine
+        reportButton.isHidden = isMine
     }
 }
     

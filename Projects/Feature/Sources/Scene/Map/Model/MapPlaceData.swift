@@ -67,6 +67,7 @@ public struct MapReview: Codable {
     public let profileImageUrl: String
     public let content: String
     public let reviewedAt: String
+    public let isMine: Bool?
 
     public init(
         reviewId: Int,
@@ -75,7 +76,8 @@ public struct MapReview: Codable {
         department: String,
         profileImageUrl: String,
         content: String,
-        reviewedAt: String
+        reviewedAt: String,
+        isMine: Bool
     ) {
         self.reviewId = reviewId
         self.name = name
@@ -84,6 +86,7 @@ public struct MapReview: Codable {
         self.profileImageUrl = profileImageUrl
         self.content = content
         self.reviewedAt = reviewedAt
+        self.isMine = isMine
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -94,5 +97,6 @@ public struct MapReview: Codable {
         case profileImageUrl
         case content
         case reviewedAt = "reviewed_at"
+        case isMine = "is_mine"
     }
 }

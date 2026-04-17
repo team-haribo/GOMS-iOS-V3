@@ -195,11 +195,17 @@ public final class MapViewModel {
     }
 
     public func deleteReview(reviewId: Int, completion: @escaping (Bool) -> Void) {
-        placeProvider.request(.deleteReview(reviewId: reviewId, authorization: accessToken)) { result in
+        placeProvider.request(.deleteReview(reviewId: reviewId, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
-                completion((200..<300).contains(response.statusCode))
+                if response.statusCode == 204 {
+                    completion(true)
+                } else {
+                    self?.onError?("리뷰 삭제 실패")
+                    completion(false)
+                }
             case .failure:
+                self?.onError?("리뷰 삭제 요청 실패")
                 completion(false)
             }
         }
