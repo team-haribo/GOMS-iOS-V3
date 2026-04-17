@@ -236,7 +236,7 @@ public final class MapRouteSelectionView: UIView {
         }
 
         recommendationStackView.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(110)
+            $0.bottom.equalTo(self.safeAreaLayoutGuide).inset(12)
             $0.leading.equalToSuperview().offset(20)
             $0.height.equalTo(106)
             $0.width.equalTo(192 * 2 + 12)
