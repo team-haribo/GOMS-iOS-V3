@@ -99,9 +99,15 @@ public final class MapViewModel {
         placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
-                let decoded = (try? JSONDecoder().decode([MapPlaceData].self, from: response.data)) ?? []
-                self?.searchResults = decoded
-                self?.onSearchUpdated?()
+                do {
+                    let decoded = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
+                    self?.searchResults = decoded.places
+                    self?.onSearchUpdated?()
+                } catch {
+                    self?.searchResults = []
+                    self?.onError?("검색 디코딩 실패")
+                    self?.onSearchUpdated?()
+                }
             case .failure:
                 self?.onError?("검색 실패")
             }

@@ -198,7 +198,7 @@ public final class MapViewController: UIViewController, MapControllerDelegate, K
         vc.onReviewCreated = { [weak self] in
             guard let self = self else { return }
 
-            /
+            
             self.fetchReviews(placeId: detailData.placeId)
             self.viewModel.fetchPlaceDetail(placeId: detailData.placeId)
             self.viewModel.fetchHotPlaces()
