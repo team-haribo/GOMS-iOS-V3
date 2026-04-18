@@ -17,14 +17,23 @@ private let viewModel = MapViewModel()
 
     // MARK: - Distance Helper
     private func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
-        let dx = lat1 - lat2
-        let dy = lon1 - lon2
-        return sqrt(dx * dx + dy * dy)
+        let earthRadius = 6371000.0 // meters
+        
+        let dLat = (lat2 - lat1) * .pi / 180
+        let dLon = (lon2 - lon1) * .pi / 180
+        
+        let a = sin(dLat/2) * sin(dLat/2) +
+                cos(lat1 * .pi / 180) * cos(lat2 * .pi / 180) *
+                sin(dLon/2) * sin(dLon/2)
+        
+        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        
+        return earthRadius * c // meters
     }
         
 // MARK: - Properties
 
-private let distanceThreshold: Double = 0.001
+private let distanceThreshold: Double = 50.0 // meters 기준
 
 
 
@@ -36,6 +45,7 @@ private var allPlaces: [MapPlaceData] = []
 private var dummyRecentSearches: [MapPlaceData] = [] {
     didSet { self.recentSearchView.tableView.reloadData() }
 }
+private var isShowingRecentSearches = true
 
 
 private let routeSelectionView = MapRouteSelectionView().then { $0.isHidden = true }
@@ -59,6 +69,15 @@ private var selectedPlaceId: Int = -1
 private var currentPlaceDetail: MapPlaceDetailModel?
 private var routeDetailVC: MapRouteDetailViewController?
 
+private var isRestoringState = false
+private var isSearching = false
+
+
+private func formatDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yy.MM.dd"
+    return formatter.string(from: date)
+}
 
 // MARK: - Life Cycle
 public override func viewDidLoad() {
@@ -84,18 +103,66 @@ public override func viewDidAppear(_ animated: Bool) {
 
 public override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
+    isRestoringState = true
+    view.endEditing(true)
 
     if selectedPlaceId != -1 {
-       
         fetchReviews(placeId: selectedPlaceId)
         viewModel.fetchPlaceDetail(placeId: selectedPlaceId)
         viewModel.fetchHotPlaces()
         viewModel.fetchRecommendedPlaces()
     }
+
+    // 🔥 서치바 상태 복원
+    if viewModel.lastSearchKeyword.isEmpty {
+        searchBar.updateState(.home)
+        searchBar.textField.text = ""
+    } else {
+        searchBar.updateState(.search)
+        searchBar.textField.text = viewModel.lastSearchKeyword
+    }
+
+    // 🔥 핵심: isSearching 기준으로 UI 결정
+    if isSearching {
+        recentSearchView.isHidden = false
+        bottomSheetView.isHidden = true
+        placeDetailView.isHidden = true
+
+        if viewModel.lastSearchKeyword.isEmpty {
+            isShowingRecentSearches = true
+            dummyRecentSearches = viewModel.recentSearches.compactMap { item in
+                self.allPlaces.first(where: { $0.placeId == item.placeId })
+            }
+            recentSearchView.titleLabel.text = "최근 검색"
+        } else if viewModel.searchResults.isEmpty {
+            isShowingRecentSearches = true
+            dummyRecentSearches = viewModel.recentSearches.compactMap { item in
+                self.allPlaces.first(where: { $0.placeId == item.placeId })
+            }
+            recentSearchView.titleLabel.text = "검색 결과가 없습니다"
+        } else {
+            isShowingRecentSearches = false
+            dummyRecentSearches = viewModel.searchResults
+            recentSearchView.titleLabel.text = "'\(viewModel.lastSearchKeyword)' 검색 결과"
+        }
+    } else {
+        recentSearchView.isHidden = true
+        bottomSheetView.isHidden = false
+        placeDetailView.isHidden = true
+    }
+
+    DispatchQueue.main.async {
+        self.isRestoringState = false
+    }
 }
 
 public override func viewDidDisappear(_ animated: Bool) {
     super.viewDidDisappear(animated)
+}
+
+public override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    view.endEditing(true)
 }
 
 // MARK: - Setup
@@ -354,14 +421,22 @@ private func bindViewModel() {
 
     viewModel.onSearchUpdated = { [weak self] in
         guard let self = self else { return }
-        self.dummyRecentSearches = self.viewModel.searchResults
-
         let keyword = self.searchBar.textField.text ?? ""
-        self.recentSearchView.titleLabel.text = self.viewModel.searchResults.isEmpty
-            ? "검색 결과가 없습니다"
-            : "'\(keyword)' 검색 결과"
 
-   
+        if keyword.isEmpty || self.viewModel.searchResults.isEmpty {
+            self.isShowingRecentSearches = true
+            self.dummyRecentSearches = self.viewModel.recentSearches.compactMap { item in
+                self.allPlaces.first(where: { $0.placeId == item.placeId })
+            }
+            self.recentSearchView.titleLabel.text = keyword.isEmpty
+                ? "최근 검색"
+                : "검색 결과가 없습니다"
+        } else {
+            self.isShowingRecentSearches = false
+            self.dummyRecentSearches = self.viewModel.searchResults
+            self.recentSearchView.titleLabel.text = "'\(keyword)' 검색 결과"
+        }
+
         self.recentSearchView.isHidden = false
         self.bottomSheetView.isHidden = true
     }
@@ -491,8 +566,52 @@ private func updateViewVisibility() {
     }
 }
 
-@objc private func backToHome() { hideDetailView(); recentSearchView.isHidden = true; searchBar.updateState(.home); searchBar.isHidden = false; searchBar.textField.text = ""; view.endEditing(true) }
-@objc private func didTapSearchBar() { if !placeDetailView.isHidden { hideDetailView() }; searchBar.updateState(.search); recentSearchView.isHidden = false; recentSearchView.titleLabel.text = "최근 검색" }
+@objc private func backToHome() {
+    isSearching = false
+    isShowingRecentSearches = true
+    hideDetailView()
+    recentSearchView.isHidden = true
+    bottomSheetView.isHidden = false
+    searchBar.updateState(.home)
+    searchBar.isHidden = false
+    searchBar.textField.text = ""
+    viewModel.lastSearchKeyword = ""
+    view.endEditing(true)
+}
+
+@objc private func didTapSearchBar() {
+    if isRestoringState { return }
+    isSearching = true
+
+    if !placeDetailView.isHidden {
+        hideDetailView()
+    }
+
+    searchBar.updateState(.search)
+    recentSearchView.isHidden = false
+
+    let keyword = viewModel.lastSearchKeyword
+
+    if keyword.isEmpty {
+        isShowingRecentSearches = true
+        dummyRecentSearches = viewModel.recentSearches.compactMap { item in
+            self.allPlaces.first(where: { $0.placeId == item.placeId })
+        }
+        recentSearchView.titleLabel.text = "최근 검색"
+    } else {
+        if viewModel.searchResults.isEmpty {
+            isShowingRecentSearches = true
+            dummyRecentSearches = viewModel.recentSearches.compactMap { item in
+                self.allPlaces.first(where: { $0.placeId == item.placeId })
+            }
+            recentSearchView.titleLabel.text = "검색 결과가 없습니다"
+        } else {
+            isShowingRecentSearches = false
+            dummyRecentSearches = viewModel.searchResults
+            recentSearchView.titleLabel.text = "'\(keyword)' 검색 결과"
+        }
+    }
+}
 @objc private func didTapArriveRoute() {
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
@@ -811,10 +930,28 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
 public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     if tableView == recentSearchView.tableView {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
-        cell.configure(model: dummyRecentSearches[indexPath.row], date: "26.04.11"); cell.backgroundColor = .clear
+        let place = dummyRecentSearches[indexPath.row]
+        let dateText: String
+
+        if self.isShowingRecentSearches,
+           let item = viewModel.recentSearches.first(where: { $0.placeId == place.placeId }) {
+            dateText = formatDate(item.searchedAt)
+        } else {
+            dateText = ""
+        }
+
+        cell.configure(model: place, date: dateText)
+        cell.backgroundColor = .clear
         cell.onDeleteTap = { [weak self, weak tableView] in
             guard let self = self, let tableView = tableView, let currentIndexPath = tableView.indexPath(for: cell) else { return }
-            self.dummyRecentSearches.remove(at: currentIndexPath.row); tableView.deleteRows(at: [currentIndexPath], with: .fade)
+            guard self.isShowingRecentSearches else { return }
+            guard currentIndexPath.row < self.dummyRecentSearches.count else { return }
+
+            let placeId = self.dummyRecentSearches[currentIndexPath.row].placeId
+            self.viewModel.removeRecentSearch(placeId: placeId)
+        self.dummyRecentSearches = self.viewModel.recentSearches.compactMap { item in
+            self.allPlaces.first(where: { $0.placeId == item.placeId })
+        }
         }
         return cell
     } else {
@@ -838,8 +975,10 @@ public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPat
 public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     if tableView == recentSearchView.tableView {
         let selectedData = dummyRecentSearches[indexPath.row]
+        viewModel.addRecentSearch(placeId: selectedData.placeId)
         recentSearchView.isHidden = true
         searchBar.updateState(.home)
+        searchBar.textField.text = selectedData.placeName
         view.endEditing(true)
 
         moveCamera(to: selectedData)

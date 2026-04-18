@@ -10,10 +10,20 @@ import Foundation
 import Moya
 import Service
 
+public struct RecentSearchItem: Codable {
+    let placeId: Int
+    let searchedAt: Date
+}
+
 public final class MapViewModel {
 
     // MARK: - Properties
+    private let recentSearchKey = "recentSearches"
     private let placeProvider = MoyaProvider<PlaceServices>()
+    
+    public init() {
+        loadRecentSearches()
+    }
     
     private var accessToken: String {
         guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
@@ -29,6 +39,7 @@ public final class MapViewModel {
     // MARK: - Data
     public private(set) var allPlaces: [MapPlaceData] = []
     public private(set) var searchResults: [MapPlaceData] = []
+    public private(set) var recentSearches: [RecentSearchItem] = []
     public private(set) var reviews: [MapReview] = []
     public private(set) var currentPlaceDetail: MapPlaceDetailModel?
     public private(set) var selectedPlaceId: Int = -1
@@ -36,6 +47,7 @@ public final class MapViewModel {
     public private(set) var timeText: String = ""
     public private(set) var hotPlaces: [MapPlaceData] = []
     public private(set) var recommendedPlaces: [MapPlaceData] = []
+    public var lastSearchKeyword: String = ""
 
     // MARK: - Route Data
     public private(set) var routeResult: MapRouteModel?
@@ -59,6 +71,7 @@ public final class MapViewModel {
                 do {
                     let decoded = try JSONDecoder().decode(MapPlaceResponse.self, from: response.data)
                     self?.allPlaces = decoded.places
+                    self?.loadRecentSearches()
                     self?.onPlacesUpdated?()
                 } catch {
                     self?.onError?("장소 리스트 디코딩 실패")
@@ -104,6 +117,7 @@ public final class MapViewModel {
     }
 
     public func searchPlace(keyword: String) {
+        self.lastSearchKeyword = keyword
         placeProvider.request(.searchPlace(keyword: keyword, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
@@ -250,6 +264,55 @@ public final class MapViewModel {
 
     public func fetchRoute(to place: MapPlaceData) {
         fetchRoute(endLat: place.latitude, endLng: place.longitude, shouldNotifyRouteUpdated: true)
+    }
+
+    private func saveRecentSearches() {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(recentSearches) {
+            UserDefaults.standard.set(data, forKey: recentSearchKey)
+        }
+    }
+
+    private func loadRecentSearches() {
+        guard let data = UserDefaults.standard.data(forKey: recentSearchKey) else {
+            recentSearches = []
+            return
+        }
+
+        let decoder = JSONDecoder()
+        if let decoded = try? decoder.decode([RecentSearchItem].self, from: data) {
+            recentSearches = decoded
+        } else {
+            recentSearches = []
+        }
+    }
+
+    public func removeRecentSearch(placeId: Int) {
+        recentSearches.removeAll { $0.placeId == placeId }
+        saveRecentSearches()
+    }
+
+    public func addRecentSearch(placeId: Int) {
+        let item = RecentSearchItem(placeId: placeId, searchedAt: Date())
+
+        // 중복 제거
+        recentSearches.removeAll { $0.placeId == placeId }
+
+        // 최신을 맨 앞에 추가
+        recentSearches.insert(item, at: 0)
+
+        // 최대 10개 유지
+        if recentSearches.count > 10 {
+            recentSearches = Array(recentSearches.prefix(10))
+        }
+
+        saveRecentSearches()
+    }
+
+    public func getRecentSearchPlaces() -> [MapPlaceData] {
+        return recentSearches.compactMap { item in
+            allPlaces.first(where: { $0.placeId == item.placeId })
+        }
     }
 
     // MARK: - Logic
