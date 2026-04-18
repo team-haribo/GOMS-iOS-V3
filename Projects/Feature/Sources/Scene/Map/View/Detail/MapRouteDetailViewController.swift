@@ -87,7 +87,7 @@ public final class MapRouteDetailViewController: UIViewController {
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if isInitialLayout {
-            let targetHeight = view.frame.height * 0.75
+            let targetHeight = minSheetHeight
             containerHeightConstraint?.update(offset: targetHeight)
             isInitialLayout = false
         }
@@ -160,7 +160,8 @@ public final class MapRouteDetailViewController: UIViewController {
         let summary = route.summary
 
         mainView.contentView.routeTypeLabel.text = routeTypeTitle
-        mainView.contentView.timeLabel.text = "\(summary.duration / 60)분"
+        let minutes = Int(ceil(Double(summary.duration) / 60.0))
+        mainView.contentView.timeLabel.text = "\(max(1, minutes))분"
         mainView.contentView.infoLabel.text = "\(summary.distance)m"
 
         var steps: [RouteStepModel] = []
