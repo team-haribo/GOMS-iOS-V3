@@ -243,14 +243,18 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
                     self.authCodeTextField.layer.borderWidth = 0
                     self.authCodeSuccess()
 
-                    let alert = UIAlertController(title: "인증번호 확인", message: "인증이 완료되었습니다.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                    GOMSAlert.show(
+                        in: self,
+                        title: "인증번호 확인",
+                        message: "인증이 완료되었습니다.",
+                        actionTitle: "확인",
+                        cancelTitle: ""
+                    ) {
                         let newPasswordVC = ChangNewPasswordViewController()
                         newPasswordVC.email = self.email ?? ""
                         newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
                         self.navigationController?.pushViewController(newPasswordVC, animated: true)
-                    })
-                    self.present(alert, animated: true)
+                    }
                 } else {
                     self.authCodeTextField.layer.borderWidth = 1
                     self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
@@ -261,9 +265,13 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
     }
 
     private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-        self.present(alert, animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: title,
+            message: message,
+            actionTitle: "확인",
+            cancelTitle: ""
+        )
     }
 
     private func startResendCooldown() {

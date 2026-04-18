@@ -256,30 +256,28 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
     }
     
     @objc func withdrawalButtonTapped() {
-        let alert = UIAlertController(title: "회원 탈퇴", message: "정말로 회원을 탈퇴하시겠습니까?", preferredStyle: .alert)
-        let cancel = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        let withdrawal = UIAlertAction(title: "회원 탈퇴", style: .destructive) { action in
+        GOMSAlert.show(
+            in: self,
+            title: "회원 탈퇴",
+            message: "정말로 회원을 탈퇴하시겠습니까?",
+            actionTitle: "회원 탈퇴",
+            cancelTitle: "취소",
+            isNegative: true
+        ) {
             let withdrawalVC = WithdrawalViewController()
-            self.navigationController?.pushViewController(withdrawalVC , animated: true)
+            self.navigationController?.pushViewController(withdrawalVC, animated: true)
         }
-        
-        alert.addAction(cancel)
-        alert.addAction(withdrawal)
-        
-        self.present(alert, animated: true)
     }
     
     @objc func logoutButtonTapped() {
-        let alertController = UIAlertController(
+        GOMSAlert.show(
+            in: self,
             title: "로그아웃",
             message: "로그아웃 하시겠습니까?",
-            preferredStyle: .alert
-        )
-
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        alertController.addAction(cancelAction)
-
-        let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
+            actionTitle: "로그아웃",
+            cancelTitle: "취소",
+            isNegative: true
+        ) { [weak self] in
             guard let self = self else { return }
 
             self.profileViewModel.profileLogout { success in
@@ -299,9 +297,6 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
                 }
             }
         }
-
-        alertController.addAction(confirmAction)
-        self.present(alertController, animated: true, completion: nil)
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
@@ -440,9 +435,13 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
             imagePickerController.sourceType = .photoLibrary
             present(imagePickerController, animated: true, completion: nil)
         } else {
-            let alertController = UIAlertController(title: "알림", message: "사용할 수 있는 앨범이 없습니다.", preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "확인", style: .default, handler: nil))
-            present(alertController, animated: true, completion: nil)
+            GOMSAlert.show(
+                in: self,
+                title: "알림",
+                message: "사용할 수 있는 앨범이 없습니다.",
+                actionTitle: "확인",
+                cancelTitle: ""
+            )
         }
     }
     

@@ -108,13 +108,13 @@ public final class ChangNewPasswordViewController: BaseViewController {
         let token = verifiedToken
 
         guard !token.isEmpty else {
-            let alert = UIAlertController(
+            GOMSAlert.show(
+                in: self,
                 title: "오류",
                 message: "인증 정보가 없어 비밀번호를 재설정할 수 없습니다.",
-                preferredStyle: .alert
+                actionTitle: "확인",
+                cancelTitle: ""
             )
-            alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-            self.present(alert, animated: true)
             return
         }
 
@@ -127,13 +127,13 @@ public final class ChangNewPasswordViewController: BaseViewController {
 
             DispatchQueue.main.async {
                 if success {
-                    let alert = UIAlertController(
+                    GOMSAlert.show(
+                        in: self,
                         title: "재설정 완료",
                         message: "비밀번호가 재설정되었습니다.",
-                        preferredStyle: .alert
-                    )
-
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                        actionTitle: "확인",
+                        cancelTitle: ""
+                    ) {
                         KeyChain.shared.delete(key: "verifiedToken")
 
                         let introViewController = IntroViewController()
@@ -144,18 +144,15 @@ public final class ChangNewPasswordViewController: BaseViewController {
                             window.rootViewController = nav
                             window.makeKeyAndVisible()
                         }
-                    })
-
-                    self.present(alert, animated: true)
+                    }
                 } else {
-                    let alert = UIAlertController(
+                    GOMSAlert.show(
+                        in: self,
                         title: "오류",
                         message: "비밀번호 재설정에 실패했습니다.",
-                        preferredStyle: .alert
+                        actionTitle: "확인",
+                        cancelTitle: ""
                     )
-
-                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                    self.present(alert, animated: true)
                 }
             }
         }
