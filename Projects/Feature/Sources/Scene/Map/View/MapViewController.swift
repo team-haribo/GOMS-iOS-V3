@@ -417,7 +417,6 @@ private func showDetailView(with data: MapPlaceData? = nil) {
     let isFirstShow = placeDetailView.isHidden
 
     if isFirstShow {
-        
         self.bottomSheetHeight?.update(offset: 0)
         self.view.layoutIfNeeded()
         self.bottomSheetView.isHidden = true
@@ -425,6 +424,32 @@ private func showDetailView(with data: MapPlaceData? = nil) {
 
     if let data = data {
         self.selectedPlaceId = data.placeId
+
+       
+        self.currentPlaceDetail = nil
+
+       
+        placeDetailView.configure(
+            with: MapPlaceDetailModel(
+                placeId: data.placeId,
+                placeName: data.placeName,
+                address: data.address,
+                roadAddress: data.address,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                categoryGroupName: "",
+                categoryName: data.categoryName,
+                phone: "",
+                placeUrl: "",
+                reviewCount: 0,
+                recommendCount: 0,
+                recommended: false
+            ),
+            distanceText: "",
+            timeText: ""
+        )
+
+       
         viewModel.fetchPlaceDetail(placeId: data.placeId)
         fetchReviews(placeId: data.placeId)
     } else {
@@ -445,12 +470,10 @@ private func showDetailView(with data: MapPlaceData? = nil) {
     detailSheetHeight?.update(offset: detailMinHeight)
 
     if isFirstShow {
-       
         UIView.animate(withDuration: 0.3) {
             self.view.layoutIfNeeded()
         }
     } else {
-   
         UIView.transition(with: self.placeDetailView,
                           duration: 0.2,
                           options: [.transitionCrossDissolve, .allowUserInteraction],
@@ -504,6 +527,8 @@ private func bindViewModel() {
 
     viewModel.onDetailUpdated = { [weak self] in
         guard let self = self, let detail = self.viewModel.currentPlaceDetail else { return }
+       
+        guard detail.placeId == self.selectedPlaceId else { return }
 
         self.selectedPlaceId = detail.placeId
         self.currentPlaceDetail = detail
@@ -706,19 +731,18 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    // 출발 = 학교 (기본값)
+    
     routeSelectionView.startDropdownButton.configuration?.attributedTitle = AttributedString("학교")
 
-    // 도착 = 선택한 장소
+    
     routeSelectionView.endLocationLabel.text = "    \(selectedPlace.placeName)"
 
-    // UI 전환
+   
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
 
-    // 서버 호출
     viewModel.fetchRoute(to: selectedPlace)
 }
 
@@ -727,26 +751,75 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    // 출발 = 선택한 장소
+  
     routeSelectionView.startDropdownButton.configuration?.attributedTitle = AttributedString(selectedPlace.placeName)
 
-    // 도착은 그대로 유지
+    
     routeSelectionView.endLocationLabel.text = "    \(routeSelectionView.endLocationLabel.text?.trimmingCharacters(in: .whitespaces) ?? "")"
 
-    // UI 전환
+   
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
 
-    // 서버 호출
+
     viewModel.fetchRoute(to: selectedPlace)
 }
 @objc private func backFromRouteSelection() {
     routeSelectionView.isHidden = true
-    placeDetailView.isHidden = false
     searchBar.isHidden = false
+
+    guard let selectedPlace = allPlaces.first(where: { $0.placeId == selectedPlaceId }) else {
+        return
+    }
+
+   
+    if let routeVC = routeDetailVC {
+        routeVC.view.removeFromSuperview()
+        routeVC.removeFromParent()
+        routeDetailVC = nil
+    }
+
+   
+    resetUIForNewSelection()
+
+    
+    currentPlaceDetail = nil
+    viewModel.fetchPlaceDetail(placeId: selectedPlace.placeId)
+    fetchReviews(placeId: selectedPlace.placeId)
+
+   
+    placeDetailView.configure(
+        with: MapPlaceDetailModel(
+            placeId: selectedPlace.placeId,
+            placeName: selectedPlace.placeName,
+            address: selectedPlace.address,
+            roadAddress: selectedPlace.address,
+            latitude: selectedPlace.latitude,
+            longitude: selectedPlace.longitude,
+            categoryGroupName: "",
+            categoryName: selectedPlace.categoryName,
+            phone: "",
+            placeUrl: "",
+            reviewCount: 0,
+            recommendCount: 0,
+            recommended: false
+        ),
+        distanceText: "",
+        timeText: ""
+    )
+
+    placeDetailView.isHidden = false
+    bottomSheetView.isHidden = true
+    recentSearchView.isHidden = true
+
+   
+    placeDetailView.setNeedsLayout()
+    placeDetailView.layoutIfNeeded()
+
     detailSheetHeight?.update(offset: detailMinHeight)
+
     UIView.animate(withDuration: 0.3) {
         self.view.layoutIfNeeded()
     }
@@ -937,6 +1010,7 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
     }
 
     self.selectedPlaceId = nearestPlace.placeId
+    self.currentPlaceDetail = nil
     self.moveCamera(to: nearestPlace)
     self.showActiveMarker(for: nearestPlace)
 
@@ -946,6 +1020,13 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
         self.routeDetailVC?.removeFromParent()
         self.routeDetailVC = nil
 
+       
+        self.selectedPlaceId = nearestPlace.placeId
+        self.currentPlaceDetail = nil
+
+        self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
+        self.fetchReviews(placeId: nearestPlace.placeId)
+
         self.resetUIForNewSelection()
         self.showDetailView(with: nearestPlace)
         return
@@ -953,11 +1034,15 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
 
 
     if !self.routeSelectionView.isHidden {
+       
+        self.selectedPlaceId = nearestPlace.placeId
+        self.currentPlaceDetail = nil
+
         self.viewModel.fetchRoute(to: nearestPlace)
         return
     }
 
-    // 일반 상태
+
     self.resetUIForNewSelection()
 
     self.placeDetailView.isHidden = false
@@ -966,6 +1051,9 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
     self.searchBar.isHidden = false
 
     self.showDetailView(with: nearestPlace)
+   
+    self.placeDetailView.setNeedsLayout()
+    self.placeDetailView.layoutIfNeeded()
 
     self.viewModel.fetchHotPlaces()
     self.viewModel.fetchRecommendedPlaces()
@@ -1003,6 +1091,7 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
     }
 
     self.selectedPlaceId = nearestPlace.placeId
+    self.currentPlaceDetail = nil
     self.moveCamera(to: nearestPlace)
     self.showActiveMarker(for: nearestPlace)
 
@@ -1012,6 +1101,13 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
         self.routeDetailVC?.removeFromParent()
         self.routeDetailVC = nil
 
+        
+        self.selectedPlaceId = nearestPlace.placeId
+        self.currentPlaceDetail = nil
+
+        self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
+        self.fetchReviews(placeId: nearestPlace.placeId)
+
         self.resetUIForNewSelection()
         self.showDetailView(with: nearestPlace)
         return
@@ -1019,6 +1115,10 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
 
     
     if !self.routeSelectionView.isHidden {
+        
+        self.selectedPlaceId = nearestPlace.placeId
+        self.currentPlaceDetail = nil
+
         self.viewModel.fetchRoute(to: nearestPlace)
         return
     }
@@ -1032,6 +1132,9 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
     self.searchBar.isHidden = false
 
     self.showDetailView(with: nearestPlace)
+    
+    self.placeDetailView.setNeedsLayout()
+    self.placeDetailView.layoutIfNeeded()
 
     self.viewModel.fetchHotPlaces()
     self.viewModel.fetchRecommendedPlaces()
