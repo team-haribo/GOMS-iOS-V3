@@ -26,7 +26,7 @@ private let locationManager = CLLocationManager()
 private var currentLocation: CLLocation?
 private var pendingRoutePlace: MapPlaceData?
 
-private enum StartLocationType {
+enum StartLocationType {
     case school
     case currentLocation
 }
@@ -330,6 +330,33 @@ private func setupActions() {
                 self.locationManager.requestLocation()
             }
         } else {
+            self.requestRoute(to: selectedPlace)
+        }
+    }
+
+    routeSelectionView.onEndLocationChanged = { [weak self] type in
+        guard let self = self else { return }
+
+        guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else {
+            return
+        }
+
+        // 도착 위치를 currentLocation / school로 바꾸는 경우
+        if type == .currentLocation {
+            if let current = self.currentLocation {
+                // 현재 위치를 도착으로 설정 → start는 기존 selectedPlace
+                self.viewModel.currentLocation = (
+                    lat: current.coordinate.latitude,
+                    lng: current.coordinate.longitude
+                )
+                // 방향 반대로 요청 (간단 처리: 동일 API 재사용)
+                self.requestRoute(to: selectedPlace)
+            } else {
+                self.pendingRoutePlace = selectedPlace
+                self.locationManager.requestLocation()
+            }
+        } else {
+            // 학교를 도착으로 설정
             self.requestRoute(to: selectedPlace)
         }
     }
@@ -817,28 +844,19 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    routeSelectionView.endLocationLabel.text = "    \(selectedPlace.placeName)"
+    // 출발 = 선택 (내 위치 / 학교 dropdown 유지)
+    let mappedType: RouteStartLocationType = (self.startLocationType == .currentLocation) ? .currentLocation : .school
+    routeSelectionView.setStartLocation(mappedType)
+
+    // 도착 = 핀
+    routeSelectionView.setEndPlaceName(selectedPlace.placeName)
+
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
 
-    routeSelectionView.setStartLocation(self.startLocationType == .currentLocation ? .currentLocation : .school)
-
-    if startLocationType == .currentLocation {
-        if let current = currentLocation {
-            viewModel.currentLocation = (
-                lat: current.coordinate.latitude,
-                lng: current.coordinate.longitude
-            )
-            requestRoute(to: selectedPlace)
-        } else {
-            pendingRoutePlace = selectedPlace
-            locationManager.requestLocation()
-        }
-    } else {
-        requestRoute(to: selectedPlace)
-    }
+    requestRoute(to: selectedPlace)
 }
 
 @objc private func didTapStartRoute() {
@@ -846,28 +864,17 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    routeSelectionView.endLocationLabel.text = "    \(selectedPlace.placeName)"
+    // 출발 = 핀
+    routeSelectionView.setStartPlaceName(selectedPlace.placeName)
+
+    // 도착 = 내 위치 / 학교
+    let endType: RouteStartLocationType = (self.startLocationType == .currentLocation) ? .currentLocation : .school
+    routeSelectionView.setEndLocation(endType)
+
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
-
-    routeSelectionView.setStartLocation(self.startLocationType == .currentLocation ? .currentLocation : .school)
-
-    if startLocationType == .currentLocation {
-        if let current = currentLocation {
-            viewModel.currentLocation = (
-                lat: current.coordinate.latitude,
-                lng: current.coordinate.longitude
-            )
-            requestRoute(to: selectedPlace)
-        } else {
-            pendingRoutePlace = selectedPlace
-            locationManager.requestLocation()
-        }
-    } else {
-        requestRoute(to: selectedPlace)
-    }
 }
 @objc private func backFromRouteSelection() {
     routeSelectionView.isHidden = true
@@ -1469,4 +1476,5 @@ extension MapViewController {
     }
 }
 
+    
     

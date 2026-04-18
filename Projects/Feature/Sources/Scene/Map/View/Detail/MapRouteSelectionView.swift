@@ -6,7 +6,6 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
-
 import UIKit
 import SnapKit
 import Then
@@ -15,6 +14,16 @@ public enum RouteStartLocationType {
     case currentLocation
     case school
 }
+
+extension RouteStartLocationType {
+    init(from type: MapViewController.StartLocationType) {
+        switch type {
+        case .currentLocation: self = .currentLocation
+        case .school: self = .school
+        }
+    }
+}
+
 
 public struct RouteCardData {
     public let title: String
@@ -96,9 +105,11 @@ public final class MapRouteSelectionView: UIView {
     private let locations = ["내 위치", "학교"]
     private var destinationName: String = "짬뽕관 광주송정선운점"
     
+    private var isSelectingStart = true
     
     public var onCardTapped: ((String) -> Void)?
     public var onStartLocationChanged: ((RouteStartLocationType) -> Void)?
+    public var onEndLocationChanged: ((RouteStartLocationType) -> Void)?
     
     private let containerView = UIView().then {
         $0.backgroundColor = .color.surface.color
@@ -133,6 +144,25 @@ public final class MapRouteSelectionView: UIView {
         $0.contentHorizontalAlignment = .fill
     }
     
+    public let endDropdownButton = UIButton().then {
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .color.button.color
+
+        var titleAttr = AttributedString("도착 위치를 선택해주세요")
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.sub2.color
+
+        config.attributedTitle = titleAttr
+        config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
+        config.imagePlacement = .trailing
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = 8
+
+        $0.configuration = config
+        $0.contentHorizontalAlignment = .fill
+    }
+
     private let selectionBox = UIView().then {
         $0.backgroundColor = .color.button.color
         $0.layer.cornerRadius = 8
@@ -218,9 +248,44 @@ public final class MapRouteSelectionView: UIView {
         startDropdownButton.configuration = config
     }
 
+    public func setStartPlaceName(_ name: String) {
+        var config = startDropdownButton.configuration
+        var titleAttr = AttributedString(name)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config?.attributedTitle = titleAttr
+        startDropdownButton.configuration = config
+    }
+
+    public func setEndPlaceName(_ name: String) {
+        var config = endDropdownButton.configuration
+        var titleAttr = AttributedString(name)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config?.attributedTitle = titleAttr
+        endDropdownButton.configuration = config
+    }
+
+    public func setEndLocation(_ type: RouteStartLocationType) {
+        let title: String
+        switch type {
+        case .currentLocation:
+            title = locations[0]
+        case .school:
+            title = locations[1]
+        }
+
+        var config = endDropdownButton.configuration
+        var titleAttr = AttributedString(title)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config?.attributedTitle = titleAttr
+        endDropdownButton.configuration = config
+    }
+
     private func setupLayout() {
         addSubview(containerView)
-        [startTitleLabel, backButton, startDropdownButton, endTitleLabel, endLocationLabel, reverseButton, selectionBox].forEach {
+        [startTitleLabel, backButton, startDropdownButton, endTitleLabel, endDropdownButton, reverseButton, selectionBox].forEach {
             containerView.addSubview($0)
         }
         [myLocationBtn, schoolLocationBtn, line].forEach { selectionBox.addSubview($0) }
@@ -229,7 +294,7 @@ public final class MapRouteSelectionView: UIView {
         
         containerView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24)
+            $0.bottom.equalTo(endDropdownButton.snp.bottom).offset(24)
         }
         
         backButton.snp.makeConstraints {
@@ -282,7 +347,7 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalTo(startTitleLabel)
         }
         
-        endLocationLabel.snp.makeConstraints {
+        endDropdownButton.snp.makeConstraints {
             $0.top.equalTo(endTitleLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
@@ -303,11 +368,19 @@ public final class MapRouteSelectionView: UIView {
 
     private func setupActions() {
         startDropdownButton.addTarget(self, action: #selector(didTapDropdown), for: .touchUpInside)
+        endDropdownButton.addTarget(self, action: #selector(didTapEndDropdown), for: .touchUpInside)
         myLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
         schoolLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
     }
 
     @objc private func didTapDropdown() {
+        isSelectingStart = true
+        selectionBox.isHidden.toggle()
+        containerView.bringSubviewToFront(selectionBox)
+    }
+
+    @objc private func didTapEndDropdown() {
+        isSelectingStart = false
         selectionBox.isHidden.toggle()
         containerView.bringSubviewToFront(selectionBox)
     }
@@ -315,15 +388,27 @@ public final class MapRouteSelectionView: UIView {
     @objc private func didSelectOption(_ sender: UIButton) {
         guard let title = sender.configuration?.attributedTitle else { return }
         let plainTitle = String(title.characters)
-        var config = startDropdownButton.configuration
-        var titleAttr = AttributedString(plainTitle)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        startDropdownButton.configuration = config
-        selectionBox.isHidden = true
         let selectedType: RouteStartLocationType = (plainTitle == locations[0]) ? .currentLocation : .school
-        onStartLocationChanged?(selectedType)
+
+        if isSelectingStart {
+            var config = startDropdownButton.configuration
+            var titleAttr = AttributedString(plainTitle)
+            titleAttr.font = .suit(size: 17, weight: .medium)
+            titleAttr.foregroundColor = .color.mainText.color
+            config?.attributedTitle = titleAttr
+            startDropdownButton.configuration = config
+            onStartLocationChanged?(selectedType)
+        } else {
+            var config = endDropdownButton.configuration
+            var titleAttr = AttributedString(plainTitle)
+            titleAttr.font = .suit(size: 17, weight: .medium)
+            titleAttr.foregroundColor = .color.mainText.color
+            config?.attributedTitle = titleAttr
+            endDropdownButton.configuration = config
+            onEndLocationChanged?(selectedType)
+        }
+
+        selectionBox.isHidden = true
     }
 
     public func configure(routes: [RouteCardData]) {
