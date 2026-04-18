@@ -1,4 +1,3 @@
-
 //
 //  AdminProfileViewController.swift
 //  Feature
@@ -12,6 +11,8 @@ import Combine
 import Moya
 import Service
 import Kingfisher
+import SnapKit
+import Then
 
 private enum Layout {
     static let horizontal: CGFloat = 20
@@ -29,7 +30,7 @@ private enum UserDefaultsKey {
     static let isSwitchMakeOn = "isSwitchMakeOn"
 }
 
-public class AdminProfileViewController: BaseViewController,UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+public class AdminProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     let imagePickerController = UIImagePickerController()
     let profileViewModel = ProfileViewModel()
@@ -43,7 +44,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         )
         $0.contentMode = .scaleAspectFit
     }
-
 
     let userProfile = UIImageView().then {
         $0.image = .image.gomsBasicProfile.image
@@ -61,8 +61,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.layer.shadowOpacity = 0.25
         $0.layer.shadowRadius = 6
         $0.layer.shadowOffset = CGSize(width: 0, height: 3)
-  
-     
         $0.clipsToBounds = false
     }
     
@@ -145,10 +143,8 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    let clockToggleButton: UISwitch = UISwitch().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
+    let clockToggleButton = GOMSSwitch().then {
         $0.onTintColor = .color.admin.color
-        $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchClockOn(_:)), for: .valueChanged)
         $0.isOn = false
     }
@@ -166,10 +162,8 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.numberOfLines = 0
     }
     
-    let qrMakeOntoggleButton: UISwitch = UISwitch().then {
-        $0.translatesAutoresizingMaskIntoConstraints = false
+    let qrMakeOntoggleButton = GOMSSwitch().then {
         $0.onTintColor = .color.admin.color
-        $0.tintColor = .color.sub2.color
         $0.addTarget(self, action: #selector(switchQRMake(_:)), for: .valueChanged)
         $0.isOn = false
     }
@@ -186,20 +180,18 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         $0.addTarget(self, action: #selector(withdrawalButtonTapped), for: .touchUpInside)
     }
     
-    
     let borderView = UIView().then() {
         $0.backgroundColor = .color.button.color
     }
     
-    @objc func switchQRMake(_ sender: UISwitch) {
-        print("QR카메라 바로생성: \(sender.isOn ? "On" : "Off")")
+    @objc func switchQRMake(_ sender: GOMSSwitch) {
         UserDefaults.standard.set(sender.isOn, forKey: UserDefaultsKey.isSwitchMakeOn)
     }
     
-    @objc func switchClockOn(_ sender: UISwitch) {
-        print("시계 나타내기: \(sender.isOn ? "On" : "Off")")
+    @objc func switchClockOn(_ sender: GOMSSwitch) {
         UserDefaults.standard.set(sender.isOn, forKey: UserDefaultsKey.isClockOn)
-        if let mainViewController = navigationController?.viewControllers.first(where: { $0 is AdminMainViewController  }) as? AdminMainViewController {
+        NotificationCenter.default.post(name: Notification.Name("clockChanged"), object: nil)
+        if let mainViewController = navigationController?.viewControllers.first(where: { $0 is AdminMainViewController }) as? AdminMainViewController {
             mainViewController.isClockOn = sender.isOn
         }
     }
@@ -224,7 +216,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             self?.updateImage(isActionSheetShowing: false)
         }))
 
-        //ipad 반응형임
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = sender
             popover.sourceRect = sender.bounds
@@ -234,7 +225,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         self.present(actionSheet, animated: true, completion: nil)
     }
 
-    
     private func applySavedTheme() {
         let savedThemeValue = UserDefaults.standard.integer(forKey: UserDefaultsKey.theme)
         let savedTheme: UIUserInterfaceStyle
@@ -311,11 +301,8 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         }
 
         alertController.addAction(confirmAction)
-
         self.present(alertController, animated: true, completion: nil)
     }
-    
-  
     
     @objc func updateImage(isActionSheetShowing: Bool) {
         if isActionSheetShowing {
@@ -332,8 +319,6 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         setNeedsStatusBarAppearanceUpdate()
     }
 
-
-
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -347,11 +332,8 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         navigationController?.navigationBar.prefersLargeTitles = false
         imagePickerController.delegate = self
 
-        let isSwitchOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isSwitchMakeOn)
-        qrMakeOntoggleButton.isOn = isSwitchOn
-
-        let isClockOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isClockOn)
-        clockToggleButton.isOn = isClockOn
+        qrMakeOntoggleButton.isOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isSwitchMakeOn)
+        clockToggleButton.isOn = UserDefaults.standard.bool(forKey: UserDefaultsKey.isClockOn)
     }
 
     private func bind() {
@@ -392,12 +374,9 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
         profileViewModel.loadProfileInfo { _, _ in }
     }
 
-    
-    // MARK: - Configure Navigation
     public override func configNavigation() {
         self.navigationController?.navigationBar.tintColor = .color.admin.color
     }
-    
     
     @objc func handleRefreshControl() {
         profileViewModel.loadProfileInfo { success, authority in
@@ -455,6 +434,7 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
 
         self.present(actionSheet, animated: true, completion: nil)
     }
+
     func presentGallery() {
         if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
             imagePickerController.sourceType = .photoLibrary
@@ -495,37 +475,14 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
     
     public override func addView() {
         [
-            logo,
-            userProfile,
-            userName,
-            userGradeDepartment,
-            perceptionCount,
-            perceptionNum,
-            perceptionText,
-            userProfilePencil,
-
-            themeTopLine,
-            themeBottomLine,
-
-            themeChangText,
-            themeChangRec,
-            themeSettingText,
-            themeSettingImg,
-
-            clockText,
-            clockDescription,
-            clockToggleButton,
-
-            qrMakeOnText,
-            qrMakeOnDescription,
-            qrMakeOntoggleButton,
-
-            passwordResetButton,
-            logoutButton,
-            withdrawalButton
-        ].forEach {
-            view.addSubview($0)
-        }
+            logo, userProfile, userName, userGradeDepartment, perceptionCount,
+            perceptionNum, perceptionText, userProfilePencil, themeTopLine, themeBottomLine,
+            themeChangText, themeChangRec, themeSettingText, themeSettingImg,
+            clockText, clockDescription, clockToggleButton, qrMakeOnText,
+            qrMakeOnDescription, qrMakeOntoggleButton, passwordResetButton,
+            logoutButton, withdrawalButton
+        ].forEach { view.addSubview($0) }
+        
         view.bringSubviewToFront(userProfilePencil)
         view.bringSubviewToFront(userName)
         view.bringSubviewToFront(userGradeDepartment)
@@ -544,131 +501,104 @@ public class AdminProfileViewController: BaseViewController,UIImagePickerControl
             $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(logo.snp.bottom).offset(16)
         }
-
         userProfilePencil.snp.makeConstraints {
             $0.width.height.equalTo(24)
             $0.bottom.equalTo(userProfile.snp.bottom)
             $0.trailing.equalTo(userProfile.snp.trailing)
         }
-
         userName.snp.makeConstraints {
             $0.leading.equalTo(userProfile.snp.trailing).offset(12)
             $0.trailing.lessThanOrEqualTo(perceptionCount.snp.leading).offset(-8)
             $0.top.equalTo(userProfile.snp.top).offset(12)
         }
-
         userGradeDepartment.snp.makeConstraints {
             $0.leading.equalTo(userName.snp.leading)
             $0.trailing.lessThanOrEqualToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(userName.snp.bottom).offset(4)
         }
-
-        perceptionCount.snp.makeConstraints { // 지각횟수
+        perceptionCount.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(userName.snp.top)
         }
-
         perceptionNum.snp.makeConstraints {
             $0.trailing.equalTo(perceptionText.snp.leading).inset(-1)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
-
         perceptionText.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(perceptionCount.snp.bottom).offset(4)
         }
-
-        passwordResetButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(48)
-            $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
-        }
-
-        logoutButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(48)
-            $0.top.equalTo(passwordResetButton.snp.bottom)
-        }
-
-        withdrawalButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(48)
-            $0.top.equalTo(logoutButton.snp.bottom)
-        }
-
         themeTopLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.bottom.equalTo(userProfile.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().inset(Layout.horizontal)
-            $0.trailing.equalToSuperview().inset(Layout.horizontal)
+            $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
         }
-
         themeChangText.snp.makeConstraints {
             $0.width.equalTo(93)
             $0.height.equalTo(28)
             $0.top.equalTo(themeTopLine.snp.top).offset(24)
             $0.leading.equalToSuperview().inset(Layout.horizontal)
         }
-
         themeChangRec.snp.makeConstraints {
             $0.height.equalTo(64)
             $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
-
         themeSettingText.snp.makeConstraints {
             $0.width.equalTo(106)
             $0.height.equalTo(28)
             $0.top.equalTo(themeChangRec.snp.top).offset(18)
             $0.leading.equalTo(themeChangRec.snp.leading).offset(12)
         }
-
         themeSettingImg.snp.makeConstraints {
             $0.width.equalTo(24)
             $0.height.equalTo(24)
             $0.top.equalTo(themeChangRec.snp.top).offset(20)
             $0.trailing.equalToSuperview().inset(Layout.trailingPadding)
         }
-
         clockText.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(themeChangRec.snp.bottom).offset(24)
         }
-
         clockDescription.snp.makeConstraints {
             $0.leading.equalTo(clockText.snp.leading)
             $0.top.equalTo(clockText.snp.bottom).offset(4)
         }
-
         clockToggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(clockText)
         }
-
         qrMakeOnText.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(clockDescription.snp.bottom).offset(24)
         }
-
         qrMakeOnDescription.snp.makeConstraints {
             $0.leading.equalTo(qrMakeOnText.snp.leading)
             $0.top.equalTo(qrMakeOnText.snp.bottom).offset(4)
         }
-
         qrMakeOntoggleButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.centerY.equalTo(qrMakeOnText)
         }
-
         themeBottomLine.snp.makeConstraints {
             $0.height.equalTo(1)
             $0.leading.trailing.equalToSuperview().inset(Layout.horizontal)
             $0.top.equalTo(qrMakeOnDescription.snp.bottom).offset(25)
         }
-
-
-
-
+        passwordResetButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(48)
+            $0.top.equalTo(themeBottomLine.snp.bottom).offset(24)
+        }
+        logoutButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(48)
+            $0.top.equalTo(passwordResetButton.snp.bottom)
+        }
+        withdrawalButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(48)
+            $0.top.equalTo(logoutButton.snp.bottom)
+        }
     }
 }
-
