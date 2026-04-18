@@ -231,17 +231,23 @@ private func setupActions() {
         if let selected = self.allPlaces.first(where: { $0.placeId == placeId }) {
             self.selectedPlaceId = selected.placeId
             self.resetUIForNewSelection()
+
+            
             self.moveCamera(to: selected)
             self.showActiveMarker(for: selected)
 
-            self.placeDetailView.isHidden = true
-            self.bottomSheetView.isHidden = false
+          
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                self.showDetailView(with: selected)
+            }
+
+            
+            self.bottomSheetView.isHidden = true
             self.recentSearchView.isHidden = true
             self.searchBar.isHidden = false
 
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
-         
         }
     }
     bottomSheetView.onHeartTapped = { [weak self] placeId, isSelected in
@@ -268,6 +274,7 @@ private func setupActions() {
 
         let detailVC = MapRouteDetailViewController()
         detailVC.routeTypeTitle = routeTitle
+        detailVC.destinationName = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId })?.placeName ?? ""
         detailVC.modalPresentationStyle = .overFullScreen
         detailVC.onDismiss = { [weak self] in
             self?.routeSelectionView.isHidden = true
@@ -650,6 +657,15 @@ private func updateViewVisibility() {
 
 
 @objc private func didTapCloseDetailButton() {
+   
+    if let map = mapController?.getView("mapview") as? KakaoMap {
+        let manager = map.getShapeManager()
+        if let layer = manager.getShapeLayer(layerID: "routeLayer") {
+            layer.removeMapPolylineShape(shapeID: "routeShape")
+            layer.removeMapPolylineShape(shapeID: "routeGlowShape")
+        }
+    }
+
     hideDetailView()
 }
 
@@ -870,10 +886,10 @@ public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
     let shapeManager = view.getShapeManager()
 
     let perLevelStyle = PerLevelPolylineStyle(
-        bodyColor: UIColor.systemBlue,
-        bodyWidth: 6,
-        strokeColor: UIColor.clear,
-        strokeWidth: 0,
+        bodyColor: UIColor.color.gomsPrimary.color,
+        bodyWidth: 10,
+        strokeColor: UIColor.white.withAlphaComponent(0.3),
+        strokeWidth: 2,
         level: 0
     )
 
@@ -1019,6 +1035,7 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
         self.routeDetailVC?.view.removeFromSuperview()
         self.routeDetailVC?.removeFromParent()
         self.routeDetailVC = nil
+        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
        
         self.selectedPlaceId = nearestPlace.placeId
@@ -1037,6 +1054,7 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
        
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
+        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
         self.viewModel.fetchRoute(to: nearestPlace)
         return
@@ -1100,6 +1118,7 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
         self.routeDetailVC?.view.removeFromSuperview()
         self.routeDetailVC?.removeFromParent()
         self.routeDetailVC = nil
+        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
         
         self.selectedPlaceId = nearestPlace.placeId
@@ -1118,6 +1137,7 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
         
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
+        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
         self.viewModel.fetchRoute(to: nearestPlace)
         return
@@ -1165,7 +1185,6 @@ private func drawRoute() {
 
     guard let layer = manager.getShapeLayer(layerID: "routeLayer") else { return }
 
-    
     layer.removeMapPolylineShape(shapeID: "routeShape")
 
     var points: [MapPoint] = []
@@ -1195,8 +1214,29 @@ private func drawRoute() {
 
     if let shape = layer.addMapPolylineShape(options) {
         shape.show()
+
+        
+        let glowStyle = PerLevelPolylineStyle(
+            bodyColor: UIColor.color.gomsPrimary.color.withAlphaComponent(0.3),
+            bodyWidth: 16,
+            strokeColor: UIColor.clear,
+            strokeWidth: 0,
+            level: 0
+        )
+        let glowStyleSet = PolylineStyleSet(styleSetID: "routeGlow", styles: [PolylineStyle(styles: [glowStyle])])
+        manager.addPolylineStyleSet(glowStyleSet)
+
+        let glowPolyline = MapPolyline(line: points, styleIndex: 0)
+        let glowOptions = MapPolylineShapeOptions(
+            shapeID: "routeGlowShape",
+            styleID: "routeGlow",
+            zOrder: 9998
+        )
+        glowOptions.polylines = [glowPolyline]
+        layer.addMapPolylineShape(glowOptions)?.show()
     }
 }
+
 
 deinit {
     mapController?.pauseEngine()

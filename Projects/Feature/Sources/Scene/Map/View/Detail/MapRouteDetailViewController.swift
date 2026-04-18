@@ -49,6 +49,7 @@ public final class MapRouteDetailViewController: UIViewController {
     private var currentSteps: [RouteStepModel] = []
     
     public var routeTypeTitle: String = "추천"
+    public var destinationName: String = ""
     public var minSheetHeight: CGFloat = 330
     public var onDismiss: (() -> Void)?
     
@@ -58,19 +59,23 @@ public final class MapRouteDetailViewController: UIViewController {
         }
     }
     
-    private let recommendationSteps: [RouteStepModel] = [
-        RouteStepModel(turnType: .start, title: "출발", description: "학교"),
-        RouteStepModel(turnType: .straight, title: "OO건물", description: "OO건물 까지 100m 이동"),
-        RouteStepModel(turnType: .left, title: "OO건물", description: "OO건물 앞에서 왼쪽길로 4m 이동"),
-        RouteStepModel(turnType: .right, title: "**건물", description: "**건물 앞에서 오른쪽길로 4m 이동"),
-        RouteStepModel(turnType: .end, title: "도착", description: "짬뽕관 광주송정선운점")
-    ]
-    private let mainRoadSteps: [RouteStepModel] = [
-        RouteStepModel(turnType: .start, title: "출발", description: "학교 정문"),
-        RouteStepModel(turnType: .straight, title: "큰대로변", description: "대로를 따라 300m 직진"),
-        RouteStepModel(turnType: .right, title: "사거리", description: "우회전 후 50m 이동"),
-        RouteStepModel(turnType: .end, title: "도착", description: "짬뽕관 광주송정선운점")
-    ]
+    private var recommendationSteps: [RouteStepModel] {
+        return [
+            RouteStepModel(turnType: .start, title: "출발", description: "학교"),
+            RouteStepModel(turnType: .straight, title: "OO건물", description: "OO건물 까지 100m 이동"),
+            RouteStepModel(turnType: .left, title: "OO건물", description: "OO건물 앞에서 왼쪽길로 4m 이동"),
+            RouteStepModel(turnType: .right, title: "**건물", description: "**건물 앞에서 오른쪽길로 4m 이동"),
+            RouteStepModel(turnType: .end, title: "도착", description: destinationName.isEmpty ? "목적지" : destinationName)
+        ]
+    }
+    private var mainRoadSteps: [RouteStepModel] {
+        return [
+            RouteStepModel(turnType: .start, title: "출발", description: "학교 정문"),
+            RouteStepModel(turnType: .straight, title: "큰대로변", description: "대로를 따라 300m 직진"),
+            RouteStepModel(turnType: .right, title: "사거리", description: "우회전 후 50m 이동"),
+            RouteStepModel(turnType: .end, title: "도착", description: destinationName.isEmpty ? "목적지" : destinationName)
+        ]
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -178,7 +183,13 @@ public final class MapRouteDetailViewController: UIViewController {
                 )
             }
         }
-        steps.append(RouteStepModel(turnType: .end, title: "도착", description: "목적지"))
+        steps.append(
+            RouteStepModel(
+                turnType: .end,
+                title: "도착",
+                description: destinationName.isEmpty ? "목적지" : destinationName
+            )
+        )
         currentSteps = steps
         mainView.contentView.tableView.reloadData()
     }
