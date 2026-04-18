@@ -82,19 +82,12 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
         requestInitialAuthCode()
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func configNavigation() {
@@ -167,7 +160,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
             guard let self else { return }
             DispatchQueue.main.async {
                 if !success {
-                    print("초기 인증번호 요청 실패 또는 지연")
+                    print("DEBUG: 초기 인증번호 요청 실패 또는 지연")
                 }
             }
         }
@@ -226,6 +219,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
 
     @objc private func doneButtonTapped() {
         let code = authCodeTextField.text ?? ""
+        print("DEBUG: 인증 버튼 클릭됨. 입력 코드: \(code)")
         viewModel.setupAuthCode(authCode: code)
         viewModel.setupEmailStatus(status: "PASSWORD_CHANGE")
 
@@ -240,6 +234,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
             guard let self else { return }
             DispatchQueue.main.async {
                 if success {
+                    print("DEBUG: 인증 성공")
                     self.authCodeTextField.layer.borderWidth = 0
                     self.authCodeSuccess()
 
@@ -248,14 +243,23 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
                         title: "인증번호 확인",
                         message: "인증이 완료되었습니다.",
                         actionTitle: "확인",
-                        cancelTitle: ""
-                    ) {
-                        let newPasswordVC = ChangNewPasswordViewController()
-                        newPasswordVC.email = self.email ?? ""
-                        newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
-                        self.navigationController?.pushViewController(newPasswordVC, animated: true)
-                    }
+                        cancelTitle: "",
+                        action: {
+                            print("DEBUG: 알럿 확인 버튼 눌림. 화면 이동 시작")
+                            let newPasswordVC = ChangNewPasswordViewController()
+                            newPasswordVC.email = self.email ?? ""
+                            newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+                            
+                            if let nav = self.navigationController {
+                                print("DEBUG: NavigationController 존재함. Push 진행")
+                                nav.pushViewController(newPasswordVC, animated: true)
+                            } else {
+                                print("DEBUG: 오류 - NavigationController가 nil입니다.")
+                            }
+                        }
+                    )
                 } else {
+                    print("DEBUG: 인증 실패")
                     self.authCodeTextField.layer.borderWidth = 1
                     self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
                     self.authCodeError()
@@ -264,14 +268,9 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
         }
     }
 
+    // GOMSAlert을 사용하여 일관성 있게 출력하도록 변경
     private func showAlert(title: String, message: String) {
-        GOMSAlert.show(
-            in: self,
-            title: title,
-            message: message,
-            actionTitle: "확인",
-            cancelTitle: ""
-        )
+        GOMSAlert.show(in: self, title: title, message: message, actionTitle: "확인", cancelTitle: "")
     }
 
     private func startResendCooldown() {

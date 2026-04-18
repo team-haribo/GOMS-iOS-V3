@@ -261,12 +261,12 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
             title: "회원 탈퇴",
             message: "정말로 회원을 탈퇴하시겠습니까?",
             actionTitle: "회원 탈퇴",
-            cancelTitle: "취소",
-            isNegative: true
-        ) {
-            let withdrawalVC = WithdrawalViewController()
-            self.navigationController?.pushViewController(withdrawalVC, animated: true)
-        }
+            isNegative: true,
+            action: { [weak self] in
+                let withdrawalVC = WithdrawalViewController()
+                self?.navigationController?.pushViewController(withdrawalVC , animated: true)
+            }
+        )
     }
     
     @objc func logoutButtonTapped() {
@@ -275,28 +275,27 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
             title: "로그아웃",
             message: "로그아웃 하시겠습니까?",
             actionTitle: "로그아웃",
-            cancelTitle: "취소",
-            isNegative: true
-        ) { [weak self] in
-            guard let self = self else { return }
+            isNegative: true,
+            action: { [weak self] in
+                guard let self = self else { return }
+                self.profileViewModel.profileLogout { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
 
-            self.profileViewModel.profileLogout { success in
-                DispatchQueue.main.async {
-                    if success {
-                        let introVC = IntroViewController()
-                        let nav = UINavigationController(rootViewController: introVC)
-
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = windowScene.windows.first {
-                            window.rootViewController = nav
-                            window.makeKeyAndVisible()
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
+                        } else {
+                            print("로그아웃 실패")
                         }
-                    } else {
-                        print("로그아웃 실패")
                     }
                 }
             }
-        }
+        )
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
@@ -435,13 +434,9 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
             imagePickerController.sourceType = .photoLibrary
             present(imagePickerController, animated: true, completion: nil)
         } else {
-            GOMSAlert.show(
-                in: self,
-                title: "알림",
-                message: "사용할 수 있는 앨범이 없습니다.",
-                actionTitle: "확인",
-                cancelTitle: ""
-            )
+            let alertController = UIAlertController(title: "알림", message: "사용할 수 있는 앨범이 없습니다.", preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "확인", style: .default, handler: nil))
+            present(alertController, animated: true, completion: nil)
         }
     }
     
