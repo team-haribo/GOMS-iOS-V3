@@ -6,9 +6,15 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+
 import UIKit
 import SnapKit
 import Then
+
+public enum RouteStartLocationType {
+    case currentLocation
+    case school
+}
 
 public struct RouteCardData {
     public let title: String
@@ -92,6 +98,7 @@ public final class MapRouteSelectionView: UIView {
     
     
     public var onCardTapped: ((String) -> Void)?
+    public var onStartLocationChanged: ((RouteStartLocationType) -> Void)?
     
     private let containerView = UIView().then {
         $0.backgroundColor = .color.surface.color
@@ -193,6 +200,23 @@ public final class MapRouteSelectionView: UIView {
     }
     
     required init?(coder: NSCoder) { fatalError() }
+
+    public func setStartLocation(_ type: RouteStartLocationType) {
+        let title: String
+        switch type {
+        case .currentLocation:
+            title = locations[0] // "내 위치"
+        case .school:
+            title = locations[1] // "학교"
+        }
+
+        var config = startDropdownButton.configuration
+        var titleAttr = AttributedString(title)
+        titleAttr.font = .suit(size: 17, weight: .medium)
+        titleAttr.foregroundColor = .color.mainText.color
+        config?.attributedTitle = titleAttr
+        startDropdownButton.configuration = config
+    }
 
     private func setupLayout() {
         addSubview(containerView)
@@ -298,6 +322,8 @@ public final class MapRouteSelectionView: UIView {
         config?.attributedTitle = titleAttr
         startDropdownButton.configuration = config
         selectionBox.isHidden = true
+        let selectedType: RouteStartLocationType = (plainTitle == locations[0]) ? .currentLocation : .school
+        onStartLocationChanged?(selectedType)
     }
 
     public func configure(routes: [RouteCardData]) {

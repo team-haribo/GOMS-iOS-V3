@@ -52,6 +52,7 @@ public final class MapViewModel {
     // MARK: - Route Data
     public private(set) var routeResult: MapRouteModel?
     public var onRouteUpdated: (() -> Void)?
+    public var currentLocation: (lat: Double, lng: Double)?
 
     // MARK: - Binding
     public var onPlacesUpdated: (() -> Void)?
@@ -146,7 +147,7 @@ public final class MapViewModel {
 
                     self?.distanceText = ""
                     self?.timeText = ""
-                    self?.fetchRoute(endLat: decoded.latitude, endLng: decoded.longitude, shouldNotifyRouteUpdated: false)
+
 
                     self?.fetchReviews(placeId: decoded.placeId)
                     self?.onDetailUpdated?()
@@ -226,13 +227,10 @@ public final class MapViewModel {
         }
     }
 
-    private func fetchRoute(endLat: Double, endLng: Double, shouldNotifyRouteUpdated: Bool = true) {
-        let schoolLat = 35.1425
-        let schoolLng = 126.8005
-
+    private func fetchRoute(startLat: Double, startLng: Double, endLat: Double, endLng: Double, shouldNotifyRouteUpdated: Bool = true) {
         placeProvider.request(.getRoute(
-            startLat: schoolLat,
-            startLng: schoolLng,
+            startLat: startLat,
+            startLng: startLng,
             endLat: endLat,
             endLng: endLng
         )) { [weak self] result in
@@ -263,7 +261,28 @@ public final class MapViewModel {
     }
 
     public func fetchRoute(to place: MapPlaceData) {
-        fetchRoute(endLat: place.latitude, endLng: place.longitude, shouldNotifyRouteUpdated: true)
+        let schoolLat = 35.1425
+        let schoolLng = 126.8005
+        fetchRoute(
+            startLat: schoolLat,
+            startLng: schoolLng,
+            endLat: place.latitude,
+            endLng: place.longitude,
+            shouldNotifyRouteUpdated: true
+        )
+    }
+
+    public func fetchRouteFromCurrentLocation(to place: MapPlaceData) {
+        guard let current = currentLocation else {
+            return
+        }
+        fetchRoute(
+            startLat: current.lat,
+            startLng: current.lng,
+            endLat: place.latitude,
+            endLng: place.longitude,
+            shouldNotifyRouteUpdated: true
+        )
     }
 
     private func saveRecentSearches() {

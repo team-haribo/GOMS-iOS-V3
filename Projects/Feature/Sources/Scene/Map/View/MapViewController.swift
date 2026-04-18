@@ -11,26 +11,27 @@ import SnapKit
 import Then
 import KakaoMapsSDK
 import Service
+import CoreLocation
 
-public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate {
-// MARK: - UI Reset for New Selection
+public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate, CLLocationManagerDelegate {
 private func resetUIForNewSelection() {
-    // route 화면 닫기
     routeSelectionView.isHidden = true
-
-    // 검색 화면 닫기
     recentSearchView.isHidden = true
-
-    // 바텀시트 숨김
     bottomSheetView.isHidden = true
-
-    // detail은 유지
     placeDetailView.isHidden = false
-
-    // searchBar는 항상 보이게
     searchBar.isHidden = false
 }
 private let viewModel = MapViewModel()
+private let locationManager = CLLocationManager()
+private var currentLocation: CLLocation?
+private var pendingRoutePlace: MapPlaceData?
+
+private enum StartLocationType {
+    case school
+    case currentLocation
+}
+
+private var startLocationType: StartLocationType = .school
 
     // MARK: - Distance Helper
     private func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
@@ -105,6 +106,7 @@ public override func viewDidLoad() {
     setupGesture()
     setupActions()
     setupReviewWriteAction()
+    setupLocationManager()
 
     setupMap()
     bindViewModel()
@@ -112,6 +114,12 @@ public override func viewDidLoad() {
     fetchPlaceList()
     viewModel.fetchHotPlaces()
     viewModel.fetchRecommendedPlaces()
+}
+private func setupLocationManager() {
+    locationManager.delegate = self
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    locationManager.requestWhenInUseAuthorization()
+    locationManager.startUpdatingLocation()
 }
 
 public override func viewDidAppear(_ animated: Bool) {
@@ -301,6 +309,31 @@ private func setupActions() {
         self.routeDetailVC?.routeResult = self.viewModel.routeResult
         self.routeDetailVC?.perform(#selector(MapRouteDetailViewController.viewDidLoad))
     }
+    routeSelectionView.onStartLocationChanged = { [weak self] type in
+        guard let self = self else { return }
+
+        self.startLocationType = (type == .currentLocation) ? .currentLocation : .school
+
+        guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else {
+            return
+        }
+
+        if type == .currentLocation {
+            if let current = self.currentLocation {
+                self.viewModel.currentLocation = (
+                    lat: current.coordinate.latitude,
+                    lng: current.coordinate.longitude
+                )
+                self.requestRoute(to: selectedPlace)
+            } else {
+                self.pendingRoutePlace = selectedPlace
+                self.locationManager.requestLocation()
+            }
+        } else {
+            self.requestRoute(to: selectedPlace)
+        }
+    }
+
 }
 
 private func setupReviewWriteAction() { placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside) }
@@ -345,6 +378,43 @@ private func fetchReviews(placeId: Int) {
     }
 
     self.navigationController?.pushViewController(vc, animated: true)
+}
+
+private func showCurrentLocationMarker(_ location: CLLocation) {
+    guard let map = mapController?.getView("mapview") as? KakaoMap else { return }
+
+    let manager = map.getLabelManager()
+
+    // 기존 currentLocationLayer 제거 (없으면 생성)
+    if let layer = manager.getLabelLayer(layerID: "currentLocationLayer") {
+        let ids = layer.getAllPois()?.map { $0.itemID } ?? []
+        layer.removePois(poiIDs: ids)
+    } else {
+        _ = manager.addLabelLayer(
+            option: LabelLayerOptions(
+                layerID: "currentLocationLayer",
+                competitionType: .none,
+                competitionUnit: .poi,
+                orderType: .rank,
+                zOrder: 30000
+            )
+        )
+    }
+
+    guard let layer = manager.getLabelLayer(layerID: "currentLocationLayer") else { return }
+
+    let option = PoiOptions(styleID: "activePinStyle", poiID: "currentLocation")
+    option.clickable = false
+
+    if let poi = layer.addPoi(
+        option: option,
+        at: MapPoint(
+            longitude: location.coordinate.longitude,
+            latitude: location.coordinate.latitude
+        )
+    ) {
+        poi.show()
+    }
 }
 
 // MARK: - Marker Rendering
@@ -747,19 +817,28 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    
-    routeSelectionView.startDropdownButton.configuration?.attributedTitle = AttributedString("학교")
-
-    
     routeSelectionView.endLocationLabel.text = "    \(selectedPlace.placeName)"
-
-   
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
 
-    viewModel.fetchRoute(to: selectedPlace)
+    routeSelectionView.setStartLocation(self.startLocationType == .currentLocation ? .currentLocation : .school)
+
+    if startLocationType == .currentLocation {
+        if let current = currentLocation {
+            viewModel.currentLocation = (
+                lat: current.coordinate.latitude,
+                lng: current.coordinate.longitude
+            )
+            requestRoute(to: selectedPlace)
+        } else {
+            pendingRoutePlace = selectedPlace
+            locationManager.requestLocation()
+        }
+    } else {
+        requestRoute(to: selectedPlace)
+    }
 }
 
 @objc private func didTapStartRoute() {
@@ -767,20 +846,28 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-  
-    routeSelectionView.startDropdownButton.configuration?.attributedTitle = AttributedString(selectedPlace.placeName)
-
-    
-    routeSelectionView.endLocationLabel.text = "    \(routeSelectionView.endLocationLabel.text?.trimmingCharacters(in: .whitespaces) ?? "")"
-
-   
+    routeSelectionView.endLocationLabel.text = "    \(selectedPlace.placeName)"
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
 
+    routeSelectionView.setStartLocation(self.startLocationType == .currentLocation ? .currentLocation : .school)
 
-    viewModel.fetchRoute(to: selectedPlace)
+    if startLocationType == .currentLocation {
+        if let current = currentLocation {
+            viewModel.currentLocation = (
+                lat: current.coordinate.latitude,
+                lng: current.coordinate.longitude
+            )
+            requestRoute(to: selectedPlace)
+        } else {
+            pendingRoutePlace = selectedPlace
+            locationManager.requestLocation()
+        }
+    } else {
+        requestRoute(to: selectedPlace)
+    }
 }
 @objc private func backFromRouteSelection() {
     routeSelectionView.isHidden = true
@@ -838,6 +925,28 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
 
     UIView.animate(withDuration: 0.3) {
         self.view.layoutIfNeeded()
+    }
+}
+
+private func requestRoute(to selectedPlace: MapPlaceData) {
+    switch startLocationType {
+    case .school:
+        routeSelectionView.setStartLocation(.school)
+        viewModel.fetchRoute(to: selectedPlace)
+
+    case .currentLocation:
+        routeSelectionView.setStartLocation(.currentLocation)
+
+        if let currentLocation {
+            viewModel.currentLocation = (
+                lat: currentLocation.coordinate.latitude,
+                lng: currentLocation.coordinate.longitude
+            )
+            viewModel.fetchRouteFromCurrentLocation(to: selectedPlace)
+        } else {
+            pendingRoutePlace = selectedPlace
+            locationManager.requestLocation()
+        }
     }
 }
 
@@ -1051,12 +1160,11 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
 
 
     if !self.routeSelectionView.isHidden {
-       
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
         self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
-        self.viewModel.fetchRoute(to: nearestPlace)
+        self.requestRoute(to: nearestPlace)
         return
     }
 
@@ -1134,12 +1242,11 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
 
     
     if !self.routeSelectionView.isHidden {
-        
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
         self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
 
-        self.viewModel.fetchRoute(to: nearestPlace)
+        self.requestRoute(to: nearestPlace)
         return
     }
 
@@ -1186,6 +1293,7 @@ private func drawRoute() {
     guard let layer = manager.getShapeLayer(layerID: "routeLayer") else { return }
 
     layer.removeMapPolylineShape(shapeID: "routeShape")
+    layer.removeMapPolylineShape(shapeID: "routeGlowShape")
 
     var points: [MapPoint] = []
 
@@ -1322,3 +1430,43 @@ public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexP
     }
 }
 }
+
+extension MapViewController {
+    public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        currentLocation = location
+
+        viewModel.currentLocation = (
+            lat: location.coordinate.latitude,
+            lng: location.coordinate.longitude
+        )
+        showCurrentLocationMarker(location)
+
+        if let pendingPlace = pendingRoutePlace {
+            viewModel.fetchRouteFromCurrentLocation(to: pendingPlace)
+            pendingRoutePlace = nil
+        }
+    }
+
+    public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            manager.startUpdatingLocation()
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            startLocationType = .school
+            routeSelectionView.setStartLocation(.school)
+        @unknown default:
+            break
+        }
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        pendingRoutePlace = nil
+        startLocationType = .school
+        routeSelectionView.setStartLocation(.school)
+    }
+}
+
+    
