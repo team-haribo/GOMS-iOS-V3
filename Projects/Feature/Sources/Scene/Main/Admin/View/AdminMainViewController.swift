@@ -295,6 +295,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         self.outingCountLabel.attributedText = attributedString
     }
 
+    // MARK: - Profile Setup (중요 로직 수정)
     func setupProfileView() {
         guard let profile = viewModel.profileData else { return }
         let grade = profile.grade ?? 0
@@ -309,18 +310,22 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.kf.setImage(with: url, placeholder: placeholder)
         }
 
-        basicsProfileView.nameLabel.text = name
+        // profileView가 본인을 관리자로 인식하게 합니다.
+        profileView.isAdmin = true
         profileView.nameLabel.text = name
-
-        let majorText = (department == Major.sw.rawValue) ? "SW" : (department == Major.iot.rawValue) ? "IoT" : (department == Major.ai.rawValue) ? "AI" : ""
-        basicsProfileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
-        profileView.studentInformationLabel.text = "\(grade)기 | \(majorText)"
-
         profileView.profileStatus.text = "관리자"
         profileView.profileStatus.textColor = .color.admin.color
         profileView.lateCountLabel.isHidden = true
 
-        basicsProfileView.configure(name: name, studentInfo: "\(grade)기 | \(majorText)", lateCount: 0, outingStatus: "관리자", isAdmin: true, profileImageUrl: urlString)
+        basicsProfileView.nameLabel.text = name
+
+        let majorText = (department == Major.sw.rawValue) ? "SW" : (department == Major.iot.rawValue) ? "IoT" : (department == Major.ai.rawValue) ? "AI" : ""
+        let studentInfoText = "\(grade)기 | \(majorText)"
+        
+        basicsProfileView.studentInformationLabel.text = studentInfoText
+        profileView.studentInformationLabel.text = studentInfoText
+
+        basicsProfileView.configure(name: name, studentInfo: studentInfoText, lateCount: 0, outingStatus: "관리자", isAdmin: true, profileImageUrl: urlString)
     }
 
     private func bindTabBar() {
@@ -557,11 +562,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
     }
 
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if collectionView == latecomerCollectionView {
-            return viewModel.lateListDatas.count
-        } else {
-            return viewModel.outingListDatas.count
-        }
+        return (collectionView == latecomerCollectionView) ? viewModel.lateListDatas.count : viewModel.outingListDatas.count
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
