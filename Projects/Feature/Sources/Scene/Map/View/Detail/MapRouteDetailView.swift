@@ -48,7 +48,7 @@ public final class MapRouteDetailView: UIView {
         $0.backgroundColor = .clear
         $0.register(RouteStepCell.self, forCellReuseIdentifier: RouteStepCell.identifier)
         $0.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 120, right: 0)
-        $0.showsVerticalScrollIndicator = false // 디자인을 위해 스크롤 바 숨김
+        $0.showsVerticalScrollIndicator = false
     }
     
 

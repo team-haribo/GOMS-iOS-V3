@@ -10,6 +10,18 @@ import UIKit
 import SnapKit
 import Then
 
+public struct RouteCardData {
+    public let title: String
+    public let time: String
+    public let info: String
+
+    public init(title: String, time: String, info: String) {
+        self.title = title
+        self.time = time
+        self.info = info
+    }
+}
+
 public final class PathRecommendationCard: UIView {
     private let titleLabel = UILabel().then {
         $0.textColor = .color.sub1.color
@@ -178,7 +190,6 @@ public final class MapRouteSelectionView: UIView {
         super.init(frame: frame)
         setupLayout()
         setupActions()
-        addCards()
     }
     
     required init?(coder: NSCoder) { fatalError() }
@@ -289,20 +300,27 @@ public final class MapRouteSelectionView: UIView {
         selectionBox.isHidden = true
     }
 
-    private func addCards() {
+    public func configure(routes: [RouteCardData]) {
         recommendationStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let card1 = PathRecommendationCard(title: "추천", time: "8분", info: "339m | 25kcal")
-        let card2 = PathRecommendationCard(title: "큰길 우선", time: "10분", info: "450m | 30kcal")
-        
-        [card1, card2].forEach { card in
+
+        routes.forEach { route in
+            let card = PathRecommendationCard(
+                title: route.title,
+                time: route.time,
+                info: route.info
+            )
+
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapCard(_:)))
             card.addGestureRecognizer(tapGesture)
+
             recommendationStackView.addArrangedSubview(card)
+
             card.snp.makeConstraints {
                 $0.width.equalTo(192)
             }
         }
     }
+
     
     @objc private func didTapCard(_ gesture: UITapGestureRecognizer) {
         guard let card = gesture.view as? PathRecommendationCard else { return }

@@ -18,8 +18,8 @@ public struct Route: Decodable {
 }
 
 public struct Summary: Decodable {
-    public let distance: Int      // 총 거리 (m)
-    public let duration: Int      // 총 시간 (초)
+    public let distance: Int      
+    public let duration: Int
 }
 
 public struct Section: Decodable {
@@ -27,5 +27,5 @@ public struct Section: Decodable {
 }
 
 public struct Road: Decodable {
-    public let vertexes: [Double] // 좌표 배열 [lng, lat, lng, lat ...]
+    public let vertexes: [Double]
 }

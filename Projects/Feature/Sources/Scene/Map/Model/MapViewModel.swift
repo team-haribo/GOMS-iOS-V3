@@ -21,6 +21,10 @@ public final class MapViewModel {
         }
         return "Bearer \(token)"
     }
+    
+    private func formatTime(minutes: Int) -> String {
+        return "\(max(1, minutes))분"
+    }
 
     // MARK: - Data
     public private(set) var allPlaces: [MapPlaceData] = []
@@ -126,22 +130,9 @@ public final class MapViewModel {
                     self?.currentPlaceDetail = decoded
                     self?.selectedPlaceId = decoded.placeId
 
-                    // 거리 계산 (학교 기준)
-                    let schoolLat = 35.1425
-                    let schoolLng = 126.8005
-
-                    let dist = self?.distance(
-                        lat1: schoolLat,
-                        lon1: schoolLng,
-                        lat2: decoded.latitude,
-                        lon2: decoded.longitude
-                    ) ?? 0
-
-                    let meters = dist * 111000
-                    let minutes = Int(meters / 80)
-
-                    self?.distanceText = "\(Int(meters))m"
-                    self?.timeText = "\(minutes)분"
+                    self?.distanceText = ""
+                    self?.timeText = ""
+                    self?.fetchRoute(endLat: decoded.latitude, endLng: decoded.longitude, shouldNotifyRouteUpdated: false)
 
                     self?.fetchReviews(placeId: decoded.placeId)
                     self?.onDetailUpdated?()
@@ -221,16 +212,15 @@ public final class MapViewModel {
         }
     }
 
-    public func fetchRoute(to place: MapPlaceData) {
-        // 학교 좌표 (고정 출발지)
+    private func fetchRoute(endLat: Double, endLng: Double, shouldNotifyRouteUpdated: Bool = true) {
         let schoolLat = 35.1425
         let schoolLng = 126.8005
 
         placeProvider.request(.getRoute(
             startLat: schoolLat,
             startLng: schoolLng,
-            endLat: place.latitude,
-            endLng: place.longitude
+            endLat: endLat,
+            endLng: endLng
         )) { [weak self] result in
             switch result {
             case .success(let response):
@@ -238,14 +228,17 @@ public final class MapViewModel {
                     let decoded = try JSONDecoder().decode(MapRouteModel.self, from: response.data)
                     self?.routeResult = decoded
 
-                    // 거리 / 시간 업데이트 (API 기준)
                     if let route = decoded.routes.first {
                         let summary = route.summary
                         self?.distanceText = "\(summary.distance)m"
-                        self?.timeText = "\(summary.duration / 60)분"
+                        let minutes = Int(ceil(Double(summary.duration) / 60.0))
+                        self?.timeText = self?.formatTime(minutes: minutes) ?? "1분"
+                        self?.onDetailUpdated?()
                     }
 
-                    self?.onRouteUpdated?()
+                    if shouldNotifyRouteUpdated {
+                        self?.onRouteUpdated?()
+                    }
                 } catch {
                     self?.onError?("경로 디코딩 실패")
                 }
@@ -255,34 +248,24 @@ public final class MapViewModel {
         }
     }
 
+    public func fetchRoute(to place: MapPlaceData) {
+        fetchRoute(endLat: place.latitude, endLng: place.longitude, shouldNotifyRouteUpdated: true)
+    }
+
     // MARK: - Logic
 
     public func findNearestPlace(lat: Double, lon: Double) -> MapPlaceData? {
         return allPlaces.min(by: {
-            distance(lat1: lat, lon1: lon, lat2: $0.latitude, lon2: $0.longitude)
-            <
-            distance(lat1: lat, lon1: lon, lat2: $1.latitude, lon2: $1.longitude)
+            let lhsDx = lat - $0.latitude
+            let lhsDy = lon - $0.longitude
+            let rhsDx = lat - $1.latitude
+            let rhsDy = lon - $1.longitude
+            let lhsDistance = sqrt(lhsDx * lhsDx + lhsDy * lhsDy)
+            let rhsDistance = sqrt(rhsDx * rhsDx + rhsDy * rhsDy)
+            return lhsDistance < rhsDistance
         })
     }
 
-    public func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
-        let dx = lat1 - lat2
-        let dy = lon1 - lon2
-        return sqrt(dx * dx + dy * dy)
-    }
-
-    public func calculateDistanceText(
-        fromLat: Double,
-        fromLon: Double,
-        toLat: Double,
-        toLon: Double
-    ) -> (distance: String, time: String) {
-        let dist = distance(lat1: fromLat, lon1: fromLon, lat2: toLat, lon2: toLon)
-        let meters = dist * 111000
-        let minutes = Int(meters / 80)
-        return ("\(Int(meters))m", "\(minutes)분")
-    }
-    
     public func getRouteCoordinates() -> [(Double, Double)] {
         guard let route = routeResult?.routes.first else { return [] }
         
