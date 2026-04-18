@@ -66,18 +66,9 @@ public class AdminQRViewController: BaseViewController {
         createQRCode()
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        self.view.subviews.forEach {
-            let isSystemView = String(describing: type(of: $0)).contains("UI")
-            if $0 != backButton && $0 != titleText && isSystemView && $0.frame.height == 100 {
-                $0.removeFromSuperview()
-            }
+    public override func shouldShowCustomNavigation() -> Bool {
+            return false
         }
-    }
-    
-
     
     // MARK: Add View
     public override func addView() {

@@ -15,7 +15,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     var outingList: [OutingListData] = []
     
-    let refreshControl = UIRefreshControl()
+let refreshControl = UIRefreshControl()
 
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
@@ -102,7 +102,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     // MARK: - Setting
     public override func configNavigation() {
-        self.navigationController?.navigationBar.isHidden = false
+        self.navigationController?.navigationBar.isHidden = true
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
         navigationController?.navigationBar.tintColor = .color.admin.color
@@ -242,15 +242,8 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
             $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
         }
     }
-
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
 }
 
@@ -278,14 +271,15 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         guard let indexPath = outingListCollectionView.indexPath(for: cell) else { return }
         let index = indexPath.item
 
-        GOMSAlert.show(
-            in: self,
+        let alertController = UIAlertController(
             title: "외출 강제 복귀",
             message: "외출자를 강제로 복귀시키시겠습니까?",
-            actionTitle: "복귀",
-            cancelTitle: "취소",
-            isNegative: true
-        ) {
+            preferredStyle: .alert
+        )
+
+        alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
+
+        alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
             guard index < self.outingList.count else { return }
 
             let target = self.outingList[index]
@@ -297,7 +291,9 @@ extension AdminOutingViewController: UICollectionViewDelegate {
                     }
                 }
             }
-        }
+        }))
+
+        present(alertController, animated: true, completion: nil)
     }
 }
 
