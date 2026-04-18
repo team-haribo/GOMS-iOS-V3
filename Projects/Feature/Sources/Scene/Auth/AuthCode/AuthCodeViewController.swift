@@ -229,9 +229,12 @@ public final class AuthCodeViewController: BaseViewController {
     }
 
     private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-        self.present(alert, animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: title,
+            message: message,
+            actionTitle: "확인"
+        )
     }
 
     private func startResendCooldown() {
@@ -265,11 +268,13 @@ public final class AuthCodeViewController: BaseViewController {
                 if success {
                     self.authCodeTextField.layer.borderWidth = 0
                     self.authCodeSuccess()
-                    let alert = UIAlertController(title: "인증번호 확인", message: "인증이 완료되었습니다.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-                        self.pushNextVC()
-                    })
-                    self.present(alert, animated: true)
+                    GOMSAlert.show(
+                        in: self,
+                        title: "인증 확인",
+                        message: "인증이 완료되었습니다.\n회원가입 페이지로 돌아갑니다.",
+                        actionTitle: "확인",
+                        action: { self.pushNextVC() }
+                    )
                 } else {
                     self.authCodeTextField.layer.borderWidth = 1
                     self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor

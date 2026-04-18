@@ -209,37 +209,29 @@ public final class NewPasswordViewController: BaseViewController {
 
             DispatchQueue.main.async {
                 if success {
-
-                    let alert = UIAlertController(
+                    GOMSAlert.show(
+                        in: self,
                         title: "재설정 완료",
                         message: "비밀번호가 재설정되었습니다.",
-                        preferredStyle: .alert
-                    )
+                        actionTitle: "확인",
+                        action: {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
 
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-
-                        let introVC = IntroViewController()
-                        let nav = UINavigationController(rootViewController: introVC)
-
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = windowScene.windows.first {
-                            window.rootViewController = nav
-                            window.makeKeyAndVisible()
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
                         }
-                    })
-
-                    self.present(alert, animated: true)
-
+                    )
                 } else {
-
-                    let alert = UIAlertController(
+                    GOMSAlert.show(
+                        in: self,
                         title: "오류",
                         message: "비밀번호 재설정에 실패했습니다.",
-                        preferredStyle: .alert
+                        actionTitle: "확인"
                     )
-
-                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                    self.present(alert, animated: true)
                 }
             }
         }
@@ -370,4 +362,3 @@ extension NewPasswordViewController: UITextFieldDelegate {
         return true
     }
 }
-
