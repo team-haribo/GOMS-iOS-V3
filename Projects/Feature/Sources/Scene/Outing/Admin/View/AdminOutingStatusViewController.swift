@@ -15,7 +15,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     var outingList: [OutingListData] = []
     
-let refreshControl = UIRefreshControl()
+    let refreshControl = UIRefreshControl()
 
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
@@ -278,15 +278,14 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         guard let indexPath = outingListCollectionView.indexPath(for: cell) else { return }
         let index = indexPath.item
 
-        let alertController = UIAlertController(
+        GOMSAlert.show(
+            in: self,
             title: "외출 강제 복귀",
             message: "외출자를 강제로 복귀시키시겠습니까?",
-            preferredStyle: .alert
-        )
-
-        alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
-
-        alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
+            actionTitle: "복귀",
+            cancelTitle: "취소",
+            isNegative: true
+        ) {
             guard index < self.outingList.count else { return }
 
             let target = self.outingList[index]
@@ -298,9 +297,7 @@ extension AdminOutingViewController: UICollectionViewDelegate {
                     }
                 }
             }
-        }))
-
-        present(alertController, animated: true, completion: nil)
+        }
     }
 }
 

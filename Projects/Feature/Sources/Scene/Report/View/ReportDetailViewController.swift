@@ -224,13 +224,18 @@ public final class ReportDetailViewController: BaseViewController {
     }
 
     private func showAlert(title: String, message: String, isSuccess: Bool) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-            if isSuccess {
-                self.navigationController?.popViewController(animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: title,
+            message: message,
+            actionTitle: "확인",
+            cancelTitle: "",
+            action: { [weak self] in
+                if isSuccess {
+                    self?.navigationController?.popViewController(animated: true)
+                }
             }
-        })
-        self.present(alert, animated: true)
+        )
     }
 
     public override func addView() {

@@ -143,24 +143,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func showUpdatePopup() {
-        let alertController = UIAlertController(
-            title: "업데이트 알림",
-            message: "더 나은 서비스를 위해 곰스가 수정되었어요!\n원활한 사용을 위해 업데이트 후 이용해주세요!",
-            preferredStyle: .alert
-        )
-
-        let updateAction = UIAlertAction(title: "확인", style: .default) { _ in
-            if let url = URL(string: "https://apps.apple.com/kr/app/goms/id6502936560") {
-                UIApplication.shared.open(url)
-            }
-        }
-
-        alertController.addAction(updateAction)
+        guard let rootVC = self.window?.rootViewController else { return }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.window?.rootViewController?.present(alertController, animated: true) {
-                print("업데이트 팝업 표시됨")
-            }
+            GOMSAlert.show(
+                in: rootVC,
+                title: "업데이트 알림",
+                message: "더 나은 서비스를 위해 곰스가 수정되었어요!\n원활한 사용을 위해 업데이트 후 이용해주세요!",
+                actionTitle: "확인",
+                cancelTitle: "",
+                action: {
+                    if let url = URL(string: "https://apps.apple.com/kr/app/goms/id6502936560") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            )
         }
     }
 
