@@ -184,9 +184,11 @@ public final class MapRouteDetailViewController: UIViewController {
     }
     
     @objc private func didTapCloseButton() {
-        self.dismiss(animated: true) { [weak self] in
-            self?.onDismiss?()
-        }
+        self.willMove(toParent: nil)
+        self.view.removeFromSuperview()
+        self.removeFromParent()
+        
+        onDismiss?()
     }
 
 

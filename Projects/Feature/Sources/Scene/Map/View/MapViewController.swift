@@ -181,11 +181,18 @@ private func setupActions() {
         detailVC.routeTypeTitle = routeTitle
         detailVC.modalPresentationStyle = .overFullScreen
         detailVC.onDismiss = { [weak self] in
-            self?.routeSelectionView.isHidden = false
+            self?.routeSelectionView.isHidden = true
+            self?.placeDetailView.isHidden = false
+            self?.searchBar.isHidden = false
+            self?.detailSheetHeight?.update(offset: self?.detailMinHeight ?? 225)
+            UIView.animate(withDuration: 0.3) {
+                self?.view.layoutIfNeeded()
+            }
         }
 
         self.routeDetailVC = detailVC
         self.routeSelectionView.isHidden = true
+        self.searchBar.isHidden = true
 
         self.addChild(detailVC)
         self.view.addSubview(detailVC.view)
@@ -412,6 +419,7 @@ private func bindViewModel() {
             self.placeDetailView.isHidden = true
             self.bottomSheetView.isHidden = true
             self.recentSearchView.isHidden = true
+            self.searchBar.isHidden = true
 
             self.routeSelectionView.configure(routes: cardData)
             self.routeSelectionView.isHidden = false
@@ -498,7 +506,15 @@ private func updateViewVisibility() {
     viewModel.fetchRoute(to: selectedPlace)
 }
 @objc private func didTapStartRoute() { didTapArriveRoute() }
-@objc private func backFromRouteSelection() { routeSelectionView.isHidden = true; placeDetailView.isHidden = false; searchBar.isHidden = false; detailSheetHeight?.update(offset: detailMinHeight); UIView.animate(withDuration: 0.3) { self.view.layoutIfNeeded() } }
+@objc private func backFromRouteSelection() {
+    routeSelectionView.isHidden = true
+    placeDetailView.isHidden = false
+    searchBar.isHidden = false
+    detailSheetHeight?.update(offset: detailMinHeight)
+    UIView.animate(withDuration: 0.3) {
+        self.view.layoutIfNeeded()
+    }
+}
 
 // MARK: - Kakao Maps Setup
 private func setupMap() {
