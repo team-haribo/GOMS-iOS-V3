@@ -1212,22 +1212,27 @@ private func createPoiStyle() {
     manager.addPoiStyle(activeStyle)
 }
 
-private func moveCamera(to place: MapPlaceData) {
-    guard let map = mapController?.getView("mapview") as? KakaoMap else { return }
+    private func moveCamera(to place: MapPlaceData) {
+        guard let map = mapController?.getView("mapview") as? KakaoMap else { return }
 
-    let point = MapPoint(
-        longitude: place.longitude,
-        latitude: place.latitude
-    )
+        let point = MapPoint(
+            longitude: place.longitude,
+            latitude: place.latitude
+        )
+        
+        let update = CameraUpdate.make(
+            target: point,
+            zoomLevel: 17,
+            mapView: map
+        )
 
-    let update: CameraUpdate = CameraUpdate.make(
-        target: point,
-        zoomLevel: 17,
-        mapView: map
-    )
+        var options = CameraAnimationOptions()
+        options.durationInMillis = 280
+        options.autoElevation = true
+        options.consecutive = false
 
-    map.moveCamera(update)
-}
+        map.animateCamera(cameraUpdate: update, options: options)
+    }
 
 private func showActiveMarker(for place: MapPlaceData) {
     guard let map = mapController?.getView("mapview") as? KakaoMap else { return }
@@ -1240,7 +1245,7 @@ private func showActiveMarker(for place: MapPlaceData) {
     activeLayer.removePois(poiIDs: ids)
 
     let styleID = styleIDForCategory(place.categoryName)
-    let option = PoiOptions(styleID: styleID, poiID: "active_\(place.placeId)")
+    let option = PoiOptions(styleID: styleID, poiID:"active_\(place.placeId)")
     option.clickable = false
 
     if let poi = activeLayer.addPoi(
