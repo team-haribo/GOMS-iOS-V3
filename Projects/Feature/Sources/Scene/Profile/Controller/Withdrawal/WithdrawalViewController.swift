@@ -72,13 +72,13 @@ public class WithdrawalViewController: BaseViewController {
                     self.passwordTextField.layer.borderWidth = 0
                     self.passwordTextField.setPlaceholderColor(.color.sub2.color)
 
-                    let alert = UIAlertController(
+                    GOMSAlert.show(
+                        in: self,
                         title: "회원 탈퇴 완료",
                         message: "그동안 GOMS를 이용해주셔서 감사합니다.\n안녕히 가세요!",
-                        preferredStyle: .alert
-                    )
-
-                    let ok = UIAlertAction(title: "완료", style: .default) { _ in
+                        actionTitle: "완료",
+                        cancelTitle: ""
+                    ) {
                         let introVC = IntroViewController()
                         let nav = UINavigationController(rootViewController: introVC)
 
@@ -88,9 +88,6 @@ public class WithdrawalViewController: BaseViewController {
                             window.makeKeyAndVisible()
                         }
                     }
-
-                    alert.addAction(ok)
-                    self.present(alert, animated: true)
 
                 } else {
                     self.passwordErrorLabel.text = self.viewModel.errorMessage

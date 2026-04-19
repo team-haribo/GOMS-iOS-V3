@@ -82,19 +82,12 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
         requestInitialAuthCode()
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func configNavigation() {
@@ -167,7 +160,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
             guard let self else { return }
             DispatchQueue.main.async {
                 if !success {
-                    print("초기 인증번호 요청 실패 또는 지연")
+                    // 요청 실패 처리
                 }
             }
         }
@@ -243,14 +236,23 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
                     self.authCodeTextField.layer.borderWidth = 0
                     self.authCodeSuccess()
 
-                    let alert = UIAlertController(title: "인증번호 확인", message: "인증이 완료되었습니다.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-                        let newPasswordVC = ChangNewPasswordViewController()
-                        newPasswordVC.email = self.email ?? ""
-                        newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
-                        self.navigationController?.pushViewController(newPasswordVC, animated: true)
-                    })
-                    self.present(alert, animated: true)
+                    GOMSAlert.show(
+                        in: self,
+                        title: "인증번호 확인",
+                        message: "인증이 완료되었습니다.",
+                        actionTitle: "확인",
+                        cancelTitle: "",
+                        action: { [weak self] in
+                            guard let self else { return }
+                            let newPasswordVC = ChangNewPasswordViewController()
+                            newPasswordVC.email = self.email ?? ""
+                            newPasswordVC.verifiedToken = UserDefaults.standard.string(forKey: "verifiedToken") ?? ""
+                            
+                            if let nav = self.navigationController {
+                                nav.pushViewController(newPasswordVC, animated: true)
+                            }
+                        }
+                    )
                 } else {
                     self.authCodeTextField.layer.borderWidth = 1
                     self.authCodeTextField.layer.borderColor = UIColor.systemRed.cgColor
@@ -261,9 +263,7 @@ public final class ProfileChangRePasswordViewController: BaseViewController {
     }
 
     private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-        self.present(alert, animated: true)
+        GOMSAlert.show(in: self, title: title, message: message, actionTitle: "확인", cancelTitle: "")
     }
 
     private func startResendCooldown() {

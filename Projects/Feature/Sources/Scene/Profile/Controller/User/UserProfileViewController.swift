@@ -187,18 +187,18 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     @objc func withdrawalButtonTapped() {
-        let alert = UIAlertController(title: "회원 탈퇴", message: "정말로 회원을 탈퇴하시겠습니까?", preferredStyle: .alert)
-        
-        let cancel = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        let withdrawal = UIAlertAction(title: "회원 탈퇴", style: .destructive) { [weak self] _ in
-            let withdrawalVC = WithdrawalViewController()
-            self?.navigationController?.pushViewController(withdrawalVC, animated: true)
-        }
-        
-        alert.addAction(cancel)
-        alert.addAction(withdrawal)
-        
-        self.present(alert, animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: "회원 탈퇴",
+            message: "정말로 회원을 탈퇴하시겠습니까?",
+            actionTitle: "회원 탈퇴",
+            cancelTitle: "취소",
+            isNegative: true,
+            action: { [weak self] in
+                let withdrawalVC = WithdrawalViewController()
+                self?.navigationController?.pushViewController(withdrawalVC, animated: true)
+            }
+        )
     }
     
     @objc func switchAlarmOn(_ sender: GOMSSwitch) {
@@ -274,47 +274,32 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     @objc func logoutButtonTapped() {
-        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
-        
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 17, weight: .semibold)
-        ]
-        let attributedTitle = NSAttributedString(string: "로그아웃\n", attributes: titleAttributes)
-        alertController.setValue(attributedTitle, forKey: "attributedTitle")
-        
-        let messageAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.color.mainText.color,
-            .font: UIFont.suit(size: 15, weight: .regular)
-        ]
-        let attributedMessage = NSAttributedString(string: "로그아웃 하시겠습니까?", attributes: messageAttributes)
-        alertController.setValue(attributedMessage, forKey: "attributedMessage")
-        
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        alertController.addAction(cancelAction)
-        
-        let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            self?.profileViewModel.profileLogout { success in
-                DispatchQueue.main.async {
-                    if success {
-                        let introVC = IntroViewController()
-                        let nav = UINavigationController(rootViewController: introVC)
-                        if let window = UIApplication.shared.connectedScenes
-                            .compactMap({ $0 as? UIWindowScene })
-                            .first?.windows.first {
-                            window.rootViewController = nav
-                            window.makeKeyAndVisible()
+        GOMSAlert.show(
+            in: self,
+            title: "로그아웃",
+            message: "로그아웃 하시겠습니까?",
+            actionTitle: "로그아웃",
+            cancelTitle: "취소",
+            isNegative: true,
+            action: { [weak self] in
+                self?.profileViewModel.profileLogout { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
+                            if let window = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first?.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
+                        } else {
+                            print("로그아웃 실패")
                         }
-                    } else {
-                        print("로그아웃 실패")
                     }
                 }
             }
-        }
-        
-        alertController.addAction(confirmAction)
-        alertController.view.subviews.first?.subviews.first?.subviews.first?.backgroundColor = .color.gomsTheme.color
-        self.present(alertController, animated: true, completion: nil)
+        )
     }
     
     @objc func passwordResetPage() {
@@ -323,7 +308,31 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     func performLogout() {
-        let _ = UIAlertController(title: "로그아웃", message: "로그아웃하시겠습니까?", preferredStyle: .alert)
+        GOMSAlert.show(
+            in: self,
+            title: "로그아웃",
+            message: "로그아웃하시겠습니까?",
+            actionTitle: "확인",
+            cancelTitle: "취소",
+            action: { [weak self] in
+                self?.profileViewModel.profileLogout { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
+                            if let window = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first?.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
+                        } else {
+                            print("로그아웃 실패")
+                        }
+                    }
+                }
+            }
+        )
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {
@@ -373,9 +382,14 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             imagePickerController.sourceType = .photoLibrary
             present(imagePickerController, animated: true, completion: nil)
         } else {
-            let alertController = UIAlertController(title: "알림", message: "사용할 수 있는 앨범이 없습니다.", preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "확인", style: .default, handler: nil))
-            present(alertController, animated: true, completion: nil)
+            GOMSAlert.show(
+                in: self,
+                title: "알림",
+                message: "사용할 수 있는 앨범이 없습니다.",
+                actionTitle: "확인",
+                cancelTitle: "",
+                action: {}
+            )
         }
     }
     

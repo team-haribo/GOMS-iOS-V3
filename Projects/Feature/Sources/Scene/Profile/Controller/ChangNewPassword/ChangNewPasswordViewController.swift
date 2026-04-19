@@ -7,15 +7,31 @@
 //
 
 import UIKit
+import SnapKit
+import Then
 
 public final class ChangNewPasswordViewController: BaseViewController {
     
     private var viewModel = AuthViewModel()
     var email: String = ""
     var verifiedToken: String = ""
+    
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
 
     // MARK: - UI Components
     
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
+
     private let textFieldStackView = UIStackView().then {
         $0.spacing = 16
         $0.axis = .vertical
@@ -88,33 +104,36 @@ public final class ChangNewPasswordViewController: BaseViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func backButtonTapped() {
+    
+        if let viewControllers = self.navigationController?.viewControllers {
+            let count = viewControllers.count
+            if count >= 3 {
+                let targetVC = viewControllers[count - 3]
+                self.navigationController?.popToViewController(targetVC, animated: true)
+            } else {
+                self.navigationController?.popViewController(animated: true)
+            }
+        }
+    }
     
     @objc func doneButtonTapped() {
-
-        // 비밀번호 불일치
         if passwordTextField.text != checkPasswordTextField.text {
             passwordErrorUI()
             return
         }
 
-        // 정규식 검증 실패
         if !validatePassword() {
             passwordWrongRegularExpressionUI()
             return
         }
 
         guard let password = passwordTextField.text else { return }
-
         let token = verifiedToken
 
         guard !token.isEmpty else {
-            let alert = UIAlertController(
-                title: "오류",
-                message: "인증 정보가 없어 비밀번호를 재설정할 수 없습니다.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-            self.present(alert, animated: true)
+            GOMSAlert.show(in: self, title: "오류", message: "인증 정보가 없어 비밀번호를 재설정할 수 없습니다.", actionTitle: "확인", cancelTitle: "")
             return
         }
 
@@ -124,38 +143,20 @@ public final class ChangNewPasswordViewController: BaseViewController {
 
         viewModel.resetPassword { [weak self] success, statusCode in
             guard let self = self else { return }
-
             DispatchQueue.main.async {
                 if success {
-                    let alert = UIAlertController(
-                        title: "재설정 완료",
-                        message: "비밀번호가 재설정되었습니다.",
-                        preferredStyle: .alert
-                    )
-
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+                    GOMSAlert.show(in: self, title: "재설정 완료", message: "비밀번호가 재설정되었습니다.", actionTitle: "확인", cancelTitle: "", action: {
                         KeyChain.shared.delete(key: "verifiedToken")
-
                         let introViewController = IntroViewController()
                         let nav = UINavigationController(rootViewController: introViewController)
-
                         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = windowScene.windows.first {
                             window.rootViewController = nav
                             window.makeKeyAndVisible()
                         }
                     })
-
-                    self.present(alert, animated: true)
                 } else {
-                    let alert = UIAlertController(
-                        title: "오류",
-                        message: "비밀번호 재설정에 실패했습니다.",
-                        preferredStyle: .alert
-                    )
-
-                    alert.addAction(UIAlertAction(title: "확인", style: .cancel))
-                    self.present(alert, animated: true)
+                    GOMSAlert.show(in: self, title: "오류", message: "비밀번호 재설정에 실패했습니다.", actionTitle: "확인", cancelTitle: "")
                 }
             }
         }
@@ -165,7 +166,6 @@ public final class ChangNewPasswordViewController: BaseViewController {
     
     private func validatePassword() -> Bool {
         guard let password = passwordTextField.text else { return false }
-        
         let regex = "^(?=.*[a-z])(?=.*\\d)(?=.*[\\W_]).{6,16}$"
         return NSPredicate(format: "SELF MATCHES %@", regex).evaluate(with: password)
     }
@@ -175,7 +175,6 @@ public final class ChangNewPasswordViewController: BaseViewController {
     func passwordErrorUI() {
         passwordErrorLabel.isHidden = false
         passwordWrongRegularExpression.isHidden = true
-        
         checkPasswordTextField.layer.borderWidth = 1
         checkPasswordTextField.layer.borderColor = UIColor.systemRed.cgColor
     }
@@ -183,34 +182,26 @@ public final class ChangNewPasswordViewController: BaseViewController {
     func passwordWrongRegularExpressionUI() {
         passwordWrongRegularExpression.isHidden = false
         passwordErrorLabel.isHidden = true
-        
         passwordTextField.layer.borderWidth = 1
         passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
     }
 
     @objc func onPasswordButtonTapped() {
         passwordTextField.isSecureTextEntry.toggle()
-        
-        let image = passwordTextField.isSecureTextEntry
-            ? UIImage.image.on.image
-            : UIImage.image.off.image
-
-        onPasswordButton.setImage(
-            image.withRenderingMode(.alwaysTemplate),
-            for: .normal
-        )
+        let image = passwordTextField.isSecureTextEntry ? UIImage.image.on.image : UIImage.image.off.image
+        onPasswordButton.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
     }
 
     // MARK: - Layout
     
     public override func addView() {
-
         textFieldStackView.addArrangedSubview(passwordTextField)
         textFieldStackView.addArrangedSubview(passwordWrongRegularExpression)
         textFieldStackView.addArrangedSubview(checkPasswordTextField)
         textFieldStackView.addArrangedSubview(passwordErrorLabel)
 
         [
+            customBackButton,
             navigationTitle,
             textFieldStackView,
             conditionsLabel,
@@ -221,9 +212,13 @@ public final class ChangNewPasswordViewController: BaseViewController {
     }
 
     public override func setLayout() {
-        
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+
         navigationTitle.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(124)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(20)
         }
 
@@ -232,20 +227,17 @@ public final class ChangNewPasswordViewController: BaseViewController {
 
         textFieldStackView.snp.makeConstraints {
             $0.top.equalTo(navigationTitle.snp.bottom).offset(24)
-            $0.leading.equalToSuperview().inset(20)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
         }
 
         conditionsLabel.snp.makeConstraints {
             $0.top.equalTo(textFieldStackView.snp.bottom).offset(12)
-            $0.leading.equalToSuperview().inset(20)
-            $0.trailing.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
         }
 
         doneButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-            $0.leading.equalTo(view.safeAreaLayoutGuide).inset(24)
-            $0.trailing.equalTo(view.safeAreaLayoutGuide).inset(24)
+            $0.leading.trailing.equalToSuperview().inset(24)
             $0.height.equalTo(48)
         }
     }
@@ -254,23 +246,10 @@ public final class ChangNewPasswordViewController: BaseViewController {
 // MARK: - UITextFieldDelegate
 
 extension ChangNewPasswordViewController: UITextFieldDelegate {
-
-    public func textFieldDidChangeSelection(_ textField: UITextField) {
-       
-    }
-
-    public func textField(_ textField: UITextField,
-                          shouldChangeCharactersIn range: NSRange,
-                          replacementString string: String) -> Bool {
-        
+    public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let currentText = (textField.text ?? "") as NSString
         let updatedText = currentText.replacingCharacters(in: range, with: string)
-        
-        
-        if updatedText.rangeOfCharacter(from: .whitespaces) != nil {
-            return false
-        }
-
+        if updatedText.rangeOfCharacter(from: .whitespaces) != nil { return false }
         return true
     }
 

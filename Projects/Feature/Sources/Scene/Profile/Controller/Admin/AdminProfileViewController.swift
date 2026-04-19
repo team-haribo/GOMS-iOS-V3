@@ -256,52 +256,46 @@ public class AdminProfileViewController: BaseViewController, UIImagePickerContro
     }
     
     @objc func withdrawalButtonTapped() {
-        let alert = UIAlertController(title: "회원 탈퇴", message: "정말로 회원을 탈퇴하시겠습니까?", preferredStyle: .alert)
-        let cancel = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        let withdrawal = UIAlertAction(title: "회원 탈퇴", style: .destructive) { action in
-            let withdrawalVC = WithdrawalViewController()
-            self.navigationController?.pushViewController(withdrawalVC , animated: true)
-        }
-        
-        alert.addAction(cancel)
-        alert.addAction(withdrawal)
-        
-        self.present(alert, animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: "회원 탈퇴",
+            message: "정말로 회원을 탈퇴하시겠습니까?",
+            actionTitle: "회원 탈퇴",
+            isNegative: true,
+            action: { [weak self] in
+                let withdrawalVC = WithdrawalViewController()
+                self?.navigationController?.pushViewController(withdrawalVC , animated: true)
+            }
+        )
     }
     
     @objc func logoutButtonTapped() {
-        let alertController = UIAlertController(
+        GOMSAlert.show(
+            in: self,
             title: "로그아웃",
             message: "로그아웃 하시겠습니까?",
-            preferredStyle: .alert
-        )
+            actionTitle: "로그아웃",
+            isNegative: true,
+            action: { [weak self] in
+                guard let self = self else { return }
+                self.profileViewModel.profileLogout { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
 
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
-        alertController.addAction(cancelAction)
-
-        let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
-            guard let self = self else { return }
-
-            self.profileViewModel.profileLogout { success in
-                DispatchQueue.main.async {
-                    if success {
-                        let introVC = IntroViewController()
-                        let nav = UINavigationController(rootViewController: introVC)
-
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = windowScene.windows.first {
-                            window.rootViewController = nav
-                            window.makeKeyAndVisible()
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
+                        } else {
+                            print("로그아웃 실패")
                         }
-                    } else {
-                        print("로그아웃 실패")
                     }
                 }
             }
-        }
-
-        alertController.addAction(confirmAction)
-        self.present(alertController, animated: true, completion: nil)
+        )
     }
     
     @objc func updateImage(isActionSheetShowing: Bool) {

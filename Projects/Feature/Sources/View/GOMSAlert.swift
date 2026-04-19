@@ -98,8 +98,12 @@ private class GOMSAlertView: UIView {
             for: .normal
         )
         
-        setMessageWithHighlight(message, keywords: highlightKeywords)
+        if cancelTitle.isEmpty {
+            cancelButton.isHidden = true
+            vLine.isHidden = true
+        }
         
+        setMessageWithHighlight(message, keywords: highlightKeywords)
         setupView()
         setupConstraints()
         setupEvents()
@@ -132,7 +136,7 @@ private class GOMSAlertView: UIView {
         containerView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.width.equalTo(285)
-            $0.height.equalTo(145)
+            $0.height.greaterThanOrEqualTo(145)
         }
         
         titleLabel.snp.makeConstraints {
@@ -146,27 +150,35 @@ private class GOMSAlertView: UIView {
         }
         
         hLine.snp.makeConstraints {
+            $0.top.equalTo(messageLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().offset(-44)
             $0.height.equalTo(0.5)
         }
         
-        vLine.snp.makeConstraints {
-            $0.top.equalTo(hLine.snp.top)
-            $0.bottom.centerX.equalToSuperview()
-            $0.width.equalTo(0.5)
-        }
-        
-        cancelButton.snp.makeConstraints {
-            $0.leading.bottom.equalToSuperview()
-            $0.trailing.equalTo(containerView.snp.centerX)
-            $0.height.equalTo(44)
-        }
-        
-        actionButton.snp.makeConstraints {
-            $0.trailing.bottom.equalToSuperview()
-            $0.leading.equalTo(containerView.snp.centerX)
-            $0.height.equalTo(44)
+        if cancelButton.isHidden {
+            actionButton.snp.makeConstraints {
+                $0.leading.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(44)
+            }
+        } else {
+            vLine.snp.makeConstraints {
+                $0.top.equalTo(hLine.snp.top)
+                $0.bottom.centerX.equalToSuperview()
+                $0.width.equalTo(0.5)
+            }
+            
+            cancelButton.snp.makeConstraints {
+                $0.leading.bottom.equalToSuperview()
+                $0.trailing.equalTo(vLine.snp.leading)
+                $0.height.equalTo(44)
+            }
+            
+            actionButton.snp.makeConstraints {
+                $0.trailing.bottom.equalToSuperview()
+                $0.leading.equalTo(vLine.snp.trailing)
+                $0.height.equalTo(44)
+            }
         }
     }
     
@@ -176,13 +188,19 @@ private class GOMSAlertView: UIView {
     }
     
     @objc func didTapCancel() {
+        let handler = cancelHandler
         self.removeFromSuperview()
-        cancelHandler?()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            handler?()
+        }
     }
     
     @objc func didTapAction() {
+        let handler = actionHandler
         self.removeFromSuperview()
-        actionHandler?()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            handler?()
+        }
     }
     
     required init?(coder: NSCoder) { fatalError() }

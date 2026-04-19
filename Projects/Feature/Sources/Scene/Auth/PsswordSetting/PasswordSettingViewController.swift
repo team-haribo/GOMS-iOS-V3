@@ -107,19 +107,12 @@ public final class PasswordSettingViewController: BaseViewController {
         checkPasswordTextField.addTarget(self, action: #selector(checkPasswordEditingChanged), for: .editingChanged)
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     public override func configNavigation() {
@@ -128,7 +121,7 @@ public final class PasswordSettingViewController: BaseViewController {
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
-    // MARK: - Actions (기존 로직 보존)
+    // MARK: - Actions
     @objc private func backButtonTapped() {
         self.navigationController?.popViewController(animated: true)
     }
@@ -242,17 +235,22 @@ public final class PasswordSettingViewController: BaseViewController {
                 self.loader.dismiss(animated: false)
                 if success {
                     self.signUpSuccessUI()
-                    let alert = UIAlertController(title: "회원가입 완료", message: "회원가입이 완료되었습니다.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-                        let introVC = IntroViewController()
-                        let nav = UINavigationController(rootViewController: introVC)
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = windowScene.windows.first {
-                            window.rootViewController = nav
-                            window.makeKeyAndVisible()
+                    GOMSAlert.show(
+                        in: self,
+                        title: "회원가입 완료",
+                        message: "회원가입이 완료되었습니다.",
+                        actionTitle: "확인",
+                        cancelTitle: "",
+                        action: {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
                         }
-                    })
-                    self.present(alert, animated: true)
+                    )
                 } else {
                     print("회원가입 실패")
                 }

@@ -102,7 +102,7 @@ let refreshControl = UIRefreshControl()
     
     // MARK: - Setting
     public override func configNavigation() {
-        self.navigationController?.navigationBar.isHidden = false
+        self.navigationController?.navigationBar.isHidden = true
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
         navigationController?.navigationBar.tintColor = .color.admin.color
@@ -242,15 +242,8 @@ let refreshControl = UIRefreshControl()
             $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
         }
     }
-
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
 }
 

@@ -91,15 +91,15 @@ public final class SignUpViewController: BaseViewController {
         $0.addGestureRecognizer(tapGesture)
     }
 
-    lazy var genderTextField = GOMSTextFieldButton(frame: .zero, title: "성별").then {
+    lazy var genderTextField = GOMSTextFieldButton(frame: .zero, title: "성별을 선택해주세요").then {
         $0.addTarget(self, action: #selector(genderButtonTapped), for: .touchUpInside)
     }
 
-    lazy var majorTextField = GOMSTextFieldButton(frame: .zero, title: "과").then {
+    lazy var majorTextField = GOMSTextFieldButton(frame: .zero, title: "과를 선택해주세요").then {
         $0.addTarget(self, action: #selector(departmentButtonTapped), for: .touchUpInside)
     }
 
-    lazy var gradeTextField = GOMSTextFieldButton(frame: .zero, title: "기수").then {
+    lazy var gradeTextField = GOMSTextFieldButton(frame: .zero, title: "기수를 선택해주세요").then {
         $0.addTarget(self, action: #selector(gradeButtonTapped), for: .touchUpInside)
     }
 
@@ -124,21 +124,14 @@ public final class SignUpViewController: BaseViewController {
 
         validateFields()
     }
-
+    
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0 != pageTitleLabel && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
-    }
 
     // MARK: - Logic
     private func validateFields() {
@@ -149,9 +142,9 @@ public final class SignUpViewController: BaseViewController {
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         let isEmailValid = emailPredicate.evaluate(with: email)
         
-        let isGenderSelected = genderTextField.title(for: .normal) != "성별"
-        let isMajorSelected = majorTextField.title(for: .normal) != "과"
-        let isGradeSelected = gradeTextField.title(for: .normal) != "기수"
+        let isGenderSelected = genderTextField.title(for: .normal) != "성별을 선택해주세요"
+        let isMajorSelected = majorTextField.title(for: .normal) != "과를 선택해주세요"
+        let isGradeSelected = gradeTextField.title(for: .normal) != "기수를 선택해주세요"
         let isPrivacyAgreed = privacyCheckbox.isSelected
         
         let isAllValid = !name.isEmpty && isEmailValid && isGenderSelected && isMajorSelected && isGradeSelected && isPrivacyAgreed
@@ -299,7 +292,7 @@ public final class SignUpViewController: BaseViewController {
     // MARK: - Add View
     public override func addView() {
         emailTextField.addSubview(defaultDomain)
-        [customBackButton, pageTitleLabel, nameTextField, nameErrorLabel, emailTextField, emailErrorLabel, genderTextField, majorTextField, gradeTextField, privacyCheckbox, privacyLabel, authCodeButton].forEach { view.addSubview($0) }
+        [customBackButton, pageTitleLabel, nameTextField, nameErrorLabel, emailTextField, emailErrorLabel, gradeTextField, genderTextField, majorTextField, privacyCheckbox, privacyLabel, authCodeButton].forEach { view.addSubview($0) }
         view.bringSubviewToFront(customBackButton)
     }
 
@@ -341,10 +334,17 @@ public final class SignUpViewController: BaseViewController {
             $0.height.equalTo(0)
         }
 
-        genderTextField.snp.makeConstraints {
+        gradeTextField.snp.makeConstraints {
             $0.leading.equalTo(20)
             $0.trailing.equalTo(-20)
             $0.top.equalTo(emailErrorLabel.snp.bottom).offset(12)
+            $0.height.equalTo(56)
+        }
+
+        genderTextField.snp.makeConstraints {
+            $0.leading.equalTo(20)
+            $0.trailing.equalTo(-20)
+            $0.top.equalTo(gradeTextField.snp.bottom).offset(16)
             $0.height.equalTo(56)
         }
 
@@ -355,13 +355,6 @@ public final class SignUpViewController: BaseViewController {
             $0.height.equalTo(56)
         }
 
-        gradeTextField.snp.makeConstraints {
-            $0.leading.equalTo(20)
-            $0.trailing.equalTo(-20)
-            $0.top.equalTo(majorTextField.snp.bottom).offset(16)
-            $0.height.equalTo(56)
-        }
-
         defaultDomain.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(28)
@@ -369,7 +362,7 @@ public final class SignUpViewController: BaseViewController {
         }
 
         privacyLabel.snp.makeConstraints {
-            $0.top.equalTo(gradeTextField.snp.bottom).offset(32)
+            $0.top.equalTo(majorTextField.snp.bottom).offset(32)
             $0.leading.equalToSuperview().offset(20)
         }
 

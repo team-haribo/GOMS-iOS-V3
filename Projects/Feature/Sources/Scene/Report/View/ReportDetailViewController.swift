@@ -151,17 +151,10 @@ public final class ReportDetailViewController: BaseViewController {
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        self.view.subviews.forEach {
-            if $0 != customBackButton && $0 != titleLabel && $0.frame.height == 100 {
-                $0.isHidden = true
-                $0.removeFromSuperview()
-            }
-        }
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
     
     private func updateUI() {
@@ -224,13 +217,18 @@ public final class ReportDetailViewController: BaseViewController {
     }
 
     private func showAlert(title: String, message: String, isSuccess: Bool) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in
-            if isSuccess {
-                self.navigationController?.popViewController(animated: true)
+        GOMSAlert.show(
+            in: self,
+            title: title,
+            message: message,
+            actionTitle: "확인",
+            cancelTitle: "",
+            action: { [weak self] in
+                if isSuccess {
+                    self?.navigationController?.popViewController(animated: true)
+                }
             }
-        })
-        self.present(alert, animated: true)
+        )
     }
 
     public override func addView() {
