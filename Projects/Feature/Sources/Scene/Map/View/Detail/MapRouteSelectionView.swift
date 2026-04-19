@@ -206,6 +206,8 @@ public final class MapRouteSelectionView: UIView {
         $0.setImage(UIImage(named: "Shift", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
         $0.tintColor = .color.gomsPrimary.color
     }
+    
+    private var reverseRotationAngle: CGFloat = 0
 
     private let scrollView = UIScrollView().then {
         $0.showsHorizontalScrollIndicator = false
@@ -416,13 +418,20 @@ public final class MapRouteSelectionView: UIView {
     }
 
     @objc private func didTapReverse() {
-        
         isSelectingStart.toggle()
-
-        
         selectionBox.isHidden = true
 
-      
+        reverseRotationAngle += .pi
+        UIView.animate(
+            withDuration: 0.28,
+            delay: 0,
+            usingSpringWithDamping: 0.9,
+            initialSpringVelocity: 0.6,
+            options: [.curveEaseInOut]
+        ) {
+            self.reverseButton.transform = CGAffineTransform(rotationAngle: self.reverseRotationAngle)
+        }
+
         onReverseTapped?()
     }
 
