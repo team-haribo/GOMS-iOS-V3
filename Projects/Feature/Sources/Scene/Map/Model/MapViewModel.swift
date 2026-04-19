@@ -60,6 +60,12 @@ public final class MapViewModel {
     public private(set) var routeResult: MapRouteModel?
     public var onRouteUpdated: (() -> Void)?
     public var currentLocation: (lat: Double, lng: Double)?
+    
+    // MARK: - School Gates
+    private let mainGate = (lat: 35.143345842452526, lng:  126.80000822150454) // 정문
+    private let backGate = (lat: 35.14266947162016, lng: 126.79979589504727) // 후문
+
+    public private(set) var selectedGateName: String = "학교"
 
     // MARK: - Binding
     public var onPlacesUpdated: (() -> Void)?
@@ -266,13 +272,24 @@ public final class MapViewModel {
             }
         }
     }
+    
+    private func nearestGate(to place: MapPlaceData) -> (lat: Double, lng: Double, name: String) {
+        let distMain = hypot(place.latitude - mainGate.lat, place.longitude - mainGate.lng)
+        let distBack = hypot(place.latitude - backGate.lat, place.longitude - backGate.lng)
+
+        return distMain < distBack
+            ? (mainGate.lat, mainGate.lng, "학교 (정문)")
+            : (backGate.lat, backGate.lng, "학교 (후문)")
+    }
 
     public func fetchRoute(to place: MapPlaceData) {
-        let schoolLat = 35.1425
-        let schoolLng = 126.8005
+        let gate = nearestGate(to: place)
+
+        selectedGateName = gate.name
+
         fetchRoute(
-            startLat: schoolLat,
-            startLng: schoolLng,
+            startLat: gate.lat,
+            startLng: gate.lng,
             endLat: place.latitude,
             endLng: place.longitude,
             shouldNotifyRouteUpdated: true
@@ -302,8 +319,10 @@ public final class MapViewModel {
 
         switch endType {
         case .school:
-            endLat = 35.1425
-            endLng = 126.8005
+            let gate = nearestGate(to: start)
+            selectedGateName = gate.name
+            endLat = gate.lat
+            endLng = gate.lng
         case .currentLocation:
             guard let currentLocation else { return }
             endLat = currentLocation.coordinate.latitude

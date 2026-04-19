@@ -14,6 +14,9 @@ import Service
 import CoreLocation
 
 public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate, CLLocationManagerDelegate {
+    // MARK: - School Front Coordinates
+    private let schoolFrontLat: Double = 35.14342015456559
+    private let schoolFrontLng: Double = 126.79997786265704
 private func resetUIForNewSelection() {
     routeSelectionView.isHidden = true
     recentSearchView.isHidden = true
@@ -1025,7 +1028,7 @@ private func setupMap() {
 }
 
 public func addViews() {
-    let defaultPoint = MapPoint(longitude: 126.8005, latitude: 35.1425)
+    let defaultPoint = MapPoint(longitude: schoolFrontLng, latitude: schoolFrontLat)
     mapController?.addView(
         MapviewInfo(
             viewName: "mapview",
@@ -1043,7 +1046,7 @@ public func addViewSucceeded(_ viewName: String, viewInfoName: String) {
 
     view.eventDelegate = self
 
-    let defaultPoint = MapPoint(longitude: 126.8005, latitude: 35.1425)
+    let defaultPoint = MapPoint(longitude: schoolFrontLng, latitude: schoolFrontLat)
     view.moveCamera(
         CameraUpdate.make(target: defaultPoint, zoomLevel: 17, mapView: view)
     )
