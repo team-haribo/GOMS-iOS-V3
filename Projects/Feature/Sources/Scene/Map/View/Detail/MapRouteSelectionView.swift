@@ -235,9 +235,9 @@ public final class MapRouteSelectionView: UIView {
         let title: String
         switch type {
         case .currentLocation:
-            title = locations[0] // "내 위치"
+            title = locations[0]
         case .school:
-            title = locations[1] // "학교"
+            title = locations[1]
         }
 
         var config = startDropdownButton.configuration
@@ -377,18 +377,31 @@ public final class MapRouteSelectionView: UIView {
         isSelectingStart = true
         selectionBox.isHidden.toggle()
         containerView.bringSubviewToFront(selectionBox)
+
+
+        endDropdownButton.isUserInteractionEnabled = false
+
+     
+        startDropdownButton.isUserInteractionEnabled = true
     }
 
     @objc private func didTapEndDropdown() {
         isSelectingStart = false
         selectionBox.isHidden.toggle()
         containerView.bringSubviewToFront(selectionBox)
+
+        
+        startDropdownButton.isUserInteractionEnabled = false
+
+        endDropdownButton.isUserInteractionEnabled = true
     }
 
     @objc private func didSelectOption(_ sender: UIButton) {
         guard let title = sender.configuration?.attributedTitle else { return }
         let plainTitle = String(title.characters)
         let selectedType: RouteStartLocationType = (plainTitle == locations[0]) ? .currentLocation : .school
+
+        
 
         if isSelectingStart {
             var config = startDropdownButton.configuration
@@ -397,7 +410,9 @@ public final class MapRouteSelectionView: UIView {
             titleAttr.foregroundColor = .color.mainText.color
             config?.attributedTitle = titleAttr
             startDropdownButton.configuration = config
+
             onStartLocationChanged?(selectedType)
+
         } else {
             var config = endDropdownButton.configuration
             var titleAttr = AttributedString(plainTitle)
@@ -405,8 +420,12 @@ public final class MapRouteSelectionView: UIView {
             titleAttr.foregroundColor = .color.mainText.color
             config?.attributedTitle = titleAttr
             endDropdownButton.configuration = config
+
             onEndLocationChanged?(selectedType)
         }
+
+        startDropdownButton.isUserInteractionEnabled = true
+        endDropdownButton.isUserInteractionEnabled = true
 
         selectionBox.isHidden = true
     }
@@ -436,5 +455,61 @@ public final class MapRouteSelectionView: UIView {
     @objc private func didTapCard(_ gesture: UITapGestureRecognizer) {
         guard let card = gesture.view as? PathRecommendationCard else { return }
         onCardTapped?(card.title)
+    }
+    public func setEndFixed(_ isFixed: Bool) {
+        var config = endDropdownButton.configuration
+
+       
+        config?.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 16,
+            bottom: 0,
+            trailing: 16
+        )
+
+        if isFixed {
+            config?.image = nil
+            
+            
+            endDropdownButton.isUserInteractionEnabled = false
+            
+            
+            endDropdownButton.contentHorizontalAlignment = .leading
+            
+        } else {
+            config?.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
+            endDropdownButton.isUserInteractionEnabled = true
+            endDropdownButton.contentHorizontalAlignment = .fill
+        }
+
+        endDropdownButton.configuration = config
+    }
+
+    public func setStartFixed(_ isFixed: Bool) {
+        var config = startDropdownButton.configuration
+
+        
+        config?.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 16,
+            bottom: 0,
+            trailing: 16
+        )
+
+        if isFixed {
+            config?.image = nil
+            startDropdownButton.isUserInteractionEnabled = false
+            startDropdownButton.contentHorizontalAlignment = .leading
+        } else {
+            config?.image = UIImage(
+                named: "Down directional",
+                in: Bundle.module,
+                compatibleWith: nil
+            )
+            startDropdownButton.isUserInteractionEnabled = true
+            startDropdownButton.contentHorizontalAlignment = .fill
+        }
+
+        startDropdownButton.configuration = config
     }
 }

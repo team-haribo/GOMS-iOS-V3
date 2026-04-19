@@ -9,6 +9,8 @@
 import Foundation
 import Moya
 import Service
+import CoreLocation
+
 
 public struct RecentSearchItem: Codable {
     let placeId: Int
@@ -16,6 +18,11 @@ public struct RecentSearchItem: Codable {
 }
 
 public final class MapViewModel {
+
+    public enum StartLocationType {
+        case school
+        case currentLocation
+    }
 
     // MARK: - Properties
     private let recentSearchKey = "recentSearches"
@@ -285,6 +292,33 @@ public final class MapViewModel {
         )
     }
 
+    public func fetchRouteFromPlace(
+        start: MapPlaceData,
+        endType: StartLocationType,
+        currentLocation: CLLocation?
+    ) {
+        let endLat: Double
+        let endLng: Double
+
+        switch endType {
+        case .school:
+            endLat = 35.1425
+            endLng = 126.8005
+        case .currentLocation:
+            guard let currentLocation else { return }
+            endLat = currentLocation.coordinate.latitude
+            endLng = currentLocation.coordinate.longitude
+        }
+
+        fetchRoute(
+            startLat: start.latitude,
+            startLng: start.longitude,
+            endLat: endLat,
+            endLng: endLng,
+            shouldNotifyRouteUpdated: true
+        )
+    }
+
     private func saveRecentSearches() {
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(recentSearches) {
@@ -314,13 +348,13 @@ public final class MapViewModel {
     public func addRecentSearch(placeId: Int) {
         let item = RecentSearchItem(placeId: placeId, searchedAt: Date())
 
-        // 중복 제거
+    
         recentSearches.removeAll { $0.placeId == placeId }
 
-        // 최신을 맨 앞에 추가
+        
         recentSearches.insert(item, at: 0)
 
-        // 최대 10개 유지
+        
         if recentSearches.count > 10 {
             recentSearches = Array(recentSearches.prefix(10))
         }

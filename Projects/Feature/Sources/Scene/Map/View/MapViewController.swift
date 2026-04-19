@@ -26,12 +26,11 @@ private let locationManager = CLLocationManager()
 private var currentLocation: CLLocation?
 private var pendingRoutePlace: MapPlaceData?
 
-enum StartLocationType {
-    case school
-    case currentLocation
-}
+typealias StartLocationType = MapViewModel.StartLocationType
 
 private var startLocationType: StartLocationType = .school
+private var endLocationType: StartLocationType = .school
+private var isStartFixedToPin: Bool = false
 
     // MARK: - Distance Helper
     private func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
@@ -311,14 +310,26 @@ private func setupActions() {
     }
     routeSelectionView.onStartLocationChanged = { [weak self] type in
         guard let self = self else { return }
+        
 
         self.startLocationType = (type == .currentLocation) ? .currentLocation : .school
+
+        if type == .currentLocation {
+            self.routeSelectionView.setStartLocation(.currentLocation)
+        } else {
+            self.routeSelectionView.setStartLocation(.school)
+        }
 
         guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else {
             return
         }
 
+        if self.isStartFixedToPin {
+            return
+        }
+
         if type == .currentLocation {
+           
             if let current = self.currentLocation {
                 self.viewModel.currentLocation = (
                     lat: current.coordinate.latitude,
@@ -326,6 +337,7 @@ private func setupActions() {
                 )
                 self.requestRoute(to: selectedPlace)
             } else {
+               
                 self.pendingRoutePlace = selectedPlace
                 self.locationManager.requestLocation()
             }
@@ -337,28 +349,29 @@ private func setupActions() {
     routeSelectionView.onEndLocationChanged = { [weak self] type in
         guard let self = self else { return }
 
+        self.endLocationType = (type == .currentLocation) ? .currentLocation : .school
+
+        if type == .currentLocation {
+            self.routeSelectionView.setEndLocation(.currentLocation)
+        } else {
+            self.routeSelectionView.setEndLocation(.school)
+        }
+
         guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else {
             return
         }
 
-        // 도착 위치를 currentLocation / school로 바꾸는 경우
-        if type == .currentLocation {
-            if let current = self.currentLocation {
-                // 현재 위치를 도착으로 설정 → start는 기존 selectedPlace
-                self.viewModel.currentLocation = (
-                    lat: current.coordinate.latitude,
-                    lng: current.coordinate.longitude
-                )
-                // 방향 반대로 요청 (간단 처리: 동일 API 재사용)
-                self.requestRoute(to: selectedPlace)
-            } else {
-                self.pendingRoutePlace = selectedPlace
-                self.locationManager.requestLocation()
-            }
-        } else {
-            // 학교를 도착으로 설정
-            self.requestRoute(to: selectedPlace)
+        if !self.isStartFixedToPin {
+            return
         }
+
+        if self.endLocationType == .currentLocation, self.currentLocation == nil {
+            self.pendingRoutePlace = selectedPlace
+            self.locationManager.requestLocation()
+            return
+        }
+
+        self.requestRoute(to: selectedPlace)
     }
 
 }
@@ -412,7 +425,7 @@ private func showCurrentLocationMarker(_ location: CLLocation) {
 
     let manager = map.getLabelManager()
 
-    // 기존 currentLocationLayer 제거 (없으면 생성)
+
     if let layer = manager.getLabelLayer(layerID: "currentLocationLayer") {
         let ids = layer.getAllPois()?.map { $0.itemID } ?? []
         layer.removePois(poiIDs: ids)
@@ -843,12 +856,16 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
     guard let selectedPlace = allPlaces.first(where: { $0.placeId == selectedPlaceId }) else {
         return
     }
+    isStartFixedToPin = false
 
-    // 출발 = 선택 (내 위치 / 학교 dropdown 유지)
+    
     let mappedType: RouteStartLocationType = (self.startLocationType == .currentLocation) ? .currentLocation : .school
+    self.endLocationType = .school
     routeSelectionView.setStartLocation(mappedType)
+    routeSelectionView.setStartFixed(false)
+    routeSelectionView.setEndFixed(true)
 
-    // 도착 = 핀
+    
     routeSelectionView.setEndPlaceName(selectedPlace.placeName)
 
     routeSelectionView.isHidden = false
@@ -864,17 +881,23 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         return
     }
 
-    // 출발 = 핀
-    routeSelectionView.setStartPlaceName(selectedPlace.placeName)
 
-    // 도착 = 내 위치 / 학교
-    let endType: RouteStartLocationType = (self.startLocationType == .currentLocation) ? .currentLocation : .school
+    routeSelectionView.setStartPlaceName(selectedPlace.placeName)
+    routeSelectionView.setStartFixed(true)
+    isStartFixedToPin = true
+
+   
+    self.endLocationType = self.startLocationType
+    let endType: RouteStartLocationType = (self.endLocationType == .currentLocation) ? .currentLocation : .school
     routeSelectionView.setEndLocation(endType)
+    routeSelectionView.setEndFixed(false)
 
     routeSelectionView.isHidden = false
     view.bringSubviewToFront(routeSelectionView)
     searchBar.isHidden = true
     [bottomSheetView, placeDetailView, recentSearchView].forEach { $0.isHidden = true }
+
+    requestRoute(to: selectedPlace)
 }
 @objc private func backFromRouteSelection() {
     routeSelectionView.isHidden = true
@@ -936,6 +959,32 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
 }
 
 private func requestRoute(to selectedPlace: MapPlaceData) {
+
+
+    if isStartFixedToPin {
+        switch endLocationType {
+        case .currentLocation:
+            if let currentLocation {
+                viewModel.fetchRouteFromPlace(
+                    start: selectedPlace,
+                    endType: .currentLocation,
+                    currentLocation: currentLocation
+                )
+            } else {
+                pendingRoutePlace = selectedPlace
+                locationManager.requestLocation()
+            }
+
+        case .school:
+            viewModel.fetchRouteFromPlace(
+                start: selectedPlace,
+                endType: .school,
+                currentLocation: currentLocation
+            )
+        }
+        return
+    }
+
     switch startLocationType {
     case .school:
         routeSelectionView.setStartLocation(.school)
@@ -951,6 +1000,7 @@ private func requestRoute(to selectedPlace: MapPlaceData) {
             )
             viewModel.fetchRouteFromCurrentLocation(to: selectedPlace)
         } else {
+           
             pendingRoutePlace = selectedPlace
             locationManager.requestLocation()
         }
@@ -1440,8 +1490,10 @@ public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexP
 
 extension MapViewController {
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+       
         guard let location = locations.last else { return }
         currentLocation = location
+       
 
         viewModel.currentLocation = (
             lat: location.coordinate.latitude,
@@ -1449,8 +1501,20 @@ extension MapViewController {
         )
         showCurrentLocationMarker(location)
 
+
         if let pendingPlace = pendingRoutePlace {
-            viewModel.fetchRouteFromCurrentLocation(to: pendingPlace)
+    
+
+            if isStartFixedToPin {
+                viewModel.fetchRouteFromPlace(
+                    start: pendingPlace,
+                    endType: .currentLocation,
+                    currentLocation: location
+                )
+            } else {
+                viewModel.fetchRouteFromCurrentLocation(to: pendingPlace)
+            }
+
             pendingRoutePlace = nil
         }
     }
@@ -1463,7 +1527,9 @@ extension MapViewController {
             manager.requestWhenInUseAuthorization()
         case .denied, .restricted:
             startLocationType = .school
+            endLocationType = .school
             routeSelectionView.setStartLocation(.school)
+            routeSelectionView.setEndLocation(.school)
         @unknown default:
             break
         }
@@ -1472,7 +1538,9 @@ extension MapViewController {
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         pendingRoutePlace = nil
         startLocationType = .school
+        endLocationType = .school
         routeSelectionView.setStartLocation(.school)
+        routeSelectionView.setEndLocation(.school)
     }
 }
 
