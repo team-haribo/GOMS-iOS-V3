@@ -146,6 +146,13 @@ extension PlaceServices: TargetType {
             commonHeaders["Authorization"] = auth
         }
         
+        print("🔥 [PlaceServices] Headers:", commonHeaders)
+
+        if let auth = commonHeaders["Authorization"] {
+            print("🔥 [PlaceServices] Authorization:", auth)
+        } else {
+            print("❌ [PlaceServices] Authorization 없음")
+        }
         return commonHeaders
     }
 }

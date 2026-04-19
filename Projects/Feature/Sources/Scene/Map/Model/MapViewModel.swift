@@ -56,6 +56,12 @@ public final class MapViewModel {
     public private(set) var recommendedPlaces: [MapPlaceData] = []
     public var lastSearchKeyword: String = ""
 
+    // MARK: - Data
+    // MARK: - Review Ownership (Server-based)
+    public func isMyReview(_ review: MapReview) -> Bool {
+        return review.isMine ?? false
+    }
+
     // MARK: - Route Data
     public private(set) var routeResult: MapRouteModel?
     public var onRouteUpdated: (() -> Void)?
@@ -178,19 +184,30 @@ public final class MapViewModel {
     }
 
     public func fetchReviews(placeId: Int) {
+        print("🔥 fetchReviews accessToken:", accessToken)
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
+                // Print raw response and status code BEFORE decoding
+                print("🔥 RAW RESPONSE:", String(data: response.data, encoding: .utf8) ?? "nil")
+                print("🔥 STATUS CODE:", response.statusCode)
                 do {
                     let decoder = JSONDecoder()
                     let decoded = try decoder.decode(MapReviewResponse.self, from: response.data)
+                    // Print reviewId and isMine for each review AFTER decoding
+                    decoded.reviews.forEach {
+                        print("🔥 reviewId:", $0.reviewId, "isMine:", $0.isMine ?? false)
+                    }
                     self?.reviews = decoded.reviews
                     self?.onReviewsUpdated?()
                 } catch {
+                    print("❌ decode error:", error)
+                    print("❌ raw response:", String(data: response.data, encoding: .utf8) ?? "nil")
                     self?.reviews = []
                     self?.onReviewsUpdated?()
                 }
             case .failure:
+                print("❌ network failure")
                 self?.onError?("리뷰 조회 실패")
             }
         }

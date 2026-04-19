@@ -61,6 +61,7 @@ public struct MapPlaceData: Codable {
 // MARK: - Review Data
 public struct MapReview: Codable {
     public let reviewId: Int
+    public let memberId: Int
     public let name: String
     public let grade: Int
     public let department: String
@@ -71,6 +72,7 @@ public struct MapReview: Codable {
 
     public init(
         reviewId: Int,
+        memberId: Int,
         name: String,
         grade: Int,
         department: String,
@@ -80,6 +82,7 @@ public struct MapReview: Codable {
         isMine: Bool
     ) {
         self.reviewId = reviewId
+        self.memberId = memberId
         self.name = name
         self.grade = grade
         self.department = department
@@ -91,6 +94,7 @@ public struct MapReview: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case reviewId = "review_id"
+        case memberId = "memberId"
         case name
         case grade
         case department
