@@ -377,6 +377,78 @@ private func setupActions() {
         self.requestRoute(to: selectedPlace)
     }
 
+    routeSelectionView.onReverseTapped = { [weak self] in
+        guard let self = self else { return }
+
+       
+        let tempStart = self.startLocationType
+        self.startLocationType = self.endLocationType
+        self.endLocationType = tempStart
+
+        
+        let tempFixed = self.isStartFixedToPin
+        self.isStartFixedToPin = !tempFixed
+
+        
+        let startUI: RouteStartLocationType =
+            (self.startLocationType == .currentLocation) ? .currentLocation : .school
+        let endUI: RouteStartLocationType =
+            (self.endLocationType == .currentLocation) ? .currentLocation : .school
+
+        self.routeSelectionView.setStartLocation(startUI)
+        self.routeSelectionView.setEndLocation(endUI)
+
+        self.routeSelectionView.setStartFixed(self.isStartFixedToPin)
+        self.routeSelectionView.setEndFixed(!self.isStartFixedToPin)
+
+        
+        self.routeSelectionView.swapLocations()
+
+      
+        guard let selectedPlace = self.allPlaces.first(where: { $0.placeId == self.selectedPlaceId }) else {
+            return
+        }
+
+        if self.isStartFixedToPin {
+        
+            self.routeSelectionView.setStartPlaceName(selectedPlace.placeName)
+
+            if self.endLocationType == .school {
+                self.routeSelectionView.setEndLocation(.school)
+            } else {
+                self.routeSelectionView.setEndLocation(.currentLocation)
+            }
+
+        } else {
+        
+            self.routeSelectionView.setEndPlaceName(selectedPlace.placeName)
+
+            if self.startLocationType == .school {
+                self.routeSelectionView.setStartLocation(.school)
+            } else {
+                self.routeSelectionView.setStartLocation(.currentLocation)
+            }
+        }
+
+       
+        if self.startLocationType == .currentLocation && self.currentLocation == nil {
+            self.pendingRoutePlace = selectedPlace
+            self.locationManager.requestLocation()
+            return
+        }
+
+        if self.isStartFixedToPin &&
+           self.endLocationType == .currentLocation &&
+           self.currentLocation == nil {
+            self.pendingRoutePlace = selectedPlace
+            self.locationManager.requestLocation()
+            return
+        }
+
+       
+        self.requestRoute(to: selectedPlace)
+    }
+
 }
 
 private func setupReviewWriteAction() { placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside) }

@@ -110,6 +110,7 @@ public final class MapRouteSelectionView: UIView {
     public var onCardTapped: ((String) -> Void)?
     public var onStartLocationChanged: ((RouteStartLocationType) -> Void)?
     public var onEndLocationChanged: ((RouteStartLocationType) -> Void)?
+    public var onReverseTapped: (() -> Void)?
     
     private let containerView = UIView().then {
         $0.backgroundColor = .color.surface.color
@@ -129,41 +130,29 @@ public final class MapRouteSelectionView: UIView {
     }
 
     public let startDropdownButton = UIButton().then {
-        var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .color.sub3.color
-        config.background.backgroundColor = .color.sub3.color
-        var titleAttr = AttributedString("출발 위치를 선택해주세요")
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.sub2.color
-        config.attributedTitle = titleAttr
-        config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
-        config.imagePlacement = .trailing
-        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
-        config.cornerStyle = .fixed
-        config.background.cornerRadius = 8
-        // Ensure no stroke is applied
-        $0.configuration = config
-        $0.contentHorizontalAlignment = .fill
+        $0.backgroundColor = .color.sub3.color
+        $0.layer.cornerRadius = 8
+        $0.contentHorizontalAlignment = .leading
+    }
+    private let startLabel = UILabel().then {
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 17, weight: .medium)
+    }
+    private let startArrow = UIImageView().then {
+        $0.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysOriginal)
     }
     
     public let endDropdownButton = UIButton().then {
-        var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .color.sub3.color
-        config.background.backgroundColor = .color.sub3.color
-
-        var titleAttr = AttributedString("도착 위치를 선택해주세요")
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.sub2.color
-
-        config.attributedTitle = titleAttr
-        config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
-        config.imagePlacement = .trailing
-        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
-        config.cornerStyle = .fixed
-        config.background.cornerRadius = 8
-        // Ensure no stroke is applied
-        $0.configuration = config
-        $0.contentHorizontalAlignment = .fill
+        $0.backgroundColor = .color.sub3.color
+        $0.layer.cornerRadius = 8
+        $0.contentHorizontalAlignment = .leading
+    }
+    private let endLabel = UILabel().then {
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 17, weight: .medium)
+    }
+    private let endArrow = UIImageView().then {
+        $0.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysOriginal)
     }
 
     private let selectionBox = UIView().then {
@@ -244,31 +233,15 @@ public final class MapRouteSelectionView: UIView {
         case .school:
             title = locations[1]
         }
-
-        var config = startDropdownButton.configuration
-        var titleAttr = AttributedString(title)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        startDropdownButton.configuration = config
+        startLabel.text = title
     }
 
     public func setStartPlaceName(_ name: String) {
-        var config = startDropdownButton.configuration
-        var titleAttr = AttributedString(name)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        startDropdownButton.configuration = config
+        startLabel.text = name
     }
 
     public func setEndPlaceName(_ name: String) {
-        var config = endDropdownButton.configuration
-        var titleAttr = AttributedString(name)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        endDropdownButton.configuration = config
+        endLabel.text = name
     }
 
     public func setEndLocation(_ type: RouteStartLocationType) {
@@ -279,13 +252,7 @@ public final class MapRouteSelectionView: UIView {
         case .school:
             title = locations[1]
         }
-
-        var config = endDropdownButton.configuration
-        var titleAttr = AttributedString(title)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        endDropdownButton.configuration = config
+        endLabel.text = title
     }
 
     private func setupLayout() {
@@ -318,6 +285,20 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
+        }
+
+       
+        startDropdownButton.addSubview(startLabel)
+        startDropdownButton.addSubview(startArrow)
+        startLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(startArrow.snp.leading).offset(-8)
+        }
+        startArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(16)
         }
 
         selectionBox.snp.makeConstraints {
@@ -358,6 +339,19 @@ public final class MapRouteSelectionView: UIView {
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
         }
+       
+        endDropdownButton.addSubview(endLabel)
+        endDropdownButton.addSubview(endArrow)
+        endLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(endArrow.snp.leading).offset(-8)
+        }
+        endArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(16)
+        }
 
         scrollView.snp.makeConstraints {
             $0.bottom.equalTo(self.safeAreaLayoutGuide).inset(12)
@@ -376,6 +370,7 @@ public final class MapRouteSelectionView: UIView {
         endDropdownButton.addTarget(self, action: #selector(didTapEndDropdown), for: .touchUpInside)
         myLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
         schoolLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
+        reverseButton.addTarget(self, action: #selector(didTapReverse), for: .touchUpInside)
     }
 
     @objc private func didTapDropdown() {
@@ -406,26 +401,11 @@ public final class MapRouteSelectionView: UIView {
         let plainTitle = String(title.characters)
         let selectedType: RouteStartLocationType = (plainTitle == locations[0]) ? .currentLocation : .school
 
-        
-
         if isSelectingStart {
-            var config = startDropdownButton.configuration
-            var titleAttr = AttributedString(plainTitle)
-            titleAttr.font = .suit(size: 17, weight: .medium)
-            titleAttr.foregroundColor = .color.mainText.color
-            config?.attributedTitle = titleAttr
-            startDropdownButton.configuration = config
-
+            startLabel.text = plainTitle
             onStartLocationChanged?(selectedType)
-
         } else {
-            var config = endDropdownButton.configuration
-            var titleAttr = AttributedString(plainTitle)
-            titleAttr.font = .suit(size: 17, weight: .medium)
-            titleAttr.foregroundColor = .color.mainText.color
-            config?.attributedTitle = titleAttr
-            endDropdownButton.configuration = config
-
+            endLabel.text = plainTitle
             onEndLocationChanged?(selectedType)
         }
 
@@ -433,6 +413,17 @@ public final class MapRouteSelectionView: UIView {
         endDropdownButton.isUserInteractionEnabled = true
 
         selectionBox.isHidden = true
+    }
+
+    @objc private func didTapReverse() {
+        
+        isSelectingStart.toggle()
+
+        
+        selectionBox.isHidden = true
+
+      
+        onReverseTapped?()
     }
 
     public func configure(routes: [RouteCardData]) {
@@ -462,59 +453,20 @@ public final class MapRouteSelectionView: UIView {
         onCardTapped?(card.title)
     }
     public func setEndFixed(_ isFixed: Bool) {
-        var config = endDropdownButton.configuration
-
-       
-        config?.contentInsets = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: 16,
-            bottom: 0,
-            trailing: 16
-        )
-
-        if isFixed {
-            config?.image = nil
-            
-            
-            endDropdownButton.isUserInteractionEnabled = false
-            
-            
-            endDropdownButton.contentHorizontalAlignment = .leading
-            
-        } else {
-            config?.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
-            endDropdownButton.isUserInteractionEnabled = true
-            endDropdownButton.contentHorizontalAlignment = .fill
-        }
-
-        endDropdownButton.configuration = config
+        endArrow.isHidden = isFixed
+        endDropdownButton.isUserInteractionEnabled = !isFixed
+        endDropdownButton.contentHorizontalAlignment = .leading
     }
 
     public func setStartFixed(_ isFixed: Bool) {
-        var config = startDropdownButton.configuration
-
-        
-        config?.contentInsets = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: 16,
-            bottom: 0,
-            trailing: 16
-        )
-
-        if isFixed {
-            config?.image = nil
-            startDropdownButton.isUserInteractionEnabled = false
-            startDropdownButton.contentHorizontalAlignment = .leading
-        } else {
-            config?.image = UIImage(
-                named: "Down directional",
-                in: Bundle.module,
-                compatibleWith: nil
-            )
-            startDropdownButton.isUserInteractionEnabled = true
-            startDropdownButton.contentHorizontalAlignment = .fill
-        }
-
-        startDropdownButton.configuration = config
+        startArrow.isHidden = isFixed
+        startDropdownButton.isUserInteractionEnabled = !isFixed
+        startDropdownButton.contentHorizontalAlignment = .leading
+    }
+    public func swapLocations() {
+        let temp = startLabel.text
+        startLabel.text = endLabel.text
+        endLabel.text = temp
+        // Swap arrow visibility if needed (if fixed state swapping is required elsewhere)
     }
 }
