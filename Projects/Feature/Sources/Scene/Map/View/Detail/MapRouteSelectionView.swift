@@ -130,7 +130,8 @@ public final class MapRouteSelectionView: UIView {
 
     public let startDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .color.button.color
+        config.baseBackgroundColor = .color.sub3.color
+        config.background.backgroundColor = .color.sub3.color
         var titleAttr = AttributedString("출발 위치를 선택해주세요")
         titleAttr.font = .suit(size: 17, weight: .medium)
         titleAttr.foregroundColor = .color.sub2.color
@@ -140,13 +141,15 @@ public final class MapRouteSelectionView: UIView {
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         config.cornerStyle = .fixed
         config.background.cornerRadius = 8
+        // Ensure no stroke is applied
         $0.configuration = config
         $0.contentHorizontalAlignment = .fill
     }
     
     public let endDropdownButton = UIButton().then {
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .color.button.color
+        config.baseBackgroundColor = .color.sub3.color
+        config.background.backgroundColor = .color.sub3.color
 
         var titleAttr = AttributedString("도착 위치를 선택해주세요")
         titleAttr.font = .suit(size: 17, weight: .medium)
@@ -158,14 +161,16 @@ public final class MapRouteSelectionView: UIView {
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         config.cornerStyle = .fixed
         config.background.cornerRadius = 8
-
+        // Ensure no stroke is applied
         $0.configuration = config
         $0.contentHorizontalAlignment = .fill
     }
 
     private let selectionBox = UIView().then {
-        $0.backgroundColor = .color.button.color
-        $0.layer.cornerRadius = 8
+        $0.backgroundColor = .color.sub3.color
+        $0.layer.cornerRadius = 12
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         $0.isHidden = true
         $0.clipsToBounds = true
     }
@@ -192,7 +197,7 @@ public final class MapRouteSelectionView: UIView {
         $0.contentHorizontalAlignment = .leading
     }
 
-    private let line = UIView().then { $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3) }
+    private let line = UIView().then { $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.25) }
     private let endTitleLabel = UILabel().then {
         $0.text = "도착"
         $0.textColor = .color.sub1.color
@@ -203,7 +208,7 @@ public final class MapRouteSelectionView: UIView {
         $0.text = "    \(destinationName)"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 17, weight: .medium)
-        $0.backgroundColor = .color.button.color
+        $0.backgroundColor = .color.sub3.color
         $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
     }

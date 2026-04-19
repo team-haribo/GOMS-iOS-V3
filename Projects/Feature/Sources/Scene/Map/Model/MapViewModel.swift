@@ -161,6 +161,10 @@ public final class MapViewModel {
                     self?.distanceText = ""
                     self?.timeText = ""
 
+                    // ⭐ 상세 진입 시 항상 학교 기준 거리 계산 다시 실행
+                    if let placeData = self?.allPlaces.first(where: { $0.placeId == decoded.placeId }) {
+                        self?.fetchRouteSilently(to: placeData)
+                    }
 
                     self?.fetchReviews(placeId: decoded.placeId)
                     self?.onDetailUpdated?()
@@ -296,6 +300,21 @@ public final class MapViewModel {
         )
     }
 
+    // 상세뷰용 (UI 전환 없이 거리/시간만 업데이트)
+    public func fetchRouteSilently(to place: MapPlaceData) {
+        let gate = nearestGate(to: place)
+
+        selectedGateName = gate.name
+
+        fetchRoute(
+            startLat: gate.lat,
+            startLng: gate.lng,
+            endLat: place.latitude,
+            endLng: place.longitude,
+            shouldNotifyRouteUpdated: false
+        )
+    }
+
     public func fetchRouteFromCurrentLocation(to place: MapPlaceData) {
         guard let current = currentLocation else {
             return
@@ -306,6 +325,19 @@ public final class MapViewModel {
             endLat: place.latitude,
             endLng: place.longitude,
             shouldNotifyRouteUpdated: true
+        )
+    }
+
+    // 상세뷰용 (현재 위치 기준, UI 전환 없음)
+    public func fetchRouteFromCurrentLocationSilently(to place: MapPlaceData) {
+        guard let current = currentLocation else { return }
+
+        fetchRoute(
+            startLat: current.lat,
+            startLng: current.lng,
+            endLat: place.latitude,
+            endLng: place.longitude,
+            shouldNotifyRouteUpdated: false
         )
     }
 

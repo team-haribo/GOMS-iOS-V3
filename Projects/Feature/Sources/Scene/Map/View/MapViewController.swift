@@ -572,6 +572,7 @@ private func showDetailView(with data: MapPlaceData? = nil) {
        
         viewModel.fetchPlaceDetail(placeId: data.placeId)
         fetchReviews(placeId: data.placeId)
+        viewModel.fetchRouteSilently(to: data)
     } else {
         let detailModel = MapMockData.detailExample
         self.selectedPlaceId = detailModel.placeId
@@ -924,6 +925,7 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
     currentPlaceDetail = nil
     viewModel.fetchPlaceDetail(placeId: selectedPlace.placeId)
     fetchReviews(placeId: selectedPlace.placeId)
+    viewModel.fetchRouteSilently(to: selectedPlace)
 
    
     placeDetailView.configure(
@@ -1210,8 +1212,9 @@ public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
 
-        self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
-        self.fetchReviews(placeId: nearestPlace.placeId)
+    self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
+    self.fetchReviews(placeId: nearestPlace.placeId)
+    self.viewModel.fetchRouteSilently(to: nearestPlace)
 
         self.resetUIForNewSelection()
         self.showDetailView(with: nearestPlace)
@@ -1292,8 +1295,9 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
         self.selectedPlaceId = nearestPlace.placeId
         self.currentPlaceDetail = nil
 
-        self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
-        self.fetchReviews(placeId: nearestPlace.placeId)
+    self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
+    self.fetchReviews(placeId: nearestPlace.placeId)
+    self.viewModel.fetchRouteSilently(to: nearestPlace)
 
         self.resetUIForNewSelection()
         self.showDetailView(with: nearestPlace)
