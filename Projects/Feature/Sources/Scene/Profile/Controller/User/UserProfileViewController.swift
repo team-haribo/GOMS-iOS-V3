@@ -314,7 +314,24 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             message: "로그아웃하시겠습니까?",
             actionTitle: "확인",
             cancelTitle: "취소",
-            action: {}
+            action: { [weak self] in
+                self?.profileViewModel.profileLogout { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            let introVC = IntroViewController()
+                            let nav = UINavigationController(rootViewController: introVC)
+                            if let window = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first?.windows.first {
+                                window.rootViewController = nav
+                                window.makeKeyAndVisible()
+                            }
+                        } else {
+                            print("로그아웃 실패")
+                        }
+                    }
+                }
+            }
         )
     }
     
