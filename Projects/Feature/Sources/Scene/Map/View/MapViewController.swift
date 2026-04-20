@@ -263,7 +263,7 @@ private func setupActions() {
     bottomSheetView.onDeleteTapped = { [weak self] placeId in
         guard let self = self else { return }
 
-        // ⭐ placeId -> reviewId 매핑 필요
+        
         guard let review = self.viewModel.myReviews.first(where: { $0.placeId == placeId }) else {
             return
         }
@@ -636,6 +636,12 @@ private func setupGesture() {
 private func showDetailView(with data: MapPlaceData? = nil) {
     let isFirstShow = placeDetailView.isHidden
 
+    
+    if isFirstShow {
+        self.detailSheetHeight?.update(offset: 0)
+        self.view.layoutIfNeeded()
+    }
+
     if isFirstShow {
         self.bottomSheetHeight?.update(offset: 0)
         self.view.layoutIfNeeded()
@@ -687,19 +693,27 @@ private func showDetailView(with data: MapPlaceData? = nil) {
 
     placeDetailView.isHidden = false
     searchBar.isHidden = false
-    detailSheetHeight?.update(offset: detailMinHeight)
-
+   
     if isFirstShow {
-        UIView.animate(withDuration: 0.3) {
-            self.view.layoutIfNeeded()
-        }
-    } else {
-        UIView.transition(with: self.placeDetailView,
-                          duration: 0.2,
-                          options: [.transitionCrossDissolve, .allowUserInteraction],
-                          animations: {
+       
+        self.detailSheetHeight?.update(offset: 0)
+        self.view.layoutIfNeeded()
+
+        self.placeDetailView.isHidden = false
+
+        UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseOut], animations: {
+            self.detailSheetHeight?.update(offset: self.detailMinHeight)
             self.view.layoutIfNeeded()
         })
+    } else {
+        UIView.transition(
+            with: self.placeDetailView,
+            duration: 0.25,
+            options: [.transitionCrossDissolve, .allowUserInteraction],
+            animations: {
+                self.placeDetailView.layoutIfNeeded()
+            }
+        )
     }
 }
 private func bindViewModel() {
@@ -950,7 +964,6 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         self.placeDetailView.isHidden = true
         self.bottomSheetView.isHidden = false
 
-        
         self.bottomSheetHeight?.update(offset: self.defaultHeight)
         self.view.layoutIfNeeded()
 
@@ -1354,6 +1367,14 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
 }
 
 private func handlePoiSelection(latitude: Double, longitude: Double, kakaoMap: KakaoMap) {
+        
+        if let map = mapController?.getView("mapview") as? KakaoMap {
+            let manager = map.getShapeManager()
+            if let layer = manager.getShapeLayer(layerID: "routeLayer") {
+                layer.removeMapPolylineShape(shapeID: "routeShape")
+                layer.removeMapPolylineShape(shapeID: "routeGlowShape")
+            }
+        }
     guard let nearestPlace = viewModel.findNearestPlace(lat: latitude, lon: longitude) else {
         return
     }
@@ -1527,7 +1548,7 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             cell.configure(with: viewModel.reviews[indexPath.row])
-            // Control delete/report button visibility based on ownership
+           
             let review = viewModel.reviews[indexPath.row]
             // TODO: replace with actual userId comparison if available
             let isMyReview = review.isMine ?? false
