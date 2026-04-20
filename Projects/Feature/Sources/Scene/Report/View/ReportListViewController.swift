@@ -85,6 +85,8 @@ public final class ReportListViewController: BaseViewController {
     
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+        reloadReportList()
     }
 
     public override func shouldShowCustomNavigation() -> Bool {
@@ -93,6 +95,24 @@ public final class ReportListViewController: BaseViewController {
 
     // MARK: - Method
     private func setupCollectionView() {
+        let layout = UICollectionViewFlowLayout()
+
+        // 🔥 1열 강제 (AutoSize 끔)
+        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 0
+        layout.sectionInset = .zero
+        layout.scrollDirection = .vertical
+
+        reportCollectionView.contentInset = .zero
+        reportCollectionView.scrollIndicatorInsets = .zero
+
+        // ❌ 자동 사이즈 제거 (2열 원인)
+        layout.estimatedItemSize = .zero
+
+        // 🔥 고정 width → 무조건 1열
+        layout.itemSize = CGSize(width: view.bounds.width, height: 100)
+
+        reportCollectionView.collectionViewLayout = layout
         reportCollectionView.dataSource = self
         reportCollectionView.delegate = self
         reportCollectionView.register(ReportCollectionViewCell.self, forCellWithReuseIdentifier: ReportCollectionViewCell.identifier)
@@ -104,6 +124,8 @@ public final class ReportListViewController: BaseViewController {
 
     private func fetchData() {
         viewModel.fetchReportList { [weak self] success in
+            print("🔥 fetch success:", success)
+            print("🔥 reports count:", self?.viewModel.reports.count ?? -1)
             if success {
                 DispatchQueue.main.async {
                     self?.reportCollectionView.reloadData()
@@ -176,7 +198,8 @@ public final class ReportListViewController: BaseViewController {
         }
         reportCollectionView.snp.makeConstraints {
             $0.top.equalTo(resultLabel.snp.bottom).offset(12)
-            $0.leading.trailing.equalToSuperview()
+            $0.leading.equalToSuperview().offset(0)
+            $0.trailing.equalToSuperview().offset(0)
             $0.bottom.equalToSuperview()
         }
         createQRButton.snp.makeConstraints {
@@ -199,9 +222,7 @@ extension ReportListViewController: UICollectionViewDataSource, UICollectionView
         return cell
     }
 
-    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 335, height: 120)
-    }
+    // ❌ automaticSize.height 직접 쓰면 크래시 남 → 이 메서드 제거 (FlowLayout이 자동 계산하도록)
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 0
@@ -212,5 +233,11 @@ extension ReportListViewController: UICollectionViewDataSource, UICollectionView
         detailVC.reportData = viewModel.reports[indexPath.row]
         detailVC.viewModel = self.viewModel
         self.navigationController?.pushViewController(detailVC, animated: true)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView,
+                              layout collectionViewLayout: UICollectionViewLayout,
+                              sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: 100)
     }
 }

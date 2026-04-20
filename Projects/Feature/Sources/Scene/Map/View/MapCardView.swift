@@ -26,6 +26,8 @@ public final class MapCardView: UIView {
     private let categoryLabel = UILabel().then {
         $0.textColor = UIColor.color.sub1.color
         $0.font = .systemFont(ofSize: 14, weight: .regular)
+        $0.numberOfLines = 1
+        $0.lineBreakMode = .byTruncatingHead
     }
     
     private let addressLabel = UILabel().then {
@@ -38,7 +40,7 @@ public final class MapCardView: UIView {
         $0.font = .systemFont(ofSize: 14, weight: .regular)
     }
     
-    // 바텀시트에서 접근해야 하므로 public 유지
+    
     public let actionButton = UIButton()
     
     private let textStackView = UIStackView().then {
@@ -79,7 +81,7 @@ public final class MapCardView: UIView {
         actionButton.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview().offset(-16)
-            $0.size.equalTo(24) // 쓰레기통과 하트 크기 통일
+            $0.size.equalTo(24) 
         }
         
         setupButton(type: type)
@@ -87,7 +89,7 @@ public final class MapCardView: UIView {
 
     private func setupButton(type: MapCardType) {
         if type == .reviewed {
-            // 쓰레기통 아이콘 크기 조정 (하트와 맞춤)
+          
             let deleteConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
             let deleteImage = UIImage(named: "GOMS_DeleteIcon", in: Bundle.module, compatibleWith: nil)?
                 .withConfiguration(deleteConfig)
@@ -96,24 +98,32 @@ public final class MapCardView: UIView {
             actionButton.setImage(deleteImage, for: .normal)
             actionButton.tintColor = UIColor.color.gomsNegative.color
         } else {
-            // 보내주신 하트 채우기 로직 적용
+        
             let heartConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
             
-            // 일반 상태: Hart 에셋
+           
             actionButton.setImage(
                 UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil),
                 for: .normal
             )
-            // 선택 상태: heart.fill 시스템 아이콘
+         
             actionButton.setImage(
                 UIImage(systemName: "heart.fill", withConfiguration: heartConfig),
                 for: .selected
             )
             
             actionButton.isSelected = (type == .recommended)
-            // 색상 설정 (추천 타입이면 Primary, 아니면 sub1)
+            
             actionButton.tintColor = actionButton.isSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub1.color
         }
+    }
+
+    public func configure(title: String, address: String, category: String, meta: String) {
+        titleLabel.text = title
+        let components = category.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
+        categoryLabel.text = components.last ?? category
+        addressLabel.text = address
+        statusLabel.text = meta
     }
 
     private func configureData(type: MapCardType) {

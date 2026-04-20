@@ -9,55 +9,43 @@
 import UIKit
 import SnapKit
 import Then
+import Kingfisher
 
+// 레이아웃 완전 재구성 (StackView 제거)
 final class ReportCollectionViewCell: UICollectionViewCell {
     static let identifier = "ReportCollectionViewCell"
     
-    private let profileImageView = UIImageView().then {
-        $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
-        $0.contentMode = .scaleAspectFill
-        $0.layer.cornerRadius = 24
-        $0.clipsToBounds = true
-    }
-    
-    private let nameLabel = UILabel().then {
+    private let reportContentLabel = UILabel().then {
         $0.font = .suit(size: 17, weight: .semibold)
         $0.textColor = UIColor.color.sub1.color
-        $0.textAlignment = .center
-    }
-    
-    private let infoLabel = UILabel().then {
-        $0.font = .suit(size: 14, weight: .medium)
-        $0.textColor = UIColor.color.sub2.color
-        $0.textAlignment = .center
-    }
-    
-    private let reportContentLabel = UILabel().then {
-        $0.font = .suit(size: 17, weight: .medium)
-        $0.textColor = UIColor.color.sub1.color
+        $0.numberOfLines = 1
+        $0.lineBreakMode = .byTruncatingTail
+        $0.setContentCompressionResistancePriority(.required, for: .vertical)
+        $0.setContentHuggingPriority(.required, for: .vertical)
     }
     
     private let locationLabel = UILabel().then {
         $0.font = .suit(size: 14, weight: .medium)
         $0.textColor = UIColor.color.sub2.color
+        $0.numberOfLines = 1
+        $0.lineBreakMode = .byTruncatingTail
+        $0.setContentCompressionResistancePriority(.required, for: .vertical)
+        $0.setContentHuggingPriority(.required, for: .vertical)
     }
     
     private let dateLabel = UILabel().then {
         $0.font = .suit(size: 14, weight: .medium)
         $0.textColor = UIColor.color.sub2.color
+        $0.numberOfLines = 1
+        $0.lineBreakMode = .byTruncatingTail
+        $0.setContentCompressionResistancePriority(.required, for: .vertical)
+        $0.setContentHuggingPriority(.required, for: .vertical)
     }
 
     private let statusLabel = UILabel().then {
         $0.font = .suit(size: 15, weight: .medium)
     }
 
-    private let textStackView = UIStackView().then {
-        $0.axis = .vertical
-        $0.spacing = 4
-        $0.alignment = .leading
-        $0.distribution = .fill
-    }
-    
     private let dividerView = UIView().then {
         $0.backgroundColor = UIColor.color.sub1.color.withAlphaComponent(0.3)
     }
@@ -66,43 +54,40 @@ final class ReportCollectionViewCell: UICollectionViewCell {
         super.init(frame: frame)
         contentView.backgroundColor = .clear
         
-        [profileImageView, nameLabel, infoLabel, textStackView, statusLabel, dividerView].forEach {
+        [reportContentLabel, locationLabel, dateLabel, statusLabel, dividerView].forEach {
             contentView.addSubview($0)
         }
         
-        [reportContentLabel, locationLabel, dateLabel].forEach {
-            textStackView.addArrangedSubview($0)
+        reportContentLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(8)
+            $0.leading.equalToSuperview().offset(36)
+            $0.trailing.equalToSuperview().inset(36)
         }
-        
-        profileImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.equalToSuperview().offset(4)
-            $0.width.height.equalTo(48)
+
+        locationLabel.snp.makeConstraints {
+            $0.top.equalTo(reportContentLabel.snp.bottom).offset(0)
+            $0.leading.equalTo(reportContentLabel.snp.leading)
+            $0.trailing.equalToSuperview().inset(36)
         }
-        
-        nameLabel.snp.makeConstraints {
-            $0.top.equalTo(profileImageView.snp.bottom).offset(4)
-            $0.centerX.equalTo(profileImageView)
+
+        dateLabel.snp.makeConstraints {
+            $0.top.equalTo(locationLabel.snp.bottom)
+            $0.leading.equalTo(reportContentLabel.snp.leading)
+            $0.trailing.equalToSuperview().inset(36)
         }
-        
-        infoLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(2)
-            $0.centerX.equalTo(profileImageView)
-        }
-        
-        textStackView.snp.makeConstraints {
-            $0.centerY.equalToSuperview()
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(18)
-            $0.trailing.lessThanOrEqualTo(statusLabel.snp.leading).offset(-8)
-        }
-        
+
         statusLabel.snp.makeConstraints {
-            $0.centerY.equalTo(textStackView)
-            $0.trailing.equalToSuperview().inset(4)
+            $0.centerY.equalTo(reportContentLabel)
+            $0.trailing.equalToSuperview().inset(36)
+            $0.width.greaterThanOrEqualTo(50)
         }
+        statusLabel.setContentHuggingPriority(.required, for: .horizontal)
         
         dividerView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.top.equalTo(dateLabel.snp.bottom).offset(4)
+            $0.leading.equalToSuperview().offset(24)
+            $0.trailing.equalToSuperview().inset(24)
+            $0.bottom.equalToSuperview()
             $0.height.equalTo(1)
         }
     }
@@ -111,17 +96,31 @@ final class ReportCollectionViewCell: UICollectionViewCell {
     
     // MARK: - Configure (Data Binding)
     func configure(with data: ReportData) {
-        nameLabel.text = data.reviewerName
-        infoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
         reportContentLabel.text = data.reportContent
+        
         locationLabel.text = data.location
-        dateLabel.text = data.reportCreatedAt
+        reportContentLabel.numberOfLines = 1
+        locationLabel.numberOfLines = 1
+        dateLabel.numberOfLines = 1
+        
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+
+        if let date = formatter.date(from: data.reportCreatedAt) {
+            let output = DateFormatter()
+            output.dateFormat = "yy.MM.dd HH:mm:ss"
+            dateLabel.text = output.string(from: date)
+        } else {
+            print("❌ date parse 실패:", data.reportCreatedAt)
+            dateLabel.text = data.reportCreatedAt
+        }
         
         switch data.reportStatus {
         case .pending:
             statusLabel.text = "처리전"
             statusLabel.textColor = UIColor.color.admin.color
-        case .resolved:
+        case .approved:
             statusLabel.text = "처리 완료"
             statusLabel.textColor = UIColor.color.sub2.color
         case .rejected:

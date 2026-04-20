@@ -16,26 +16,35 @@ public enum PlaceServices {
     case getPlaceDetail(placeId: Int, authorization: String)   // 장소 상세 조회
     case getPlaceReviews(placeId: Int, authorization: String)  // 장소 리뷰 목록 조회
     case getPlaceReviewCount(placeId: Int, authorization: String) // 장소 리뷰 개수 조회
-    case getHotPlaces(authorization: String)                   // 핫플레이스(최근 인기 장소) 조회
+    case getHotPlaces(days: Int, authorization: String)                   // 핫플레이스(최근 인기 장소) 조회
     case syncPlaces(authorization: String)                     // 장소 동기화
     case recommendPlace(placeId: Int, authorization: String)   // 장소 추천 (하트 클릭)
     case cancelRecommendPlace(placeId: Int, authorization: String) // 장소 추천 취소
     case writeReview(placeId: Int, content: String, authorization: String) // 리뷰 작성
     case deleteReview(reviewId: Int, authorization: String)    // 리뷰 삭제
+    case reportReview(reviewId: Int, request: ReviewReportRequestDTO, authorization: String) // 리뷰 신고
+    case getMyReviews(authorization: String) // 내가 작성한 리뷰 목록 조회
     // MARK: - 장소 전체 목록 조회 추가
     case getAllPlaces(authorization: String)                   // DB에 저장된 전체 장소 목록 조회
+    // MARK: - 카카오 길찾기
+    case getRoute(startLat: Double, startLng: Double, endLat: Double, endLng: Double)
 }
 
 extension PlaceServices: TargetType {
 
     public var baseURL: URL {
-        guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
-            fatalError("SchoolBaseURL을 찾을 수 없습니다")
+        switch self {
+        case .getRoute:
+            return URL(string: "https://apis-navi.kakaomobility.com")!
+        default:
+            guard let urlString = Bundle.main.infoDictionary?["SchoolBaseURL"] as? String else {
+                fatalError("SchoolBaseURL을 찾을 수 없습니다")
+            }
+            guard let url = URL(string: urlString) else {
+                fatalError("Invalid baseURL string: \(urlString)")
+            }
+            return url
         }
-        guard let url = URL(string: urlString) else {
-            fatalError("Invalid baseURL string: \(urlString)")
-        }
-        return url
     }
 
     public var path: String {
@@ -62,15 +71,21 @@ extension PlaceServices: TargetType {
             return "/api/v3/review/\(placeId)"
         case .deleteReview(let reviewId, _):
             return "/api/v3/review/\(reviewId)"
+        case .reportReview(let reviewId, _, _):
+            return "/api/v3/report/\(reviewId)"
+        case .getMyReviews:
+            return "/api/v3/review/me"
         // MARK: - 장소 전체 목록 조회 경로 추가
         case .getAllPlaces:
             return "/api/v3/place"
+        case .getRoute:
+            return "/v1/directions"
         }
     }
 
     public var method: Moya.Method {
         switch self {
-        case .syncPlaces, .recommendPlace, .writeReview:
+        case .syncPlaces, .recommendPlace, .writeReview, .reportReview:
             return .post
         case .cancelRecommendPlace, .deleteReview:
             return .delete
@@ -95,6 +110,21 @@ extension PlaceServices: TargetType {
                 parameters: ["content": content],
                 encoding: JSONEncoding.default
             )
+        case let .getHotPlaces(days, _):
+            return .requestParameters(
+                parameters: ["days": days],
+                encoding: URLEncoding.queryString
+            )
+        case let .getRoute(startLat, startLng, endLat, endLng):
+            return .requestParameters(
+                parameters: [
+                    "origin": "\(startLng),\(startLat)",
+                    "destination": "\(endLng),\(endLat)"
+                ],
+                encoding: URLEncoding.queryString
+            )
+        case let .reportReview(_, request, _):
+            return .requestJSONEncodable(request)
         default:
             return .requestPlain
         }
@@ -105,23 +135,34 @@ extension PlaceServices: TargetType {
         var commonHeaders = ["Content-Type": "application/json"]
         
         switch self {
+        case .getRoute:
+            commonHeaders["Authorization"] = "KakaoAK b47f0cac2134d01481d23d13ffa419e6"
         case .getRecommendedPlaces(let auth),
              .getRecommendedPlacesCount(let auth),
              .searchPlace(_, let auth),
              .getPlaceDetail(_, let auth),
              .getPlaceReviews(_, let auth),
              .getPlaceReviewCount(_, let auth),
-             .getHotPlaces(let auth),
+             .getHotPlaces(_, let auth),
              .syncPlaces(let auth),
              .recommendPlace(_, let auth),
              .cancelRecommendPlace(_, let auth),
              .writeReview(_, _, let auth),
              .deleteReview(_, let auth),
+             .reportReview(_, _, let auth),
+             .getMyReviews(let auth),
              // MARK: - 장소 전체 목록 조회 헤더 추가
              .getAllPlaces(let auth):
             commonHeaders["Authorization"] = auth
         }
         
+      
+
+        if let auth = commonHeaders["Authorization"] {
+           
+        } else {
+           
+        }
         return commonHeaders
     }
 }

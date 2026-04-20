@@ -87,18 +87,29 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     }
     
     private func applyFilter() {
-        let selectedStatus: ReportStatusType? = pendingButton.isSelected ? .pending : (completedButton.isSelected ? .resolved : nil)
-        
-        viewModel.filterReportsByStatus(status: selectedStatus)
-        
-        DispatchQueue.main.async {
-            self.reportListVC?.reloadReportList()
+        if pendingButton.isSelected {
+            viewModel.filterType = .pending
+        } else if completedButton.isSelected {
+            viewModel.filterType = .completed
+        } else {
+            viewModel.filterType = .pending
+        }
+
+        viewModel.fetchReportList { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.reportListVC?.reloadReportList()
+            }
         }
     }
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        applyFilter()
+        viewModel.filterType = .pending
+        viewModel.fetchReportList { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.reportListVC?.reloadReportList()
+            }
+        }
     }
     
     public override func addView() {

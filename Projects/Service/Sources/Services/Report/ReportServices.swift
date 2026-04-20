@@ -10,10 +10,12 @@ import Foundation
 import Moya
 
 public enum ReportServices {
-    case reportList(status: String, authorization: String)
+    case reportPending(authorization: String)
+    case reportResolved(authorization: String)
     case reportDetail(reportId: Int, authorization: String)
     case reportDelete(reviewId: Int, authorization: String)
     case reportReject(reportId: Int, authorization: String)
+    case reportResolve(reportId: Int, authorization: String)
 }
 
 extension ReportServices: TargetType {
@@ -27,22 +29,28 @@ extension ReportServices: TargetType {
 
     public var path: String {
         switch self {
-        case .reportList(let status, _):
-            return "/api/v3/student-council/report/\(status)"
+        case .reportPending:
+            return "/api/v3/student-council/report/pending"
+        case .reportResolved:
+            return "/api/v3/student-council/report/resolved"
         case .reportDetail(let reportId, _):
             return "/api/v3/student-council/report/\(reportId)"
         case .reportDelete(let reviewId, _):
-            return "/api/v3/student-council/report/\(reviewId)"
+            return "/api/v3/review/\(reviewId)"
         case .reportReject(let reportId, _):
-            return "/api/v3/student-council/report/reject/\(reportId)"
+            return "/api/v3/student-council/report/\(reportId)"
+        case .reportResolve(let reportId, _):
+            return "/api/v3/student-council/report/\(reportId)"
         }
     }
 
     public var method: Moya.Method {
         switch self {
-        case .reportList, .reportDetail:
+        case .reportPending, .reportResolved, .reportDetail:
             return .get
-        case .reportDelete, .reportReject:
+        case .reportDelete:
+            return .delete
+        case .reportReject, .reportResolve:
             return .patch
         }
     }
@@ -52,15 +60,31 @@ extension ReportServices: TargetType {
     }
 
     public var task: Task {
-        return .requestPlain
+        switch self {
+        case .reportReject:
+            return .requestParameters(
+                parameters: ["reportStatus": "REJECTED"],
+                encoding: JSONEncoding.default
+            )
+
+        case .reportResolve:
+            return .requestParameters(
+                parameters: ["reportStatus": "APPROVED"],
+                encoding: JSONEncoding.default
+            )
+        default:
+            return .requestPlain
+        }
     }
 
     public var headers: [String : String]? {
         switch self {
-        case .reportList(_, let authorization),
+        case .reportPending(let authorization),
+             .reportResolved(let authorization),
              .reportDetail(_, let authorization),
              .reportDelete(_, let authorization),
-             .reportReject(_, let authorization):
+             .reportReject(_, let authorization),
+             .reportResolve(_, let authorization):
             return [
                 "Authorization": authorization,
                 "Content-Type": "application/json"

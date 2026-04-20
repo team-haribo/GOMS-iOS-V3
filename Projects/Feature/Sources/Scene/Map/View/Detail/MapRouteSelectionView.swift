@@ -10,6 +10,33 @@ import UIKit
 import SnapKit
 import Then
 
+public enum RouteStartLocationType {
+    case currentLocation
+    case school
+}
+
+extension RouteStartLocationType {
+    init(from type: MapViewController.StartLocationType) {
+        switch type {
+        case .currentLocation: self = .currentLocation
+        case .school: self = .school
+        }
+    }
+}
+
+
+public struct RouteCardData {
+    public let title: String
+    public let time: String
+    public let info: String
+
+    public init(title: String, time: String, info: String) {
+        self.title = title
+        self.time = time
+        self.info = info
+    }
+}
+
 public final class PathRecommendationCard: UIView {
     private let titleLabel = UILabel().then {
         $0.textColor = .color.sub1.color
@@ -61,11 +88,29 @@ public final class PathRecommendationCard: UIView {
 }
 
 public final class MapRouteSelectionView: UIView {
+    public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let converted = containerView.convert(point, from: self)
+        if containerView.bounds.contains(converted) {
+            return true
+        }
+
+        let convertedCard = recommendationStackView.convert(point, from: self)
+        if recommendationStackView.bounds.contains(convertedCard) {
+            return true
+        }
+
+        return false
+    }
+    
     private let locations = ["내 위치", "학교"]
     private var destinationName: String = "짬뽕관 광주송정선운점"
     
-    // [추가] 카드 클릭 시 컨트롤러에 알려주기 위한 클로저
+    private var isSelectingStart = true
+    
     public var onCardTapped: ((String) -> Void)?
+    public var onStartLocationChanged: ((RouteStartLocationType) -> Void)?
+    public var onEndLocationChanged: ((RouteStartLocationType) -> Void)?
+    public var onReverseTapped: (() -> Void)?
     
     private let containerView = UIView().then {
         $0.backgroundColor = .color.surface.color
@@ -85,24 +130,36 @@ public final class MapRouteSelectionView: UIView {
     }
 
     public let startDropdownButton = UIButton().then {
-        var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .color.button.color
-        var titleAttr = AttributedString("출발 위치를 선택해주세요")
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.sub2.color
-        config.attributedTitle = titleAttr
-        config.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)
-        config.imagePlacement = .trailing
-        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
-        config.cornerStyle = .fixed
-        config.background.cornerRadius = 8
-        $0.configuration = config
-        $0.contentHorizontalAlignment = .fill
+        $0.backgroundColor = .color.sub3.color
+        $0.layer.cornerRadius = 8
+        $0.contentHorizontalAlignment = .leading
+    }
+    private let startLabel = UILabel().then {
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 17, weight: .medium)
+    }
+    private let startArrow = UIImageView().then {
+        $0.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysOriginal)
     }
     
-    private let selectionBox = UIView().then {
-        $0.backgroundColor = .color.button.color
+    public let endDropdownButton = UIButton().then {
+        $0.backgroundColor = .color.sub3.color
         $0.layer.cornerRadius = 8
+        $0.contentHorizontalAlignment = .leading
+    }
+    private let endLabel = UILabel().then {
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 17, weight: .medium)
+    }
+    private let endArrow = UIImageView().then {
+        $0.image = UIImage(named: "Down directional", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysOriginal)
+    }
+
+    private let selectionBox = UIView().then {
+        $0.backgroundColor = .color.sub3.color
+        $0.layer.cornerRadius = 12
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         $0.isHidden = true
         $0.clipsToBounds = true
     }
@@ -129,7 +186,7 @@ public final class MapRouteSelectionView: UIView {
         $0.contentHorizontalAlignment = .leading
     }
 
-    private let line = UIView().then { $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.3) }
+    private let line = UIView().then { $0.backgroundColor = .color.sub2.color.withAlphaComponent(0.25) }
     private let endTitleLabel = UILabel().then {
         $0.text = "도착"
         $0.textColor = .color.sub1.color
@@ -140,7 +197,7 @@ public final class MapRouteSelectionView: UIView {
         $0.text = "    \(destinationName)"
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 17, weight: .medium)
-        $0.backgroundColor = .color.button.color
+        $0.backgroundColor = .color.sub3.color
         $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
     }
@@ -149,33 +206,69 @@ public final class MapRouteSelectionView: UIView {
         $0.setImage(UIImage(named: "Shift", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate), for: .normal)
         $0.tintColor = .color.gomsPrimary.color
     }
+    
+    private var reverseRotationAngle: CGFloat = 0
+
+    private let scrollView = UIScrollView().then {
+        $0.showsHorizontalScrollIndicator = false
+    }
 
     public let recommendationStackView = UIStackView().then {
         $0.axis = .horizontal
         $0.spacing = 12
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
     }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
         setupActions()
-        addCards()
     }
     
     required init?(coder: NSCoder) { fatalError() }
 
+    public func setStartLocation(_ type: RouteStartLocationType) {
+        let title: String
+        switch type {
+        case .currentLocation:
+            title = locations[0]
+        case .school:
+            title = locations[1]
+        }
+        startLabel.text = title
+    }
+
+    public func setStartPlaceName(_ name: String) {
+        startLabel.text = name
+    }
+
+    public func setEndPlaceName(_ name: String) {
+        endLabel.text = name
+    }
+
+    public func setEndLocation(_ type: RouteStartLocationType) {
+        let title: String
+        switch type {
+        case .currentLocation:
+            title = locations[0]
+        case .school:
+            title = locations[1]
+        }
+        endLabel.text = title
+    }
+
     private func setupLayout() {
         addSubview(containerView)
-        [startTitleLabel, backButton, startDropdownButton, endTitleLabel, endLocationLabel, reverseButton, selectionBox].forEach {
+        [startTitleLabel, backButton, startDropdownButton, endTitleLabel, endDropdownButton, reverseButton, selectionBox].forEach {
             containerView.addSubview($0)
         }
         [myLocationBtn, schoolLocationBtn, line].forEach { selectionBox.addSubview($0) }
-        addSubview(recommendationStackView)
+        addSubview(scrollView)
+        scrollView.addSubview(recommendationStackView)
         
         containerView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(endLocationLabel.snp.bottom).offset(24)
+            $0.bottom.equalTo(endDropdownButton.snp.bottom).offset(24)
         }
         
         backButton.snp.makeConstraints {
@@ -194,6 +287,20 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
+        }
+
+       
+        startDropdownButton.addSubview(startLabel)
+        startDropdownButton.addSubview(startArrow)
+        startLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(startArrow.snp.leading).offset(-8)
+        }
+        startArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(16)
         }
 
         selectionBox.snp.makeConstraints {
@@ -228,58 +335,147 @@ public final class MapRouteSelectionView: UIView {
             $0.leading.equalTo(startTitleLabel)
         }
         
-        endLocationLabel.snp.makeConstraints {
+        endDropdownButton.snp.makeConstraints {
             $0.top.equalTo(endTitleLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().offset(52)
             $0.trailing.equalToSuperview().offset(-24)
             $0.height.equalTo(52)
         }
+       
+        endDropdownButton.addSubview(endLabel)
+        endDropdownButton.addSubview(endArrow)
+        endLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(endArrow.snp.leading).offset(-8)
+        }
+        endArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(16)
+        }
+
+        scrollView.snp.makeConstraints {
+            $0.bottom.equalTo(self.safeAreaLayoutGuide).inset(12)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(106)
+        }
 
         recommendationStackView.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(110)
-            $0.leading.equalToSuperview().offset(20)
-            $0.height.equalTo(106)
-            $0.width.equalTo(192 * 2 + 12)
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+            $0.height.equalToSuperview()
         }
     }
 
     private func setupActions() {
         startDropdownButton.addTarget(self, action: #selector(didTapDropdown), for: .touchUpInside)
+        endDropdownButton.addTarget(self, action: #selector(didTapEndDropdown), for: .touchUpInside)
         myLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
         schoolLocationBtn.addTarget(self, action: #selector(didSelectOption), for: .touchUpInside)
+        reverseButton.addTarget(self, action: #selector(didTapReverse), for: .touchUpInside)
     }
 
     @objc private func didTapDropdown() {
+        isSelectingStart = true
         selectionBox.isHidden.toggle()
         containerView.bringSubviewToFront(selectionBox)
+
+
+        endDropdownButton.isUserInteractionEnabled = false
+
+     
+        startDropdownButton.isUserInteractionEnabled = true
+    }
+
+    @objc private func didTapEndDropdown() {
+        isSelectingStart = false
+        selectionBox.isHidden.toggle()
+        containerView.bringSubviewToFront(selectionBox)
+
+        
+        startDropdownButton.isUserInteractionEnabled = false
+
+        endDropdownButton.isUserInteractionEnabled = true
     }
 
     @objc private func didSelectOption(_ sender: UIButton) {
         guard let title = sender.configuration?.attributedTitle else { return }
         let plainTitle = String(title.characters)
-        var config = startDropdownButton.configuration
-        var titleAttr = AttributedString(plainTitle)
-        titleAttr.font = .suit(size: 17, weight: .medium)
-        titleAttr.foregroundColor = .color.mainText.color
-        config?.attributedTitle = titleAttr
-        startDropdownButton.configuration = config
+        let selectedType: RouteStartLocationType = (plainTitle == locations[0]) ? .currentLocation : .school
+
+        if isSelectingStart {
+            startLabel.text = plainTitle
+            onStartLocationChanged?(selectedType)
+        } else {
+            endLabel.text = plainTitle
+            onEndLocationChanged?(selectedType)
+        }
+
+        startDropdownButton.isUserInteractionEnabled = true
+        endDropdownButton.isUserInteractionEnabled = true
+
         selectionBox.isHidden = true
     }
 
-    private func addCards() {
+    @objc private func didTapReverse() {
+        isSelectingStart.toggle()
+        selectionBox.isHidden = true
+
+        reverseRotationAngle += .pi
+        UIView.animate(
+            withDuration: 0.28,
+            delay: 0,
+            usingSpringWithDamping: 0.9,
+            initialSpringVelocity: 0.6,
+            options: [.curveEaseInOut]
+        ) {
+            self.reverseButton.transform = CGAffineTransform(rotationAngle: self.reverseRotationAngle)
+        }
+
+        onReverseTapped?()
+    }
+
+    public func configure(routes: [RouteCardData]) {
         recommendationStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let card1 = PathRecommendationCard(title: "추천", time: "8분", info: "339m | 25kcal")
-        let card2 = PathRecommendationCard(title: "큰길 우선", time: "10분", info: "450m | 30kcal")
-        
-        [card1, card2].forEach { card in
+
+        routes.forEach { route in
+            let card = PathRecommendationCard(
+                title: route.title,
+                time: route.time,
+                info: route.info
+            )
+
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapCard(_:)))
             card.addGestureRecognizer(tapGesture)
+
             recommendationStackView.addArrangedSubview(card)
+
+            card.snp.makeConstraints {
+                $0.width.equalTo(192)
+            }
         }
     }
+
     
     @objc private func didTapCard(_ gesture: UITapGestureRecognizer) {
         guard let card = gesture.view as? PathRecommendationCard else { return }
         onCardTapped?(card.title)
+    }
+    public func setEndFixed(_ isFixed: Bool) {
+        endArrow.isHidden = isFixed
+        endDropdownButton.isUserInteractionEnabled = !isFixed
+        endDropdownButton.contentHorizontalAlignment = .leading
+    }
+
+    public func setStartFixed(_ isFixed: Bool) {
+        startArrow.isHidden = isFixed
+        startDropdownButton.isUserInteractionEnabled = !isFixed
+        startDropdownButton.contentHorizontalAlignment = .leading
+    }
+    public func swapLocations() {
+        let temp = startLabel.text
+        startLabel.text = endLabel.text
+        endLabel.text = temp
+
     }
 }

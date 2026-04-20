@@ -9,17 +9,42 @@ import UIKit
 import SnapKit
 import Then
 
-struct MapCardData {
-    let id: UUID = UUID()
-    var isFavorite: Bool
+public struct MapCardData {
+    public let id: Int
+    public let name: String
+    public let address: String
+    public let category: String
+    public let reviewCount: Int
+    public let recommendCount: Int
+    public var isFavorite: Bool
+
+    public init(
+        id: Int,
+        name: String,
+        address: String,
+        category: String,
+        reviewCount: Int,
+        recommendCount: Int,
+        isFavorite: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.address = address
+        self.category = category
+        self.reviewCount = reviewCount
+        self.recommendCount = recommendCount
+        self.isFavorite = isFavorite
+    }
 }
 
 public final class MapBottomSheetView: UIView {
-    public var onCardTapped: (() -> Void)?
+    public var onCardTapped: ((Int) -> Void)?
+    public var onHeartTapped: ((Int, Bool) -> Void)?
+    public var onDeleteTapped: ((Int) -> Void)?
     
-    private var popularPlaces = [MapCardData(isFavorite: false), MapCardData(isFavorite: false), MapCardData(isFavorite: false)]
-    private var recommendedPlaces = [MapCardData(isFavorite: true), MapCardData(isFavorite: true)]
-    private var reviewPlaces = [MapCardData(isFavorite: false), MapCardData(isFavorite: false), MapCardData(isFavorite: false)]
+    private var popularPlaces: [MapCardData] = []
+    private var recommendedPlaces: [MapCardData] = []
+    private var reviewPlaces: [MapCardData] = []
     
     private let pointColor = UIColor.color.gomsPrimary.color
     
@@ -46,6 +71,20 @@ public final class MapBottomSheetView: UIView {
         renderUI()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
+    public func configure(
+        popular: [MapCardData],
+        recommended: [MapCardData],
+        reviews: [MapCardData]
+    ) {
+        self.popularPlaces = popular
+        self.recommendedPlaces = recommended
+        
+        self.reviewPlaces = reviews
+        
+    
+        renderUI()
+    }
     
     private func setupView() {
         self.backgroundColor = UIColor.color.surface.color
@@ -100,12 +139,16 @@ public final class MapBottomSheetView: UIView {
             }
         }
         
+ 
         if !reviewPlaces.isEmpty {
             addSpacer(8)
-            contentStackView.addArrangedSubview(createSubTitleLabel(title: "작성한 후기", count: reviewPlaces.count, unit: "건", fontSize: 18))
+            contentStackView.addArrangedSubview(
+                createSubTitleLabel(title: "작성한 후기", count: reviewPlaces.count, unit: "건", fontSize: 18)
+            )
             addSpacer(16)
-            for (index, _) in reviewPlaces.enumerated() {
-                addCard(type: .reviewed, data: MapCardData(isFavorite: false), index: index)
+
+            for (index, place) in reviewPlaces.enumerated() {
+                addCard(type: .reviewed, data: place, index: index)
                 addSpacer(12)
             }
         }
@@ -114,8 +157,16 @@ public final class MapBottomSheetView: UIView {
 
     private func addCard(type: MapCardType, data: MapCardData, index: Int) {
         let card = MapCardView(type: type)
+        card.configure(
+            title: data.name,
+            address: data.address,
+            category: data.category,
+            meta: "학생 후기 \(data.reviewCount)+ | 추천 \(data.recommendCount)+"
+        )
         card.actionButton.isSelected = data.isFavorite
         card.actionButton.tintColor = data.isFavorite ? pointColor : UIColor.color.sub1.color
+
+        card.tag = data.id
 
         if type == .reviewed {
             card.actionButton.tag = index
@@ -126,7 +177,8 @@ public final class MapBottomSheetView: UIView {
             card.actionButton.addTarget(self, action: #selector(heartButtonTapped(_:)), for: .touchUpInside)
         }
         
-        card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapCard)))
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapCard(_:)))
+        card.addGestureRecognizer(tapGesture)
         contentStackView.addArrangedSubview(card)
         card.snp.makeConstraints { $0.height.equalTo(105) }
     }
@@ -136,29 +188,38 @@ public final class MapBottomSheetView: UIView {
         let index = isPopular ? sender.tag - 100 : sender.tag - 200
         
         if isPopular {
+            guard index < popularPlaces.count else { return }
             popularPlaces[index].isFavorite.toggle()
-            if popularPlaces[index].isFavorite {
-                recommendedPlaces.insert(MapCardData(isFavorite: true), at: 0)
-            } else {
-                if !recommendedPlaces.isEmpty { recommendedPlaces.removeFirst() }
-            }
         } else {
-            if index < recommendedPlaces.count {
-                recommendedPlaces.remove(at: index)
-            }
+            guard index < recommendedPlaces.count else { return }
+            recommendedPlaces[index].isFavorite.toggle()
         }
+        
+        let placeId = isPopular
+            ? popularPlaces[index].id
+            : recommendedPlaces[index].id
+        let isSelected = isPopular
+            ? popularPlaces[index].isFavorite
+            : recommendedPlaces[index].isFavorite
+
+        onHeartTapped?(placeId, isSelected)
+        
         renderUI()
     }
 
     @objc private func deleteButtonTapped(_ sender: UIButton) {
         let index = sender.tag
-        if index < reviewPlaces.count {
-            reviewPlaces.remove(at: index)
-            renderUI()
-        }
+        guard index < reviewPlaces.count else { return }
+        let placeId = reviewPlaces[index].id
+        onDeleteTapped?(placeId)
+        reviewPlaces.remove(at: index)
+        renderUI()
     }
 
-    @objc private func didTapCard() { onCardTapped?() }
+    @objc private func didTapCard(_ sender: UITapGestureRecognizer) {
+        guard let view = sender.view else { return }
+        onCardTapped?(view.tag)
+    }
 
     private func createTitleLabel(_ text: String, fontSize: CGFloat) -> UILabel {
         return UILabel().then {

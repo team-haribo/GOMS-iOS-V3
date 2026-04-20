@@ -9,6 +9,7 @@
 import UIKit
 import SnapKit
 import Then
+import Kingfisher
 
 public final class ReportDetailViewController: BaseViewController {
     
@@ -35,28 +36,6 @@ public final class ReportDetailViewController: BaseViewController {
         $0.font = .suit(size: 16, weight: .medium)
     }
 
-    private let reporterTitleLabel = UILabel().then {
-        $0.text = "신고자"
-        $0.font = .suit(size: 20, weight: .bold)
-        $0.textColor = UIColor.color.mainText.color
-    }
-
-    private let reporterProfileImageView = UIImageView().then {
-        $0.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
-        $0.layer.cornerRadius = 24
-        $0.clipsToBounds = true
-        $0.backgroundColor = .lightGray
-    }
-
-    private let reporterNameLabel = UILabel().then {
-        $0.font = .suit(size: 20, weight: .semibold)
-        $0.textColor = UIColor.color.mainText.color
-    }
-
-    private let reporterInfoLabel = UILabel().then {
-        $0.font = .suit(size: 16, weight: .medium)
-        $0.textColor = UIColor.color.sub2.color
-    }
 
     private let contentTitleLabel = UILabel().then {
         $0.text = "신고 내용"
@@ -95,7 +74,7 @@ public final class ReportDetailViewController: BaseViewController {
 
     private let targetNameLabel = UILabel().then {
         $0.font = .suit(size: 20, weight: .semibold)
-        $0.textColor = UIColor.color.mainText.color
+        $0.textColor = UIColor.color.sub1.color
     }
 
     private let targetInfoLabel = UILabel().then {
@@ -166,7 +145,7 @@ public final class ReportDetailViewController: BaseViewController {
             statusLabel.textColor = UIColor.color.admin.color
             rejectButton.isHidden = false
             deleteButton.isHidden = false
-        case .resolved:
+        case .approved:
             statusLabel.text = "처리 완료"
             statusLabel.textColor = UIColor.color.sub2.color
             rejectButton.isHidden = true
@@ -178,16 +157,24 @@ public final class ReportDetailViewController: BaseViewController {
             deleteButton.isHidden = true
         }
 
-        reporterNameLabel.text = "신고자"
-        reporterInfoLabel.text = "정보 없음"
         
         targetNameLabel.text = data.reviewerName
         targetInfoLabel.text = "\(data.reviewerGrade)기 | \(data.reviewerDepartment)"
+
+        if let urlString = data.profileImageUrl,
+           let url = URL(string: urlString) {
+            targetProfileImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+            )
+        } else {
+            targetProfileImageView.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        }
         
         contentLabel.text = data.reportContent
-        contentTimeLabel.text = data.reportCreatedAt
+        contentTimeLabel.text = formatDate(data.reportCreatedAt)
         reviewLabel.text = data.reviewContent
-        reviewLocationAndTimeLabel.text = "\(data.location) | \(data.reportCreatedAt)"
+        reviewLocationAndTimeLabel.text = "\(data.location) | \(formatDate(data.reportCreatedAt))"
     }
     
     @objc private func backButtonTapped() {
@@ -197,21 +184,28 @@ public final class ReportDetailViewController: BaseViewController {
     @objc private func rejectButtonTapped() {
         guard let reportId = reportData?.reportId else { return }
         viewModel?.rejectReport(reportId: reportId) { [weak self] success in
+            guard let self = self else { return }
             if success {
-                self?.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.", isSuccess: true)
+                self.viewModel?.updateReportStatus(reportId: reportId, status: .rejected)
+                self.viewModel?.filterType = .completed
+                self.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.", isSuccess: true)
             } else {
-                self?.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
+                self.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
             }
         }
     }
 
     @objc private func deleteButtonTapped() {
-        guard let reviewId = reportData?.reviewId else { return }
-        viewModel?.deleteReview(reviewId: reviewId) { [weak self] success in
+        guard let reportId = reportData?.reportId else { return }
+
+        viewModel?.resolveReport(reportId: reportId) { [weak self] success in
+            guard let self = self else { return }
             if success {
-                self?.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.", isSuccess: true)
+                self.viewModel?.updateReportStatus(reportId: reportId, status: .approved)
+                self.viewModel?.filterType = .completed
+                self.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.", isSuccess: true)
             } else {
-                self?.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
+                self.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
             }
         }
     }
@@ -234,7 +228,6 @@ public final class ReportDetailViewController: BaseViewController {
     public override func addView() {
         [
             customBackButton, titleLabel, statusLabel,
-            reporterTitleLabel, reporterProfileImageView, reporterNameLabel, reporterInfoLabel,
             contentTitleLabel, contentContainerView, contentTimeLabel,
             targetTitleLabel, targetProfileImageView, targetNameLabel, targetInfoLabel,
             reviewTitleLabel, reviewContainerView, reviewLocationAndTimeLabel,
@@ -263,29 +256,8 @@ public final class ReportDetailViewController: BaseViewController {
             $0.trailing.equalToSuperview().inset(24)
         }
 
-        reporterTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(32)
-            $0.leading.equalToSuperview().inset(24)
-        }
-
-        reporterProfileImageView.snp.makeConstraints {
-            $0.top.equalTo(reporterTitleLabel.snp.bottom).offset(12)
-            $0.leading.equalToSuperview().inset(24)
-            $0.size.equalTo(48)
-        }
-
-        reporterNameLabel.snp.makeConstraints {
-            $0.top.equalTo(reporterProfileImageView).offset(2)
-            $0.leading.equalTo(reporterProfileImageView.snp.trailing).offset(12)
-        }
-
-        reporterInfoLabel.snp.makeConstraints {
-            $0.top.equalTo(reporterNameLabel.snp.bottom).offset(2)
-            $0.leading.equalTo(reporterNameLabel)
-        }
-
         contentTitleLabel.snp.makeConstraints {
-            $0.top.equalTo(reporterProfileImageView.snp.bottom).offset(32)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(32)
             $0.leading.equalToSuperview().inset(24)
         }
 
@@ -358,5 +330,26 @@ public final class ReportDetailViewController: BaseViewController {
             $0.height.equalTo(52)
             $0.leading.equalTo(view.snp.centerX).offset(2)
         }
+    }
+    private func formatDate(_ isoString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.locale = Locale(identifier: "en_US_POSIX")
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        
+        if let date = inputFormatter.date(from: isoString) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateFormat = "yy.MM.dd. HH:mm:ss"
+            return outputFormatter.string(from: date)
+        }
+        
+        // fallback (혹시 포맷 다를 때)
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        if let date = inputFormatter.date(from: isoString) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateFormat = "yy.MM.dd. HH:mm:ss"
+            return outputFormatter.string(from: date)
+        }
+        
+        return isoString
     }
 }
