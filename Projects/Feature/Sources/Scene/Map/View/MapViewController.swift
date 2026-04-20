@@ -1354,6 +1354,14 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
 }
 
 private func handlePoiSelection(latitude: Double, longitude: Double, kakaoMap: KakaoMap) {
+        
+        if let map = mapController?.getView("mapview") as? KakaoMap {
+            let manager = map.getShapeManager()
+            if let layer = manager.getShapeLayer(layerID: "routeLayer") {
+                layer.removeMapPolylineShape(shapeID: "routeShape")
+                layer.removeMapPolylineShape(shapeID: "routeGlowShape")
+            }
+        }
     guard let nearestPlace = viewModel.findNearestPlace(lat: latitude, lon: longitude) else {
         return
     }
