@@ -636,6 +636,12 @@ private func setupGesture() {
 private func showDetailView(with data: MapPlaceData? = nil) {
     let isFirstShow = placeDetailView.isHidden
 
+    
+    if isFirstShow {
+        self.detailSheetHeight?.update(offset: 0)
+        self.view.layoutIfNeeded()
+    }
+
     if isFirstShow {
         self.bottomSheetHeight?.update(offset: 0)
         self.view.layoutIfNeeded()
@@ -687,18 +693,19 @@ private func showDetailView(with data: MapPlaceData? = nil) {
 
     placeDetailView.isHidden = false
     searchBar.isHidden = false
-    detailSheetHeight?.update(offset: detailMinHeight)
-
+   
     if isFirstShow {
-        
-        self.placeDetailView.alpha = 0
+       
+        self.detailSheetHeight?.update(offset: 0)
+        self.view.layoutIfNeeded()
 
-        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut], animations: {
-            self.placeDetailView.alpha = 1
+        self.placeDetailView.isHidden = false
+
+        UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseOut], animations: {
+            self.detailSheetHeight?.update(offset: self.detailMinHeight)
             self.view.layoutIfNeeded()
         })
     } else {
-        
         UIView.transition(
             with: self.placeDetailView,
             duration: 0.25,
@@ -957,7 +964,6 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         self.placeDetailView.isHidden = true
         self.bottomSheetView.isHidden = false
 
-        
         self.bottomSheetHeight?.update(offset: self.defaultHeight)
         self.view.layoutIfNeeded()
 
