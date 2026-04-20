@@ -263,7 +263,7 @@ private func setupActions() {
     bottomSheetView.onDeleteTapped = { [weak self] placeId in
         guard let self = self else { return }
 
-        // ⭐ placeId -> reviewId 매핑 필요
+        
         guard let review = self.viewModel.myReviews.first(where: { $0.placeId == placeId }) else {
             return
         }
@@ -690,16 +690,23 @@ private func showDetailView(with data: MapPlaceData? = nil) {
     detailSheetHeight?.update(offset: detailMinHeight)
 
     if isFirstShow {
-        UIView.animate(withDuration: 0.3) {
-            self.view.layoutIfNeeded()
-        }
-    } else {
-        UIView.transition(with: self.placeDetailView,
-                          duration: 0.2,
-                          options: [.transitionCrossDissolve, .allowUserInteraction],
-                          animations: {
+        
+        self.placeDetailView.alpha = 0
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut], animations: {
+            self.placeDetailView.alpha = 1
             self.view.layoutIfNeeded()
         })
+    } else {
+        
+        UIView.transition(
+            with: self.placeDetailView,
+            duration: 0.25,
+            options: [.transitionCrossDissolve, .allowUserInteraction],
+            animations: {
+                self.placeDetailView.layoutIfNeeded()
+            }
+        )
     }
 }
 private func bindViewModel() {
@@ -1535,7 +1542,7 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             cell.configure(with: viewModel.reviews[indexPath.row])
-            // Control delete/report button visibility based on ownership
+           
             let review = viewModel.reviews[indexPath.row]
             // TODO: replace with actual userId comparison if available
             let isMyReview = review.isMine ?? false
