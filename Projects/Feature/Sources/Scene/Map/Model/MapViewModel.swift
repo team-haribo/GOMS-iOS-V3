@@ -12,6 +12,7 @@ import Service
 import CoreLocation
 
 
+
 public struct RecentSearchItem: Codable {
     let placeId: Int
     let searchedAt: Date
@@ -48,6 +49,8 @@ public final class MapViewModel {
     public private(set) var searchResults: [MapPlaceData] = []
     public private(set) var recentSearches: [RecentSearchItem] = []
     public private(set) var reviews: [MapReview] = []
+    public private(set) var myReviews: [MapReview] = []
+    public var onMyReviewsUpdated: (() -> Void)?
     public private(set) var currentPlaceDetail: MapPlaceDetailModel?
     public private(set) var selectedPlaceId: Int = -1
     public private(set) var distanceText: String = ""
@@ -167,7 +170,7 @@ public final class MapViewModel {
                     self?.distanceText = ""
                     self?.timeText = ""
 
-                    // ⭐ 상세 진입 시 항상 학교 기준 거리 계산 다시 실행
+                    
                     if let placeData = self?.allPlaces.first(where: { $0.placeId == decoded.placeId }) {
                         self?.fetchRouteSilently(to: placeData)
                     }
@@ -184,31 +187,52 @@ public final class MapViewModel {
     }
 
     public func fetchReviews(placeId: Int) {
-        print("🔥 fetchReviews accessToken:", accessToken)
         placeProvider.request(.getPlaceReviews(placeId: placeId, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
-                // Print raw response and status code BEFORE decoding
-                print("🔥 RAW RESPONSE:", String(data: response.data, encoding: .utf8) ?? "nil")
-                print("🔥 STATUS CODE:", response.statusCode)
                 do {
                     let decoder = JSONDecoder()
                     let decoded = try decoder.decode(MapReviewResponse.self, from: response.data)
-                    // Print reviewId and isMine for each review AFTER decoding
-                    decoded.reviews.forEach {
-                        print("🔥 reviewId:", $0.reviewId, "isMine:", $0.isMine ?? false)
-                    }
                     self?.reviews = decoded.reviews
                     self?.onReviewsUpdated?()
                 } catch {
-                    print("❌ decode error:", error)
-                    print("❌ raw response:", String(data: response.data, encoding: .utf8) ?? "nil")
                     self?.reviews = []
                     self?.onReviewsUpdated?()
                 }
             case .failure:
-                print("❌ network failure")
                 self?.onError?("리뷰 조회 실패")
+            }
+        }
+    }
+
+    public func fetchMyReviews() {
+        placeProvider.request(.getMyReviews(authorization: accessToken)) { [weak self] result in
+            switch result {
+            case .success(let response):
+                do {
+                    let decoded = try JSONDecoder().decode(MyReviewResponse.self, from: response.data)
+
+                    self?.myReviews = decoded.reviews.map {
+                        MapReview(
+                            reviewId: $0.reviewId,
+                            placeId: $0.placeId,
+                            memberId: 0,
+                            name: $0.placeName,
+                            grade: 0,
+                            department: $0.categoryName,
+                            profileImageUrl: "",
+                            content: $0.content,
+                            reviewedAt: $0.reviewedAt,
+                            isMine: true
+                        )
+                    }
+                    self?.onMyReviewsUpdated?()
+                } catch {
+                    self?.myReviews = []
+                    self?.onMyReviewsUpdated?()
+                }
+            case .failure:
+                self?.onError?("내 리뷰 조회 실패")
             }
         }
     }
@@ -248,14 +272,41 @@ public final class MapViewModel {
         placeProvider.request(.deleteReview(reviewId: reviewId, authorization: accessToken)) { [weak self] result in
             switch result {
             case .success(let response):
-                if response.statusCode == 204 {
+                if response.statusCode == 204 || response.statusCode == 200 {
+                    self?.reviews.removeAll { $0.reviewId == reviewId }
+                    self?.onReviewsUpdated?()
                     completion(true)
                 } else {
-                    self?.onError?("리뷰 삭제 실패")
+                    self?.onError?("리뷰 삭제 실패 (status: \(response.statusCode))")
                     completion(false)
                 }
             case .failure:
                 self?.onError?("리뷰 삭제 요청 실패")
+                completion(false)
+            }
+        }
+    }
+
+    public func reportReview(reviewId: Int, reason: String, completion: @escaping (Bool) -> Void) {
+        let request = ReviewReportRequestDTO(content: reason)
+        
+        placeProvider.request(
+            .reportReview(
+                reviewId: reviewId,
+                request: request,
+                authorization: accessToken
+            )
+        ) { [weak self] result in
+            switch result {
+            case .success(let response):
+                if response.statusCode == 200 || response.statusCode == 201 {
+                    completion(true)
+                } else {
+                    self?.onError?("리뷰 신고 실패")
+                    completion(false)
+                }
+            case .failure:
+                self?.onError?("리뷰 신고 요청 실패")
                 completion(false)
             }
         }
@@ -317,7 +368,7 @@ public final class MapViewModel {
         )
     }
 
-    // 상세뷰용 (UI 전환 없이 거리/시간만 업데이트)
+    
     public func fetchRouteSilently(to place: MapPlaceData) {
         let gate = nearestGate(to: place)
 
@@ -345,7 +396,6 @@ public final class MapViewModel {
         )
     }
 
-    // 상세뷰용 (현재 위치 기준, UI 전환 없음)
     public func fetchRouteFromCurrentLocationSilently(to place: MapPlaceData) {
         guard let current = currentLocation else { return }
 

@@ -64,6 +64,7 @@ public final class MapReviewCell: UITableViewCell {
         onDeleteTap = nil
         onReportTap = nil
         actionButton.setImage(nil, for: .normal)
+        actionButton.isHidden = false
         isMineState = false
     }
     
@@ -199,6 +200,18 @@ public final class MapReviewCell: UITableViewCell {
                     .withRenderingMode(.alwaysTemplate),
                 for: .normal
             )
+        }
+    }
+
+    public func setDeleteButtonHidden(_ hidden: Bool) {
+        if isMineState {
+            actionButton.isHidden = hidden
+        }
+    }
+
+    public func setReportButtonHidden(_ hidden: Bool) {
+        if !isMineState {
+            actionButton.isHidden = hidden
         }
     }
 }

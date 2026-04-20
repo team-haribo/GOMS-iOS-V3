@@ -22,6 +22,8 @@ public enum PlaceServices {
     case cancelRecommendPlace(placeId: Int, authorization: String) // 장소 추천 취소
     case writeReview(placeId: Int, content: String, authorization: String) // 리뷰 작성
     case deleteReview(reviewId: Int, authorization: String)    // 리뷰 삭제
+    case reportReview(reviewId: Int, request: ReviewReportRequestDTO, authorization: String) // 리뷰 신고
+    case getMyReviews(authorization: String) // 내가 작성한 리뷰 목록 조회
     // MARK: - 장소 전체 목록 조회 추가
     case getAllPlaces(authorization: String)                   // DB에 저장된 전체 장소 목록 조회
     // MARK: - 카카오 길찾기
@@ -69,6 +71,10 @@ extension PlaceServices: TargetType {
             return "/api/v3/review/\(placeId)"
         case .deleteReview(let reviewId, _):
             return "/api/v3/review/\(reviewId)"
+        case .reportReview(let reviewId, _, _):
+            return "/api/v3/report/\(reviewId)"
+        case .getMyReviews:
+            return "/api/v3/review/me"
         // MARK: - 장소 전체 목록 조회 경로 추가
         case .getAllPlaces:
             return "/api/v3/place"
@@ -79,7 +85,7 @@ extension PlaceServices: TargetType {
 
     public var method: Moya.Method {
         switch self {
-        case .syncPlaces, .recommendPlace, .writeReview:
+        case .syncPlaces, .recommendPlace, .writeReview, .reportReview:
             return .post
         case .cancelRecommendPlace, .deleteReview:
             return .delete
@@ -117,6 +123,8 @@ extension PlaceServices: TargetType {
                 ],
                 encoding: URLEncoding.queryString
             )
+        case let .reportReview(_, request, _):
+            return .requestJSONEncodable(request)
         default:
             return .requestPlain
         }
@@ -141,17 +149,19 @@ extension PlaceServices: TargetType {
              .cancelRecommendPlace(_, let auth),
              .writeReview(_, _, let auth),
              .deleteReview(_, let auth),
+             .reportReview(_, _, let auth),
+             .getMyReviews(let auth),
              // MARK: - 장소 전체 목록 조회 헤더 추가
              .getAllPlaces(let auth):
             commonHeaders["Authorization"] = auth
         }
         
-        print("🔥 [PlaceServices] Headers:", commonHeaders)
+      
 
         if let auth = commonHeaders["Authorization"] {
-            print("🔥 [PlaceServices] Authorization:", auth)
+           
         } else {
-            print("❌ [PlaceServices] Authorization 없음")
+           
         }
         return commonHeaders
     }

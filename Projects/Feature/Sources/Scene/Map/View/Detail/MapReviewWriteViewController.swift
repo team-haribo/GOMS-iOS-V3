@@ -68,7 +68,7 @@ public final class MapReviewWriteViewController: UIViewController {
                 in: self,
                 title: "후기 등록 완료",
                 message: "후기를 성공적으로 등록했습니다!",
-                completion: { [weak self] in
+                completion: { [weak self] _ in
                     guard let self = self else { return }
                     self.onReviewCreated?()
                     self.navigationController?.popViewController(animated: true)
@@ -106,7 +106,7 @@ public final class MapReviewWriteViewController: UIViewController {
             in: self,
             title: "후기 등록",
             message: "이 후기를 등록하시겠습니까?",
-            completion: { [weak self] in
+            completion: { [weak self] _ in
                 self?.viewModel.postReview()
             }
         )

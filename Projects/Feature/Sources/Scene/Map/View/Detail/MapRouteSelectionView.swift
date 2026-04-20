@@ -476,6 +476,6 @@ public final class MapRouteSelectionView: UIView {
         let temp = startLabel.text
         startLabel.text = endLabel.text
         endLabel.text = temp
-        // Swap arrow visibility if needed (if fixed state swapping is required elsewhere)
+
     }
 }

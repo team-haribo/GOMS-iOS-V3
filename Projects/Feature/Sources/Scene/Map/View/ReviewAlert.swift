@@ -10,29 +10,53 @@ import UIKit
 import SnapKit
 import Then
 
-public struct ReviewReportRequestDTO: Codable {
-    let reason: String
-}
 
 public class ReviewAlert {
     public static func show(
         in vc: UIViewController,
         title: String,
         message: String,
-        completion: @escaping () -> Void = {}
+        completion: @escaping (_ reason: String?) -> Void = { _ in }
     ) {
         let alert = ReviewAlertView(title: title, message: message, vc: vc)
-        vc.view.addSubview(alert)
-        alert.snp.makeConstraints { $0.edges.equalToSuperview() }
+        if let window = UIApplication.shared.windows.first {
+            window.addSubview(alert)
+            alert.snp.makeConstraints { $0.edges.equalToSuperview() }
+        } else {
+            vc.view.addSubview(alert)
+            alert.snp.makeConstraints { $0.edges.equalToSuperview() }
+        }
         
         alert.cancelButton.addTarget(alert, action: #selector(alert.didTapCancel), for: .touchUpInside)
         alert.actionButton.addTarget(alert, action: #selector(alert.didTapAction), for: .touchUpInside)
-        alert.completionHandler = completion
+        alert.completionHandler = { [weak alert] reason in
+            completion(reason)
+        }
+    }
+
+    public static func showSingle(
+        in vc: UIViewController,
+        title: String,
+        message: String,
+        buttonTitle: String = "확인"
+    ) {
+        let alert = ReviewAlertView(title: title, message: message, vc: vc)
+        if let window = UIApplication.shared.windows.first {
+            window.addSubview(alert)
+            alert.snp.makeConstraints { $0.edges.equalToSuperview() }
+        } else {
+            vc.view.addSubview(alert)
+            alert.snp.makeConstraints { $0.edges.equalToSuperview() }
+        }
+        
+        alert.configureSingle(buttonTitle: buttonTitle)
+        
+        alert.cancelButton.addTarget(alert, action: #selector(alert.didTapCancel), for: .touchUpInside)
     }
 }
 
 private class ReviewAlertView: UIView, UITextViewDelegate {
-    var completionHandler: (() -> Void)?
+    var completionHandler: ((String?) -> Void)?
     private weak var parentVC: UIViewController?
     private var currentTitle: String = ""
     private let placeholderText = "신고 사유 작성"
@@ -56,7 +80,7 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         $0.numberOfLines = 0
         $0.textAlignment = .center
     }
-
+    
     private let reasonTextView = UITextView().then {
         $0.backgroundColor = UIColor.color.gomsTextFieldBackground.color
         $0.textColor = UIColor.color.sub2.color
@@ -68,7 +92,7 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         $0.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         $0.isHidden = true
     }
-
+    
     private let countLabel = UILabel().then {
         $0.text = "0/100"
         $0.textColor = UIColor.color.sub2.color
@@ -92,7 +116,7 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
     private let vLine = UIView().then {
         $0.backgroundColor = UIColor.color.sub1.color.withAlphaComponent(0.2)
     }
-
+    
     init(title: String, message: String, vc: UIViewController?) {
         super.init(frame: .zero)
         self.parentVC = vc
@@ -163,7 +187,7 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
             $0.top.equalTo(titleLabel.snp.bottom).offset(isReportFlow ? 8 : 16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
-
+        
         if !reasonTextView.isHidden {
             reasonTextView.snp.makeConstraints {
                 $0.top.equalTo(messageLabel.snp.bottom).offset(12)
@@ -201,13 +225,25 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         }
     }
 
+    func configureSingle(buttonTitle: String) {
+        actionButton.isHidden = true
+        vLine.isHidden = true
+        
+        cancelButton.setTitle(buttonTitle, for: .normal)
+        
+        cancelButton.snp.remakeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(44)
+        }
+    }
+    
     func textViewDidBeginEditing(_ textView: UITextView) {
         if textView.text == placeholderText {
             textView.text = nil
             textView.textColor = .label
         }
     }
-
+    
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.isEmpty {
             textView.text = placeholderText
@@ -224,27 +260,51 @@ private class ReviewAlertView: UIView, UITextViewDelegate {
         }
     }
     
-    @objc func didTapCancel() {
-        self.removeFromSuperview()
+    func getReasonText() -> String? {
+        if reasonTextView.isHidden { return nil }
+        let text = reasonTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text == placeholderText || text.isEmpty ? nil : text
     }
     
-    @objc func didTapAction() {
-        let titleAtTap = self.currentTitle
-        let vcAtTap = self.parentVC
-        
-        self.removeFromSuperview()
-        completionHandler?()
-
-        if titleAtTap.contains("완료") { return }
-        
-        if let vc = vcAtTap {
-            if titleAtTap.contains("삭제") {
-                ReviewAlert.show(in: vc, title: "삭제 완료", message: "후기가 성공적으로 삭제되었습니다.")
-            } else if titleAtTap.contains("신고") {
-                ReviewAlert.show(in: vc, title: "신고 완료", message: "신고가 정상적으로 접수되었습니다.\n더 나은 GOMS가 되기 위해 노력하겠습니다!")
-            }
+    @objc func didTapCancel() {
+        UIView.animate(withDuration: 0.15, animations: {
+            self.alpha = 0
+        }) { _ in
+            self.removeFromSuperview()
         }
     }
     
-    required init?(coder: NSCoder) { fatalError() }
+    @objc func didTapAction() {
+
+        let titleAtTap = self.currentTitle
+        let vcAtTap = self.parentVC
+        let reason = getReasonText()
+
+        if titleAtTap.contains("신고") && !titleAtTap.contains("완료"),
+           (reason == nil || reason?.isEmpty == true) {
+            return
+        }
+
+        UIView.animate(withDuration: 0.15, animations: {
+            self.alpha = 0
+        }) { _ in
+            self.removeFromSuperview()
+        }
+
+        completionHandler?(reason)
+
+        if titleAtTap.contains("완료") {
+            return
+        }
+
+        if let vc = vcAtTap {
+            if titleAtTap.contains("삭제") {
+                ReviewAlert.show(in: vc, title: "삭제 완료", message: "후기가 성공적으로 삭제되었습니다.")
+            }
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 }

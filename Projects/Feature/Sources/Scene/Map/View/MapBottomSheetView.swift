@@ -79,7 +79,10 @@ public final class MapBottomSheetView: UIView {
     ) {
         self.popularPlaces = popular
         self.recommendedPlaces = recommended
+        
         self.reviewPlaces = reviews
+        
+    
         renderUI()
     }
     
@@ -136,10 +139,14 @@ public final class MapBottomSheetView: UIView {
             }
         }
         
+ 
         if !reviewPlaces.isEmpty {
             addSpacer(8)
-            contentStackView.addArrangedSubview(createSubTitleLabel(title: "작성한 후기", count: reviewPlaces.count, unit: "건", fontSize: 18))
+            contentStackView.addArrangedSubview(
+                createSubTitleLabel(title: "작성한 후기", count: reviewPlaces.count, unit: "건", fontSize: 18)
+            )
             addSpacer(16)
+
             for (index, place) in reviewPlaces.enumerated() {
                 addCard(type: .reviewed, data: place, index: index)
                 addSpacer(12)

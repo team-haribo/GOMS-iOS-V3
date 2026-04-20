@@ -14,7 +14,6 @@ import Service
 import CoreLocation
 
 public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate, CLLocationManagerDelegate {
-    // MARK: - School Front Coordinates
     private let schoolFrontLat: Double = 35.14342015456559
     private let schoolFrontLng: Double = 126.79997786265704
 private func resetUIForNewSelection() {
@@ -35,7 +34,6 @@ private var startLocationType: StartLocationType = .school
 private var endLocationType: StartLocationType = .school
 private var isStartFixedToPin: Bool = false
 
-    // MARK: - Distance Helper
     private func distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
         let earthRadius = 6371000.0
         
@@ -51,12 +49,7 @@ private var isStartFixedToPin: Bool = false
         return earthRadius * c
     }
         
-// MARK: - Properties
-
-private let distanceThreshold: Double = 50.0 // meters 기준
-
-
-
+private let distanceThreshold: Double = 50.0
 private var mapContainer: KMViewContainer?
 private var mapController: KMController?
 private let mapWrapperView = UIView()
@@ -99,7 +92,6 @@ private func formatDate(_ date: Date) -> String {
     return formatter.string(from: date)
 }
 
-// MARK: - Life Cycle
 public override func viewDidLoad() {
     super.viewDidLoad()
     setupView()
@@ -116,6 +108,7 @@ public override func viewDidLoad() {
     fetchPlaceList()
     viewModel.fetchHotPlaces()
     viewModel.fetchRecommendedPlaces()
+    viewModel.fetchMyReviews()
 }
 private func setupLocationManager() {
     locationManager.delegate = self
@@ -192,7 +185,6 @@ public override func viewWillDisappear(_ animated: Bool) {
     view.endEditing(true)
 }
 
-// MARK: - Setup
 private func setupView() {
     view.backgroundColor = .color.background.color
     view.addSubview(mapWrapperView)
@@ -228,7 +220,7 @@ private func setupLayout() {
 }
 
 private func setupDelegate() {
-    [recentSearchView.tableView, placeDetailView.tableView].forEach { $0.delegate = self; $0.dataSource = self }
+    [recentSearchView.tableView].forEach { $0.delegate = self; $0.dataSource = self }
 }
 
 private func setupActions() {
@@ -265,6 +257,46 @@ private func setupActions() {
         self.viewModel.toggleRecommend(placeId: placeId, isSelected: isSelected) {
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
+        }
+    }
+
+    bottomSheetView.onDeleteTapped = { [weak self] placeId in
+        guard let self = self else { return }
+
+        // ⭐ placeId -> reviewId 매핑 필요
+        guard let review = self.viewModel.myReviews.first(where: { $0.placeId == placeId }) else {
+            return
+        }
+
+        ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") { _ in
+            self.placeDetailView.isUserInteractionEnabled = false
+
+            self.viewModel.deleteReview(reviewId: review.reviewId) { [weak self] success in
+                guard let self = self else { return }
+
+                DispatchQueue.main.async {
+                    self.placeDetailView.isUserInteractionEnabled = true
+                }
+
+                guard success else {
+                    DispatchQueue.main.async {
+                        ReviewAlert.showSingle(
+                            in: self,
+                            title: "알림",
+                            message: "후기 삭제에 실패했습니다.",
+                            buttonTitle: "확인"
+                        )
+                    }
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    self.viewModel.fetchMyReviews()
+                    self.viewModel.fetchHotPlaces()
+                    self.viewModel.fetchRecommendedPlaces()
+                    self.updateBottomSheet()
+                }
+            }
         }
     }
     searchBar.textField.addTarget(self, action: #selector(didTapSearchBar), for: .editingDidBegin)
@@ -453,7 +485,6 @@ private func setupActions() {
 
 private func setupReviewWriteAction() { placeDetailView.reviewWriteButton.addTarget(self, action: #selector(didTapReviewWrite), for: .touchUpInside) }
 
-// MARK: - Networking
 private func fetchPlaceList() {
     viewModel.fetchAllPlaces()
 }
@@ -532,7 +563,6 @@ private func showCurrentLocationMarker(_ location: CLLocation) {
     }
 }
 
-// MARK: - Marker Rendering
 private func renderAllPlaceMarkers() {
     guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
     let manager = view.getLabelManager()
@@ -574,7 +604,6 @@ private func styleIDForCategory(_ category: String) -> String {
     return ""
 }
 
-// MARK: - Gestures
 @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
     let isDetail = gesture.view == placeDetailView
     let translation = gesture.translation(in: view)
@@ -604,7 +633,6 @@ private func setupGesture() {
     placeDetailView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
 }
 
-// MARK: - View Transition
 private func showDetailView(with data: MapPlaceData? = nil) {
     let isFirstShow = placeDetailView.isHidden
 
@@ -617,10 +645,8 @@ private func showDetailView(with data: MapPlaceData? = nil) {
     if let data = data {
         self.selectedPlaceId = data.placeId
 
-       
         self.currentPlaceDetail = nil
 
-       
         placeDetailView.configure(
             with: MapPlaceDetailModel(
                 placeId: data.placeId,
@@ -638,10 +664,10 @@ private func showDetailView(with data: MapPlaceData? = nil) {
                 recommended: false
             ),
             distanceText: "",
-            timeText: ""
+            timeText: "",
+            reviews: self.viewModel.reviews
         )
 
-       
         viewModel.fetchPlaceDetail(placeId: data.placeId)
         fetchReviews(placeId: data.placeId)
         viewModel.fetchRouteSilently(to: data)
@@ -654,7 +680,8 @@ private func showDetailView(with data: MapPlaceData? = nil) {
         placeDetailView.configure(
             with: detailModel,
             distanceText: "",
-            timeText: ""
+            timeText: "",
+            reviews: self.viewModel.reviews
         )
     }
 
@@ -707,14 +734,37 @@ private func bindViewModel() {
     viewModel.onReviewsUpdated = { [weak self] in
         guard let self = self else { return }
 
+
         DispatchQueue.main.async {
+            self.placeDetailView.isUserInteractionEnabled = true
             self.placeDetailView.updateReviewCount(
                 self.viewModel.reviews.count,
                 recommendCount: self.currentPlaceDetail?.recommendCount ?? 0
             )
 
-            self.placeDetailView.tableView.reloadData()
+            self.placeDetailView.configure(
+                with: self.currentPlaceDetail ?? MapPlaceDetailModel(
+                    placeId: self.selectedPlaceId,
+                    placeName: "",
+                    address: "",
+                    roadAddress: "",
+                    latitude: 0,
+                    longitude: 0,
+                    categoryGroupName: "",
+                    categoryName: "",
+                    phone: "",
+                    placeUrl: "",
+                    reviewCount: self.viewModel.reviews.count,
+                    recommendCount: self.currentPlaceDetail?.recommendCount ?? 0,
+                    recommended: self.currentPlaceDetail?.recommended ?? false
+                ),
+                distanceText: self.viewModel.distanceText,
+                timeText: self.viewModel.timeText,
+                reviews: self.viewModel.reviews
+            )
             self.updateBottomSheet()
+            self.placeDetailView.setNeedsLayout()
+            self.placeDetailView.layoutIfNeeded()
         }
     }
 
@@ -729,7 +779,8 @@ private func bindViewModel() {
         self.placeDetailView.configure(
             with: detail,
             distanceText: self.viewModel.distanceText,
-            timeText: self.viewModel.timeText
+            timeText: self.viewModel.timeText,
+            reviews: self.viewModel.reviews
         )
 
         self.updateViewVisibility()
@@ -769,6 +820,9 @@ private func bindViewModel() {
             self.drawRoute()
         }
     }
+    viewModel.onMyReviewsUpdated = { [weak self] in
+        self?.updateBottomSheet()
+    }
 }
 
 private func setupBottomSheetBinding() {
@@ -802,10 +856,23 @@ private func updateBottomSheet() {
             )
         }
 
+        let reviews: [MapCardData] = viewModel.myReviews.compactMap { review in
+            guard let place = self.allPlaces.first(where: { $0.placeId == review.placeId }) else { return nil }
+            return MapCardData(
+                id: place.placeId,
+                name: place.placeName,
+                address: place.address,
+                category: place.categoryName,
+                reviewCount: place.reviewCount,
+                recommendCount: place.recommendCount,
+                isFavorite: place.recommended
+            )
+        }
+
         bottomSheetView.configure(
             popular: Array(popular),
             recommended: recommended,
-            reviews: []
+            reviews: reviews
         )
         return
     }
@@ -824,10 +891,23 @@ private func updateBottomSheet() {
             )
         }
 
+    let reviews: [MapCardData] = viewModel.myReviews.compactMap { review in
+        guard let place = self.allPlaces.first(where: { $0.placeId == review.placeId }) else { return nil }
+        return MapCardData(
+            id: place.placeId,
+            name: place.placeName,
+            address: place.address,
+            category: place.categoryName,
+            reviewCount: place.reviewCount,
+            recommendCount: place.recommendCount,
+            isFavorite: place.recommended
+        )
+    }
+
     bottomSheetView.configure(
         popular: Array(popular),
         recommended: recommended,
-        reviews: []
+        reviews: reviews
     )
 }
 
@@ -1017,7 +1097,8 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
             recommended: false
         ),
         distanceText: "",
-        timeText: ""
+        timeText: "",
+        reviews: self.viewModel.reviews
     )
 
     placeDetailView.isHidden = false
@@ -1084,7 +1165,6 @@ private func requestRoute(to selectedPlace: MapPlaceData) {
     }
 }
 
-// MARK: - Kakao Maps Setup
 private func setupMap() {
     mapWrapperView.layoutIfNeeded()
     mapWrapperView.subviews.forEach { $0.removeFromSuperview() }
@@ -1259,86 +1339,9 @@ private func showActiveMarker(for place: MapPlaceData) {
 public func kakaoMapDidTap(kakaoMap: KakaoMap, point: CGPoint) {
 }
 
-// MARK: - Kakao 기본 POI 클릭 처리
 public func kakaoMap(_ kakaoMap: KakaoMap, didTap poi: Poi) {
-    let coord = poi.position
-    let wgs = coord.wgsCoord
-
-    guard let nearestPlace = viewModel.findNearestPlace(lat: wgs.latitude, lon: wgs.longitude) else {
-        return
-    }
-
-    let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
-    if dist > distanceThreshold {
-        return
-    }
-
-    self.selectedPlaceId = nearestPlace.placeId
-    self.currentPlaceDetail = nil
-    self.moveCamera(to: nearestPlace)
-    self.showActiveMarker(for: nearestPlace)
-
-    
-    if self.routeDetailVC != nil {
-        self.routeDetailVC?.view.removeFromSuperview()
-        self.routeDetailVC?.removeFromParent()
-        self.routeDetailVC = nil
-        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
-
-       
-        self.selectedPlaceId = nearestPlace.placeId
-        self.currentPlaceDetail = nil
-
-    self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
-    self.fetchReviews(placeId: nearestPlace.placeId)
-    self.viewModel.fetchRouteSilently(to: nearestPlace)
-
-        self.resetUIForNewSelection()
-        self.showDetailView(with: nearestPlace)
-        return
-    }
-
-
-    if !self.routeSelectionView.isHidden {
-        self.selectedPlaceId = nearestPlace.placeId
-        self.currentPlaceDetail = nil
-        self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
-
-        self.requestRoute(to: nearestPlace)
-        return
-    }
-
-
-    self.resetUIForNewSelection()
-
-    self.placeDetailView.isHidden = false
-    self.bottomSheetView.isHidden = true
-    self.recentSearchView.isHidden = true
-    self.searchBar.isHidden = false
-
-    self.showDetailView(with: nearestPlace)
-   
-    self.placeDetailView.setNeedsLayout()
-    self.placeDetailView.layoutIfNeeded()
-
-    self.viewModel.fetchHotPlaces()
-    self.viewModel.fetchRecommendedPlaces()
-
-    if let activeLayer = kakaoMap.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
-        let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
-        activeLayer.removePois(poiIDs: ids)
-
-        let styleID = styleIDForCategory(nearestPlace.categoryName)
-        let option = PoiOptions(styleID: styleID, poiID: "active_\(nearestPlace.placeId)")
-        option.clickable = false
-
-        if let poi = activeLayer.addPoi(
-            option: option,
-            at: MapPoint(longitude: nearestPlace.longitude, latitude: nearestPlace.latitude)
-        ) {
-            poi.show()
-        }
-    }
+    let coord = poi.position.wgsCoord
+    handlePoiSelection(latitude: coord.latitude, longitude: coord.longitude, kakaoMap: kakaoMap)
 }
 
 public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, position: MapPoint) {
@@ -1346,75 +1349,69 @@ public func poiDidTapped(kakaoMap: KakaoMap, layerID: String, poiID: String, pos
         return
     }
 
-    let wgs = position.wgsCoord
-    guard let nearestPlace = viewModel.findNearestPlace(lat: wgs.latitude, lon: wgs.longitude) else {
+    let coord = position.wgsCoord
+    handlePoiSelection(latitude: coord.latitude, longitude: coord.longitude, kakaoMap: kakaoMap)
+}
+
+private func handlePoiSelection(latitude: Double, longitude: Double, kakaoMap: KakaoMap) {
+    guard let nearestPlace = viewModel.findNearestPlace(lat: latitude, lon: longitude) else {
         return
     }
 
-    let dist = distance(lat1: wgs.latitude, lon1: wgs.longitude, lat2: nearestPlace.latitude, lon2: nearestPlace.longitude)
+    let dist = distance(
+        lat1: latitude,
+        lon1: longitude,
+        lat2: nearestPlace.latitude,
+        lon2: nearestPlace.longitude
+    )
+
     if dist > distanceThreshold {
         return
     }
 
     self.selectedPlaceId = nearestPlace.placeId
     self.currentPlaceDetail = nil
-    self.moveCamera(to: nearestPlace)
-    self.showActiveMarker(for: nearestPlace)
 
-    
-    if self.routeDetailVC != nil {
-        self.routeDetailVC?.view.removeFromSuperview()
-        self.routeDetailVC?.removeFromParent()
+    moveCamera(to: nearestPlace)
+    showActiveMarker(for: nearestPlace)
+
+    if let routeVC = self.routeDetailVC {
+        routeVC.view.removeFromSuperview()
+        routeVC.removeFromParent()
         self.routeDetailVC = nil
+
         self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
-
-        
-        self.selectedPlaceId = nearestPlace.placeId
-        self.currentPlaceDetail = nil
-
-    self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
-    self.fetchReviews(placeId: nearestPlace.placeId)
-    self.viewModel.fetchRouteSilently(to: nearestPlace)
-
+        self.viewModel.fetchPlaceDetail(placeId: nearestPlace.placeId)
+        self.fetchReviews(placeId: nearestPlace.placeId)
+        self.viewModel.fetchRouteSilently(to: nearestPlace)
         self.resetUIForNewSelection()
         self.showDetailView(with: nearestPlace)
         return
     }
 
-    
     if !self.routeSelectionView.isHidden {
-        self.selectedPlaceId = nearestPlace.placeId
-        self.currentPlaceDetail = nil
         self.routeSelectionView.endLocationLabel.text = "    \(nearestPlace.placeName)"
-
         self.requestRoute(to: nearestPlace)
         return
     }
 
-
     self.resetUIForNewSelection()
-
     self.placeDetailView.isHidden = false
     self.bottomSheetView.isHidden = true
     self.recentSearchView.isHidden = true
     self.searchBar.isHidden = false
-
     self.showDetailView(with: nearestPlace)
-    
     self.placeDetailView.setNeedsLayout()
     self.placeDetailView.layoutIfNeeded()
-
     self.viewModel.fetchHotPlaces()
     self.viewModel.fetchRecommendedPlaces()
 
     if let activeLayer = kakaoMap.getLabelManager().getLabelLayer(layerID: "activePoiLayer") {
         let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
         activeLayer.removePois(poiIDs: ids)
-
         let styleID = styleIDForCategory(nearestPlace.categoryName)
         let option = PoiOptions(styleID: styleID, poiID: "active_\(nearestPlace.placeId)")
         option.clickable = false
-
         if let poi = activeLayer.addPoi(
             option: option,
             at: MapPoint(longitude: nearestPlace.longitude, latitude: nearestPlace.latitude)
@@ -1499,48 +1496,138 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
     let count = tableView == recentSearchView.tableView ? dummyRecentSearches.count : viewModel.reviews.count
     return count
 }
-public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    if tableView == recentSearchView.tableView {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
-        let place = dummyRecentSearches[indexPath.row]
-        let dateText: String
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView == recentSearchView.tableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "MapRecentSearchCell", for: indexPath) as! MapRecentSearchCell
+            let place = dummyRecentSearches[indexPath.row]
+            let dateText: String
 
-        if self.isShowingRecentSearches,
-           let item = viewModel.recentSearches.first(where: { $0.placeId == place.placeId }) {
-            dateText = formatDate(item.searchedAt)
+            if self.isShowingRecentSearches,
+               let item = viewModel.recentSearches.first(where: { $0.placeId == place.placeId }) {
+                dateText = formatDate(item.searchedAt)
+            } else {
+                dateText = ""
+            }
+
+            cell.configure(model: place, date: dateText)
+            cell.backgroundColor = .clear
+            cell.onDeleteTap = { [weak self, weak tableView] in
+                guard let self = self, let tableView = tableView, let currentIndexPath = tableView.indexPath(for: cell) else { return }
+                guard self.isShowingRecentSearches else { return }
+                guard currentIndexPath.row < self.dummyRecentSearches.count else { return }
+
+                let placeId = self.dummyRecentSearches[currentIndexPath.row].placeId
+                self.viewModel.removeRecentSearch(placeId: placeId)
+
+                self.dummyRecentSearches = self.viewModel.recentSearches.compactMap { item in
+                    self.allPlaces.first(where: { $0.placeId == item.placeId })
+                }
+            }
+            return cell
         } else {
-            dateText = ""
-        }
-
-        cell.configure(model: place, date: dateText)
-        cell.backgroundColor = .clear
+            let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
+            cell.configure(with: viewModel.reviews[indexPath.row])
+            // Control delete/report button visibility based on ownership
+            let review = viewModel.reviews[indexPath.row]
+            // TODO: replace with actual userId comparison if available
+            let isMyReview = review.isMine ?? false
+            cell.setDeleteButtonHidden(!isMyReview)
+            cell.setReportButtonHidden(isMyReview)
         cell.onDeleteTap = { [weak self, weak tableView] in
-            guard let self = self, let tableView = tableView, let currentIndexPath = tableView.indexPath(for: cell) else { return }
-            guard self.isShowingRecentSearches else { return }
-            guard currentIndexPath.row < self.dummyRecentSearches.count else { return }
+            guard let self = self else {
+                return
+            }
+            guard let tableView = tableView else {
+                return
+            }
+            guard let currentIndexPath = tableView.indexPath(for: cell) else {
+                return
+            }
+            guard currentIndexPath.row < self.viewModel.reviews.count else {
+                return
+            }
 
-            let placeId = self.dummyRecentSearches[currentIndexPath.row].placeId
-            self.viewModel.removeRecentSearch(placeId: placeId)
-        self.dummyRecentSearches = self.viewModel.recentSearches.compactMap { item in
-            self.allPlaces.first(where: { $0.placeId == item.placeId })
-        }
-        }
-        return cell
-    } else {
-        let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
-        cell.configure(with: viewModel.reviews[indexPath.row])
-        cell.onDeleteTap = { [weak self] in
-            guard let self = self, let currentIndexPath = tableView.indexPath(for: cell) else { return }
-            ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") {
-                let reviewToDelete = self.viewModel.reviews[currentIndexPath.row]
-                self.viewModel.deleteReview(reviewId: reviewToDelete.reviewId) { success in
-                    if success {
+            let reviewToDelete = self.viewModel.reviews[currentIndexPath.row]
+
+            ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") { _ in
+
+                self.placeDetailView.isUserInteractionEnabled = false
+
+                self.viewModel.deleteReview(reviewId: reviewToDelete.reviewId) { [weak self] success in
+                    guard let self = self else { return }
+
+                    DispatchQueue.main.async {
+                        self.placeDetailView.isUserInteractionEnabled = true
+                    }
+
+                    guard success else {
+                        DispatchQueue.main.async {
+                            ReviewAlert.showSingle(
+                                in: self,
+                                title: "알림",
+                                message: "후기 삭제에 실패했습니다.",
+                                buttonTitle: "확인"
+                            )
+                        }
+                        return
+                    }
+
+                    DispatchQueue.main.async {
                         self.fetchReviews(placeId: self.selectedPlaceId)
+                        self.viewModel.fetchPlaceDetail(placeId: self.selectedPlaceId)
+                        self.viewModel.fetchHotPlaces()
+                        self.viewModel.fetchRecommendedPlaces()
+                        self.placeDetailView.tableView.reloadData()
                     }
                 }
             }
         }
-        cell.onReportTap = { [weak self] in guard let self = self else { return }; ReviewAlert.show(in: self, title: "후기 신고", message: "이 후기를 신고하시겠습니까?") { } }
+        cell.onReportTap = { [weak self] in
+            guard let self = self else {
+                return
+            }
+            guard indexPath.row < self.viewModel.reviews.count else {
+                return
+            }
+
+            ReviewAlert.show(in: self, title: "후기 신고", message: "") { reason in
+                guard let reason = reason else {
+                    return
+                }
+
+                let review = self.viewModel.reviews[indexPath.row]
+
+                self.viewModel.reportReview(reviewId: review.reviewId, reason: reason) { [weak self] success in
+                    guard let self = self else { return }
+
+                    guard success else {
+                        DispatchQueue.main.async {
+                            ReviewAlert.showSingle(
+                                in: self,
+                                title: "알림",
+                                message: "이미 해당 후기를 신고했습니다.",
+                                buttonTitle: "취소"
+                            )
+                        }
+                        return
+                    }
+
+                    DispatchQueue.main.async {
+                        self.placeDetailView.isUserInteractionEnabled = false
+
+                        ReviewAlert.show(
+                            in: self,
+                            title: "신고 완료",
+                            message: "신고가 정상적으로 접수되었습니다."
+                        ) { [weak self] _ in
+                            guard let self = self else { return }
+                            self.placeDetailView.isUserInteractionEnabled = true
+                            self.backToHome()
+                        }
+                    }
+                }
+            }
+        }
         return cell
     }
 }
