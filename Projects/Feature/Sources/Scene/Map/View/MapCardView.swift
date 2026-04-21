@@ -81,10 +81,11 @@ public final class MapCardView: UIView {
         actionButton.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview().offset(-16)
-            $0.size.equalTo(24) 
+            $0.size.equalTo(24)
         }
         
         setupButton(type: type)
+        actionButton.addTarget(self, action: #selector(didTapHeart), for: .touchUpInside)
     }
 
     private func setupButton(type: MapCardType) {
@@ -108,13 +109,13 @@ public final class MapCardView: UIView {
             )
          
             actionButton.setImage(
-                UIImage(systemName: "heart.fill", withConfiguration: heartConfig),
+                UIImage(named: "fillhart", in: Bundle.module, compatibleWith: nil),
                 for: .selected
             )
             
             actionButton.isSelected = (type == .recommended)
             
-            actionButton.tintColor = actionButton.isSelected ? UIColor.color.gomsPrimary.color : UIColor.color.sub1.color
+            actionButton.tintColor = nil
         }
     }
 
@@ -136,5 +137,8 @@ public final class MapCardView: UIView {
         } else {
             statusLabel.text = "학생 후기 10+ | 추천 20+"
         }
+    }
+    @objc private func didTapHeart() {
+        actionButton.isSelected.toggle()
     }
 }

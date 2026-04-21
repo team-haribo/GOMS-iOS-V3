@@ -48,18 +48,14 @@ public final class MapPlaceDetailView: UIView {
     }
     
     public let heartButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
-        let emptyHeart = UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil)?
-            .withConfiguration(config)
-            .withRenderingMode(.alwaysTemplate)
-        let filledHeart = UIImage(systemName: "heart.fill")?
-            .withConfiguration(config)
-            .withRenderingMode(.alwaysTemplate)
+        let emptyHeart = UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil)
+        let filledHeart = UIImage(named: "fillhart", in: Bundle.module, compatibleWith: nil)
         
         $0.setImage(emptyHeart, for: .normal)
         $0.setImage(filledHeart, for: .selected)
         $0.imageView?.contentMode = .scaleAspectFit
-        $0.tintColor = .color.sub2.color
+        
+        $0.tintColor = nil
     }
     
     public let closeButton = UIButton().then {

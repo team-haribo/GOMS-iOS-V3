@@ -75,10 +75,14 @@ public final class MapReviewWriteView: UIView {
     }
     
     public let heartButton = UIButton().then {
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+       
         $0.setImage(UIImage(named: "Hart", in: Bundle.module, compatibleWith: nil), for: .normal)
-        $0.setImage(UIImage(systemName: "heart.fill", withConfiguration: config), for: .selected)
-        $0.tintColor = .color.sub2.color
+
+       
+        $0.setImage(UIImage(named: "fillhart", in: Bundle.module, compatibleWith: nil), for: .selected)
+
+      
+        $0.tintColor = nil
     }
     
     public let contentContainerView = UIView().then {
