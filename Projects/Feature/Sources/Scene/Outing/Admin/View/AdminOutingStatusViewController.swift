@@ -10,19 +10,18 @@ import UIKit
 
 public final class AdminOutingViewController: BaseViewController, AdminOutingCellDelegate {
     
-    // MARK: - Properties
     private let viewModel = OutingViewModel()
     
     var outingList: [OutingListData] = []
     
-let refreshControl = UIRefreshControl()
+    let refreshControl = UIRefreshControl()
 
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
-        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
-        $0.tintColor = UIColor.color.admin.color
+        $0.setTitleColor(UIColor.color.sub2.color, for: .normal)
+        $0.tintColor = UIColor.color.sub2.color
         $0.titleLabel?.font = .suit(size: 18, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
@@ -78,7 +77,6 @@ let refreshControl = UIRefreshControl()
         $0.isHidden = true
     }
     
-    // MARK: - Life Cycel
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -97,28 +95,26 @@ let refreshControl = UIRefreshControl()
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.navigationBar.tintColor = .color.admin.color
+        navigationController?.navigationBar.tintColor = .color.sub2.color
     }
     
-    // MARK: - Setting
     public override func configNavigation() {
         self.navigationController?.navigationBar.isHidden = true
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
-        navigationController?.navigationBar.tintColor = .color.admin.color
+        navigationController?.navigationBar.tintColor = .color.sub2.color
         self.navigationItem.hidesSearchBarWhenScrolling = false
-    
     }
     
     func setup() {
         if outingList.isEmpty {
-        
-            searchResultLabel.isHidden = false
-            coffeeIcon.isHidden = true
-            outingNilLabel.isHidden = true
+            searchResultLabel.isHidden = true
+            outingListCollectionView.isHidden = true
+            coffeeIcon.isHidden = false
+            outingNilLabel.isHidden = false
         } else {
-            
             searchResultLabel.isHidden = false
+            outingListCollectionView.isHidden = false
             coffeeIcon.isHidden = true
             outingNilLabel.isHidden = true
         }
@@ -132,7 +128,7 @@ let refreshControl = UIRefreshControl()
         addView()
         configureRefreshControl()
     }
-        // MARK: - Refresh Control Setup
+
     private func configureRefreshControl() {
         outingListCollectionView.refreshControl = refreshControl
         refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
@@ -146,6 +142,7 @@ let refreshControl = UIRefreshControl()
             self.outingList = self.viewModel.outingListDatas
             DispatchQueue.main.async {
                 self.outingListCollectionView.reloadData()
+                self.setup()
                 self.refreshControl.endRefreshing()
             }
         }
@@ -176,10 +173,15 @@ let refreshControl = UIRefreshControl()
         let searchText = textField.text ?? ""
         if searchText.isEmpty {
             outingList = viewModel.outingListDatas
+            self.setup()
+            self.outingListCollectionView.reloadData()
         } else {
             viewModel.searchStudent(searchString: searchText) {
                 self.outingList = self.viewModel.outingSearchListDatas
-                self.outingListCollectionView.reloadData()
+                DispatchQueue.main.async {
+                    self.setup()
+                    self.outingListCollectionView.reloadData()
+                }
             }
         }
     }
@@ -188,17 +190,14 @@ let refreshControl = UIRefreshControl()
         self.navigationController?.popViewController(animated: true)
     }
 
-    // MARK: - Configure UI
     public override func configureUI() {
         view.backgroundColor = .color.background.color
     }
     
-    // MARK: - Add View
     public override func addView() {
         [customBackButton, searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel].forEach { view.addSubview($0) }
     }
         
-    // MARK: - Layout
     public override func setLayout() {
         customBackButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
@@ -242,12 +241,12 @@ let refreshControl = UIRefreshControl()
             $0.top.equalTo(coffeeIcon.snp.bottom).offset(12)
         }
     }
+
     public override func shouldShowCustomNavigation() -> Bool {
         return false
     }
 }
 
-// MARK: - Extension
 extension AdminOutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return outingList.count
@@ -271,29 +270,28 @@ extension AdminOutingViewController: UICollectionViewDelegate {
         guard let indexPath = outingListCollectionView.indexPath(for: cell) else { return }
         let index = indexPath.item
 
-        let alertController = UIAlertController(
-            title: "외출 강제 복귀",
-            message: "외출자를 강제로 복귀시키시겠습니까?",
-            preferredStyle: .alert
-        )
+        GOMSAlert.show(
+            in: self,
+            title: "강제외출 복귀",
+            message: "학생을 복귀 상태로 변경하시겠습니까?",
+            actionTitle: "복귀",
+            isNegative: true,
+            highlightKeywords: [],
+            action: {
+                guard index < self.outingList.count else { return }
 
-        alertController.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
-
-        alertController.addAction(UIAlertAction(title: "복귀", style: .destructive, handler: { _ in
-            guard index < self.outingList.count else { return }
-
-            let target = self.outingList[index]
-            self.viewModel.forceOutingStudent(user: target) {
-                DispatchQueue.main.async {
-                    self.viewModel.getOutingList {
-                        self.outingList = self.viewModel.outingListDatas
-                        self.outingListCollectionView.reloadData()
+                let target = self.outingList[index]
+                self.viewModel.forceOutingStudent(user: target) {
+                    DispatchQueue.main.async {
+                        self.viewModel.getOutingList {
+                            self.outingList = self.viewModel.outingListDatas
+                            self.setup()
+                            self.outingListCollectionView.reloadData()
+                        }
                     }
                 }
             }
-        }))
-
-        present(alertController, animated: true, completion: nil)
+        )
     }
 }
 
