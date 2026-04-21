@@ -202,7 +202,7 @@ public final class SignInViewController: BaseViewController {
                     window.rootViewController = nav
                     window.makeKeyAndVisible()
                 } else {
-                    self.passwordErrorLabel.text = "이메일 또는 비밀번호를 확인해주세요."
+                    self.passwordErrorLabel.text = "잘못된 비밀번호입니다."
                     self.showPasswordError()
                 }
             }
