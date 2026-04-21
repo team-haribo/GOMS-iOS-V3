@@ -100,7 +100,7 @@ public final class IntroViewController: BaseViewController {
     private let signUpGuideLabel = UILabel().then {
         $0.text = "GOMS가 처음이라면?"
         $0.font = .suit(size: 12, weight: .medium)
-        $0.textColor = .color.button.color
+        $0.textColor = .color.mainText.color
     }
 
     private lazy var signUpButton = UIButton().then {
