@@ -152,8 +152,6 @@ public final class MapPlaceDetailView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
-        tableView.dataSource = self
-        tableView.delegate = self
         setLayout()
         bindActions()
     }
@@ -342,22 +340,3 @@ public final class MapPlaceDetailView: UIView {
     }
 }
 
-extension MapPlaceDetailView: UITableViewDataSource, UITableViewDelegate {
-    
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return reviews.count
-    }
-
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: MapReviewCell.identifier,
-            for: indexPath
-        ) as? MapReviewCell else {
-            return UITableViewCell()
-        }
-
-        let review = reviews[indexPath.row]
-        cell.configure(with: review)
-        return cell
-    }
-}

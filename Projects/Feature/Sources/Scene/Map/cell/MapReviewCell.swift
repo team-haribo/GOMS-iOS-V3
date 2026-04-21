@@ -126,20 +126,15 @@ public final class MapReviewCell: UITableViewCell {
     }
     
     private func formatDate(_ isoString: String) -> String {
-       
         let datePart = isoString.split(separator: "T").first ?? Substring(isoString)
         let components = datePart.split(separator: "-")
-        
         guard components.count == 3 else { return isoString }
-        
         let year = components[0].suffix(2)
         let month = components[1]
         let day = components[2]
-        
         return "\(year).\(month).\(day)"
     }
 
-    // 🔥 accessToken에서 memberId 추출
     private func getMyIdFromToken() -> Int? {
         guard let token = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) else {
             return nil
@@ -179,14 +174,9 @@ public final class MapReviewCell: UITableViewCell {
             profileImageView.image = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
         }
 
-        // 🔥 토큰 기반으로 내 리뷰 판단 (서버 isMine 안 내려오는 경우 대응)
         let myId = getMyIdFromToken()
         let isMine = (myId == data.memberId)
         isMineState = isMine
-
-        print("myId:", myId as Any)
-        print("review memberId:", data.memberId)
-        print("isMine:", isMine)
 
         if isMine {
             actionButton.setImage(
@@ -204,14 +194,10 @@ public final class MapReviewCell: UITableViewCell {
     }
 
     public func setDeleteButtonHidden(_ hidden: Bool) {
-        if isMineState {
-            actionButton.isHidden = hidden
-        }
+        actionButton.isHidden = hidden
     }
 
     public func setReportButtonHidden(_ hidden: Bool) {
-        if !isMineState {
-            actionButton.isHidden = hidden
-        }
+        actionButton.isHidden = hidden
     }
 }
