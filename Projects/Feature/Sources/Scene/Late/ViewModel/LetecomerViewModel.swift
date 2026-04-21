@@ -49,7 +49,7 @@ public final class LetecomerViewModel: BaseViewModel {
                     self.latecomerListDatas = self.latecomerList.map {
                         LatecomerListData(
                             id: $0.memberid,
-                            profileImageURL: $0.profileUrl,
+                            profileImageURL: $0.profileImageUrl,
                             name: $0.name,
                             grade: $0.grade,
                             department: $0.major
