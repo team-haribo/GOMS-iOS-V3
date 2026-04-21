@@ -36,10 +36,8 @@ public final class MapPlaceDetailView: UIView {
     public let titleLabel = UILabel().then {
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 22, weight: .bold)
-        // MARK: - FIX (Text Fitting)
-        $0.adjustsFontSizeToFitWidth = true
-        $0.minimumScaleFactor = 0.7
-        $0.lineBreakMode = .byTruncatingTail
+        $0.numberOfLines = 2
+        $0.lineBreakMode = .byWordWrapping
     }
     
     public let categoryLabel = UILabel().then {
@@ -120,6 +118,8 @@ public final class MapPlaceDetailView: UIView {
         $0.separatorStyle = .singleLine
         $0.separatorColor = .color.sub2.color.withAlphaComponent(0.2)
         $0.register(MapReviewCell.self, forCellReuseIdentifier: MapReviewCell.identifier)
+        $0.rowHeight = UITableView.automaticDimension
+        $0.estimatedRowHeight = 100
     }
 
     private let emptyReviewStackView = UIStackView().then {
@@ -145,12 +145,15 @@ public final class MapPlaceDetailView: UIView {
     }
 
     // MARK: - Properties
+    private var reviews: [MapReview] = []
     public var onHeartToggled: ((Bool) -> Void)?
 
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        tableView.dataSource = self
+        tableView.delegate = self
         setLayout()
         bindActions()
     }
@@ -158,19 +161,25 @@ public final class MapPlaceDetailView: UIView {
     required init?(coder: NSCoder) { fatalError() }
     
     // MARK: - Configure
-    public func configure(with data: MapPlaceDetailModel) {
+    public func configure(with data: MapPlaceDetailModel, distanceText: String, timeText: String, reviews: [MapReview]) {
         titleLabel.text = data.placeName
-        categoryLabel.text = data.categoryName
-        addressLabel.text = data.address
-        infoLabel.text = data.roadAddress
+        let categories = data.categoryName.split(separator: ">").map { $0.trimmingCharacters(in: .whitespaces) }
+        categoryLabel.text = categories.last
+        addressLabel.text = data.roadAddress
+        infoLabel.isHidden = false
+        infoLabel.text = "\(distanceText) | \(timeText)"
         heartButton.isSelected = data.recommended
         heartButton.tintColor = data.recommended ? .color.gomsPrimary.color : .color.sub2.color
         
         updateReviewCount(data.reviewCount, recommendCount: data.recommendCount)
         
+        self.reviews = reviews
         // MARK: - FIXED (Data Sync)
         tableView.reloadData()
-        self.layoutIfNeeded() // 데이터 갱신 후 레이아웃 즉시 재계산
+        DispatchQueue.main.async {
+            self.tableView.layoutIfNeeded()
+            self.layoutIfNeeded()
+        }
     }
 
     public func updateReviewCount(_ count: Int, recommendCount: Int) {
@@ -178,12 +187,26 @@ public final class MapPlaceDetailView: UIView {
         
         let fullText = "학생 후기 \(count)건"
         let attributedString = NSMutableAttributedString(string: fullText)
-        let font = UIFont.suit(size: 20, weight: .bold)
         
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.mainText.color, range: (fullText as NSString).range(of: "학생 후기"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: (fullText as NSString).range(of: "\(count)"))
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.sub2.color, range: (fullText as NSString).range(of: "건"))
-        attributedString.addAttribute(.font, value: font, range: NSRange(location: 0, length: fullText.count))
+        
+        let titleFont = UIFont.suit(size: 18, weight: .semibold)
+        let countFont = UIFont.suit(size: 15, weight: .medium)
+        let unitFont = UIFont.suit(size: 15, weight: .medium)
+
+        let nsString = fullText as NSString
+
+        attributedString.addAttribute(.font, value: titleFont, range: nsString.range(of: "학생 후기"))
+        attributedString.addAttribute(.font, value: countFont, range: nsString.range(of: "\(count)"))
+        attributedString.addAttribute(.font, value: unitFont, range: nsString.range(of: "건"))
+
+        
+        let baselineOffset: CGFloat = (titleFont.lineHeight - countFont.lineHeight) / 2
+
+        attributedString.addAttribute(.baselineOffset, value: baselineOffset, range: nsString.range(of: "\(count)"))
+        attributedString.addAttribute(.baselineOffset, value: baselineOffset, range: nsString.range(of: "건"))
         
         reviewHeaderLabel.attributedText = attributedString
         
@@ -254,15 +277,15 @@ public final class MapPlaceDetailView: UIView {
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
-        
+
         infoLabel.snp.makeConstraints {
             $0.top.equalTo(addressLabel.snp.bottom).offset(4)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
             $0.trailing.equalToSuperview().inset(Metric.sideMargin)
         }
-        
+
         reviewCountLabel.snp.makeConstraints {
-            $0.top.equalTo(infoLabel.snp.bottom).offset(4)
+            $0.top.equalTo(infoLabel.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(Metric.sideMargin)
         }
         
@@ -291,7 +314,10 @@ public final class MapPlaceDetailView: UIView {
         tableView.snp.makeConstraints {
             $0.top.equalTo(reviewHeaderLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(-20)
+        }
+
+        contentView.snp.makeConstraints {
+            $0.bottom.equalTo(tableView.snp.bottom).offset(20)
         }
 
         emptyReviewStackView.snp.makeConstraints {
@@ -313,5 +339,25 @@ public final class MapPlaceDetailView: UIView {
         heartButton.isSelected.toggle()
         heartButton.tintColor = heartButton.isSelected ? .color.gomsPrimary.color : .color.sub2.color
         onHeartToggled?(heartButton.isSelected)
+    }
+}
+
+extension MapPlaceDetailView: UITableViewDataSource, UITableViewDelegate {
+    
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return reviews.count
+    }
+
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: MapReviewCell.identifier,
+            for: indexPath
+        ) as? MapReviewCell else {
+            return UITableViewCell()
+        }
+
+        let review = reviews[indexPath.row]
+        cell.configure(with: review)
+        return cell
     }
 }

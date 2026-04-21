@@ -61,25 +61,50 @@ public struct MapPlaceData: Codable {
 // MARK: - Review Data
 public struct MapReview: Codable {
     public let reviewId: Int
+    public let placeId: Int?
+    public let memberId: Int
     public let name: String
-    public let info: String
+    public let grade: Int
+    public let department: String
+    public let profileImageUrl: String
     public let content: String
-    public let date: String
-    public let isMine: Bool
-    
+    public let reviewedAt: String
+    public let isMine: Bool?
+
     public init(
         reviewId: Int,
+        placeId: Int?,
+        memberId: Int,
         name: String,
-        info: String,
+        grade: Int,
+        department: String,
+        profileImageUrl: String,
         content: String,
-        date: String,
-        isMine: Bool = false
+        reviewedAt: String,
+        isMine: Bool
     ) {
         self.reviewId = reviewId
+        self.placeId = placeId
+        self.memberId = memberId
         self.name = name
-        self.info = info
+        self.grade = grade
+        self.department = department
+        self.profileImageUrl = profileImageUrl
         self.content = content
-        self.date = date
+        self.reviewedAt = reviewedAt
         self.isMine = isMine
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reviewId = "review_id"
+        case placeId = "place_id"
+        case memberId = "memberId"
+        case name
+        case grade
+        case department
+        case profileImageUrl
+        case content
+        case reviewedAt = "reviewed_at"
+        case isMine = "is_mine"
     }
 }

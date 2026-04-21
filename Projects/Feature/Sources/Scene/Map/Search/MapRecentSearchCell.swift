@@ -22,6 +22,8 @@ public final class MapRecentSearchCell: UITableViewCell {
     private let titleLabel = UILabel().then {
         $0.textColor = UIColor.color.sub1.color
         $0.font = UIFont(name: "SUIT-Medium", size: 16) ?? .systemFont(ofSize: 16)
+        $0.numberOfLines = 2
+        $0.lineBreakMode = .byWordWrapping
     }
     
     private let dateLabel = UILabel().then {
@@ -70,7 +72,7 @@ public final class MapRecentSearchCell: UITableViewCell {
         
         titleLabel.snp.makeConstraints {
             $0.leading.equalTo(pinIcon.snp.trailing).offset(12)
-            $0.trailing.equalTo(dateLabel.snp.leading).offset(-8)
+            $0.trailing.lessThanOrEqualTo(dateLabel.snp.leading).offset(-8)
             $0.centerY.equalToSuperview()
         }
     }
