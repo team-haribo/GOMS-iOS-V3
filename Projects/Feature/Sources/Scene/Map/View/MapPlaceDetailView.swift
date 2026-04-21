@@ -146,14 +146,13 @@ public final class MapPlaceDetailView: UIView {
 
     // MARK: - Properties
     private var reviews: [MapReview] = []
+    public var currentReviews: [MapReview] = []
     public var onHeartToggled: ((Bool) -> Void)?
 
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
-        tableView.dataSource = self
-        tableView.delegate = self
         setLayout()
         bindActions()
     }
@@ -174,12 +173,12 @@ public final class MapPlaceDetailView: UIView {
         updateReviewCount(data.reviewCount, recommendCount: data.recommendCount)
         
         self.reviews = reviews
-        // MARK: - FIXED (Data Sync)
-        tableView.reloadData()
-        DispatchQueue.main.async {
-            self.tableView.layoutIfNeeded()
-            self.layoutIfNeeded()
-        }
+        self.currentReviews = reviews
+
+  
+        self.tableView.reloadData()
+        self.tableView.layoutIfNeeded()
+        self.layoutIfNeeded()
     }
 
     public func updateReviewCount(_ count: Int, recommendCount: Int) {
@@ -210,7 +209,7 @@ public final class MapPlaceDetailView: UIView {
         
         reviewHeaderLabel.attributedText = attributedString
         
-        let hasReviews = count > 0
+        let hasReviews = !self.reviews.isEmpty
         tableView.isHidden = !hasReviews
         emptyReviewStackView.isHidden = hasReviews
     }
@@ -342,22 +341,3 @@ public final class MapPlaceDetailView: UIView {
     }
 }
 
-extension MapPlaceDetailView: UITableViewDataSource, UITableViewDelegate {
-    
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return reviews.count
-    }
-
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: MapReviewCell.identifier,
-            for: indexPath
-        ) as? MapReviewCell else {
-            return UITableViewCell()
-        }
-
-        let review = reviews[indexPath.row]
-        cell.configure(with: review)
-        return cell
-    }
-}

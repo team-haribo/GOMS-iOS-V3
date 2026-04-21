@@ -57,7 +57,7 @@ public final class MainViewModel: BaseViewModel {
                     self.lateList = responseModel.students
                     self.lateListDatas = self.lateList.map {
                         LatecomerData(
-                            profileImageURL: $0.profileUrl,
+                            profileImageURL: $0.profileImageUrl,
                             name: $0.name,
                             grade: $0.grade,
                             department: $0.department

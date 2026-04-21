@@ -57,6 +57,7 @@ public final class LetecomerViewModel: BaseViewModel {
                             department: $0.department
                         )
                     }
+                    
                     DispatchQueue.main.async {
                         completion(self.latecomerListDatas)
                     }
