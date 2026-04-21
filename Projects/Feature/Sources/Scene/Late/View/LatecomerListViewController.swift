@@ -2,15 +2,16 @@
 //  LatecomerListViewController.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 4/21/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
+import SnapKit
+import Then
 
 public final class LatecomerListViewController: BaseViewController {
 
-    // MARK: - Properties
     var latecomerList: [LatecomerListData] = [] {
         didSet {
             DispatchQueue.main.async {
@@ -19,16 +20,18 @@ public final class LatecomerListViewController: BaseViewController {
         }
     }
     
-    var date: String = {
-        let currentDate = Date()
-        let lastWednesday = currentDate.lastWednesday()
-        
+    var date: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko")
         formatter.dateFormat = "yyyy년 M월 d일 (E)"
-        
-        return formatter.string(from: lastWednesday)
-    }()
+        return formatter.string(from: Date())
+    }
+    
+    private let titleLabel = UILabel().then {
+        $0.text = "지각자 명단"
+        $0.textColor = .color.mainText.color
+        $0.font = .suit(size: 24, weight: .bold)
+    }
     
     private var dateLabel = UILabel().then {
         $0.textColor = .color.mainText.color
@@ -45,37 +48,50 @@ public final class LatecomerListViewController: BaseViewController {
         $0.translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private lazy var  filterButton = UIButton().then {
-        $0.setTitle("필터", for: .normal)
+    private lazy var dateFilterButton = UIButton().then {
+        $0.setTitle("날짜", for: .normal)
         $0.backgroundColor = .clear
-        $0.setTitleColor(.color.gomsInformation.color, for: .normal)
+        $0.setTitleColor(.color.admin.color, for: .normal)
+        $0.titleLabel?.font = .suit(size: 18, weight: .regular)
         $0.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
     }
     
-    lazy var lateListCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout.init()).then {
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.admin.color, for: .normal)
+        $0.tintColor = .color.admin.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
+
+    lazy var lateListCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
         $0.backgroundColor = .clear
         $0.isScrollEnabled = true
         $0.showsHorizontalScrollIndicator = false
         $0.showsVerticalScrollIndicator = true
         $0.clipsToBounds = true
-        $0.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     }
     
-    // MARK: - Life Cycel
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
+    }
+    
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
+    }
+
     public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(true)
-        viewModel.getLatecomerList { latecomerList in
-            self.dateLabel.text = self.date
-            self.latecomerList = latecomerList
+        super.viewWillAppear(animated)
+        self.dateLabel.text = self.date
+        viewModel.getLatecomerList { [weak self] latecomerList in
+            self?.latecomerList = latecomerList
         }
     }
     
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.lateListCollectionView.dataSource = self
-        self.lateListCollectionView.delegate = self
-        
         setupCollectionView()
         configNavigation()
         setupScrollView()
@@ -107,9 +123,7 @@ public final class LatecomerListViewController: BaseViewController {
     
     public override func configNavigation() {
         super.configNavigation()
-        navigationController?.navigationBar.tintColor = .color.admin.color
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationItem.title = "지각자 명단"
+        navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
     func setupCollectionView() {
@@ -119,55 +133,60 @@ public final class LatecomerListViewController: BaseViewController {
     }
     
     public override func addView() {
-        [dateLabel, filterButton, lateListCollectionView].forEach { view.addSubview($0) }
+        [customBackButton, titleLabel, dateLabel, dateFilterButton, lateListCollectionView].forEach { view.addSubview($0) }
     }
     
     public override func setLayout() {
-        dateLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.height.equalTo(32)
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            $0.leading.equalToSuperview().inset(16)
         }
         
-        filterButton.snp.makeConstraints {
-            $0.height.equalTo(32)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            $0.trailing.equalTo(-bounds.width * 0.05)
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(customBackButton.snp.bottom).offset(20)
+            $0.leading.equalToSuperview().inset(20)
+        }
+        
+        dateLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(24)
+            $0.leading.equalToSuperview().inset(20)
+        }
+        
+        dateFilterButton.snp.makeConstraints {
+            $0.centerY.equalTo(dateLabel)
+            $0.trailing.equalToSuperview().inset(20)
         }
         
         lateListCollectionView.snp.makeConstraints {
-            $0.top.equalTo(dateLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(bounds.width * 0.05)
-            $0.trailing.equalTo(-(bounds.width * 0.05))
+            $0.top.equalTo(dateLabel.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalToSuperview()
         }
     }
 }
 
-// MARK: - Extension
 extension LatecomerListViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return latecomerList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = lateListCollectionView.dequeueReusableCell(withReuseIdentifier: LatecomerCollectionViewCell.identifier, for: indexPath) as! LatecomerCollectionViewCell
-        
+        guard let cell = lateListCollectionView.dequeueReusableCell(withReuseIdentifier: LatecomerCollectionViewCell.identifier, for: indexPath) as? LatecomerCollectionViewCell else {
+            return UICollectionViewCell()
+        }
         let latecomerData = latecomerList[indexPath.item]
         cell.configureData(lateData: latecomerData)
-        
         return cell
     }
 }
 
 extension LatecomerListViewController: UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = bounds.width * 0.9
-        let height: CGFloat = 72
-        return CGSize(width: width, height: height)
+        let width = UIScreen.main.bounds.width - 40
+        return CGSize(width: width, height: 80)
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 0
+        return 12
     }
 }

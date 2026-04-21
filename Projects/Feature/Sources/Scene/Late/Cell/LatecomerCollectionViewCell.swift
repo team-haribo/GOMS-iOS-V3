@@ -2,12 +2,11 @@
 //  LatecomerCollectionViewCell.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김밈선 on 4/21/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
 import UIKit
-
 import SnapKit
 import Then
 import Kingfisher
@@ -15,95 +14,90 @@ import Service
 
 class LatecomerCollectionViewCell: UICollectionViewCell {
     
-    // MARK: - Properties
     static let identifier = "LatecomerCell"
     
-    let profileImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 48, height: 48)).then {
-        $0.image = .image.profile.image
+    private let profileImageView = UIImageView().then {
+        $0.contentMode = .scaleAspectFill
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 24
     }
     
-    let nameLabel = UILabel().then {
-        $0.textColor = .color.gomsSecondary.color
-        $0.font = UIFont.suit(size: 16, weight: .semibold)
-        $0.text = "test"
+    private let nameLabel = UILabel().then {
+        $0.textColor = .color.sub1.color
+        $0.font = .suit(size: 16, weight: .semibold)
     }
     
-    let studentInfoLabel = UILabel().then {
+    private let studentInfoLabel = UILabel().then {
         $0.textColor = .color.sub2.color
-        $0.font = UIFont.suit(size: 12, weight: .regular)
-        $0.text = "test"
+        $0.font = .suit(size: 14, weight: .medium)
     }
 
-    private let bottomView = UIView().then {
-        $0.setDynamicBackgroundColor(darkModeColor: UIColor(red: 1, green: 1, blue: 1, alpha: 0.15), lightModeColor: UIColor(red: 0, green: 0, blue: 0, alpha: 0.05))
+    private let dividerView = UIView().then {
+        $0.backgroundColor = .color.sub1.color.withAlphaComponent(0.3)
     }
     
-    // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
         addView()
         setLayout()
-        configureUI()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Configure
-    func configureUI() {
-        profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
-        profileImageView.clipsToBounds = true
-    }
-    
-    func configureData(lateData: LatecomerListData) {
-        if let imageURL = lateData.profileImageURL, let url = URL(string: imageURL) {
-            profileImageView.kf.setImage(with: url, placeholder: UIImage(systemName: "person.crop.circle.fill"))
-            profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
-        } else {
-            profileImageView.image = .image.profile.image
-        }
-        
-        nameLabel.text = lateData.name
-        if lateData.department == Major.sw.rawValue {
-            studentInfoLabel.text = "\(lateData.grade)기 | SW"
-        } else if lateData.department == Major.iot.rawValue {
-            studentInfoLabel.text = "\(lateData.grade)기 | IoT"
-        } else {
-            studentInfoLabel.text = "\(lateData.grade)기 | AI"
-        }
-    }
-    
-    // MARK: - Add View
     private func addView() {
-        [profileImageView, nameLabel, studentInfoLabel, bottomView].forEach { contentView.addSubview($0)}
+        [profileImageView, nameLabel, studentInfoLabel, dividerView].forEach { contentView.addSubview($0) }
     }
     
-    // MARK: - Layout
     private func setLayout() {
         profileImageView.snp.makeConstraints {
-            $0.width.equalTo(48)
-            $0.leading.equalToSuperview().inset(16)
-            $0.top.bottom.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview().offset(16)
             $0.centerY.equalToSuperview()
+            $0.width.height.equalTo(48)
         }
         
         nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(12)
-            $0.height.equalTo(28)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
+            $0.bottom.equalTo(contentView.snp.centerY).offset(-2)
         }
         
         studentInfoLabel.snp.makeConstraints {
-            $0.height.equalTo(20)
-            $0.bottom.equalToSuperview().inset(12)
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(16)
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(contentView.snp.centerY).offset(2)
         }
         
-        bottomView.snp.makeConstraints {
-            $0.bottom.equalToSuperview()
+        dividerView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(1)
-            $0.leading.trailing.equalToSuperview()
         }
+    }
+    
+    func configureData(lateData: LatecomerListData) {
+        let defaultImage = UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)
+        
+        if let imageURL = lateData.profileImageURL, let url = URL(string: imageURL) {
+            profileImageView.kf.setImage(with: url, placeholder: defaultImage)
+        } else {
+            profileImageView.image = defaultImage
+        }
+        
+        nameLabel.text = lateData.name
+        
+        let majorDisplayName: String
+        switch lateData.department {
+        case Major.sw.rawValue: majorDisplayName = "SW"
+        case Major.iot.rawValue: majorDisplayName = "IoT"
+        default: majorDisplayName = "AI"
+        }
+        
+        studentInfoLabel.text = "\(lateData.grade)기 | \(majorDisplayName)"
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        profileImageView.image = nil
+        nameLabel.text = nil
+        studentInfoLabel.text = nil
     }
 }
