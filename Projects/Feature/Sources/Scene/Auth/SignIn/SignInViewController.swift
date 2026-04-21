@@ -201,8 +201,11 @@ public final class SignInViewController: BaseViewController {
 
                     window.rootViewController = nav
                     window.makeKeyAndVisible()
+                } else if statusCode == 404 {
+                    self.passwordErrorLabel.text = "존재하지 않는 계정입니다."
+                    self.showAllError()
                 } else {
-                    self.passwordErrorLabel.text = "이메일 또는 비밀번호를 확인해주세요."
+                    self.passwordErrorLabel.text = "잘못된 비밀번호입니다."
                     self.showPasswordError()
                 }
             }
@@ -299,6 +302,26 @@ public final class SignInViewController: BaseViewController {
         emailErrorLabel.isHidden = true
         emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
 
+        findPasswordButton.snp.remakeConstraints {
+            $0.height.equalTo(48)
+            $0.trailing.equalToSuperview().offset(-20)
+            $0.top.equalTo(passwordErrorLabel.snp.bottom).offset(0)
+        }
+        view.layoutIfNeeded()
+    }
+
+    private func showAllError() {
+        emailTextField.layer.borderColor = UIColor.systemRed.cgColor
+        emailTextField.layer.borderWidth = 1
+        defaultDomain.textColor = .color.gomsNegative.color
+        
+        passwordTextField.layer.borderColor = UIColor.systemRed.cgColor
+        passwordTextField.layer.borderWidth = 1
+        passwordTextField.setPlaceholderColor(.color.gomsNegative.color)
+        
+        passwordErrorLabel.isHidden = false
+        passwordErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+        
         findPasswordButton.snp.remakeConstraints {
             $0.height.equalTo(48)
             $0.trailing.equalToSuperview().offset(-20)
@@ -408,10 +431,7 @@ extension SignInViewController: UITextFieldDelegate {
         } else if textField == passwordTextField {
             viewModel.setupPassword(password: password)
             if !password.isEmpty {
-                passwordErrorLabel.isHidden = true
-                passwordTextField.layer.borderWidth = 0
-                passwordErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }
-                view.layoutIfNeeded()
+                showDefaultState()
             }
         }
     }

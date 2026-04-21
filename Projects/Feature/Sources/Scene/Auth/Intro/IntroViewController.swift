@@ -104,7 +104,7 @@ public final class IntroViewController: BaseViewController {
     }
 
     private lazy var signUpButton = UIButton().then {
-        $0.setTitle("회원가입", for: .normal)
+        $0.setTitle("회원가입 하기", for: .normal)
         $0.backgroundColor = .clear
         $0.titleLabel?.font = UIFont.suit(size: 16, weight: .semibold)
         $0.setTitleColor(.color.gomsPrimary.color, for: .normal)

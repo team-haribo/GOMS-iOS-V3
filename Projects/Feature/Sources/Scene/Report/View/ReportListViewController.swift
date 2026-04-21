@@ -97,7 +97,7 @@ public final class ReportListViewController: BaseViewController {
     private func setupCollectionView() {
         let layout = UICollectionViewFlowLayout()
 
-        // 🔥 1열 강제 (AutoSize 끔)
+       
         layout.minimumInteritemSpacing = 0
         layout.minimumLineSpacing = 0
         layout.sectionInset = .zero
@@ -106,10 +106,10 @@ public final class ReportListViewController: BaseViewController {
         reportCollectionView.contentInset = .zero
         reportCollectionView.scrollIndicatorInsets = .zero
 
-        // ❌ 자동 사이즈 제거 (2열 원인)
+     
         layout.estimatedItemSize = .zero
 
-        // 🔥 고정 width → 무조건 1열
+       
         layout.itemSize = CGSize(width: view.bounds.width, height: 100)
 
         reportCollectionView.collectionViewLayout = layout
@@ -124,8 +124,6 @@ public final class ReportListViewController: BaseViewController {
 
     private func fetchData() {
         viewModel.fetchReportList { [weak self] success in
-            print("🔥 fetch success:", success)
-            print("🔥 reports count:", self?.viewModel.reports.count ?? -1)
             if success {
                 DispatchQueue.main.async {
                     self?.reportCollectionView.reloadData()
@@ -222,7 +220,7 @@ extension ReportListViewController: UICollectionViewDataSource, UICollectionView
         return cell
     }
 
-    // ❌ automaticSize.height 직접 쓰면 크래시 남 → 이 메서드 제거 (FlowLayout이 자동 계산하도록)
+
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 0

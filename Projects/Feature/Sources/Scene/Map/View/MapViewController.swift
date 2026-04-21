@@ -220,7 +220,10 @@ private func setupLayout() {
 }
 
 private func setupDelegate() {
-    [recentSearchView.tableView].forEach { $0.delegate = self; $0.dataSource = self }
+    [recentSearchView.tableView, placeDetailView.tableView].forEach {
+        $0.delegate = self
+        $0.dataSource = self
+    }
 }
 
 private func setupActions() {
@@ -747,6 +750,7 @@ private func bindViewModel() {
 
     viewModel.onReviewsUpdated = { [weak self] in
         guard let self = self else { return }
+       
 
 
         DispatchQueue.main.async {
@@ -783,19 +787,23 @@ private func bindViewModel() {
     }
 
     viewModel.onDetailUpdated = { [weak self] in
-        guard let self = self, let detail = self.viewModel.currentPlaceDetail else { return }
-       
+        guard let self = self,
+              let detail = self.viewModel.currentPlaceDetail else { return }
+
         guard detail.placeId == self.selectedPlaceId else { return }
 
         self.selectedPlaceId = detail.placeId
         self.currentPlaceDetail = detail
 
-        self.placeDetailView.configure(
-            with: detail,
-            distanceText: self.viewModel.distanceText,
-            timeText: self.viewModel.timeText,
-            reviews: self.viewModel.reviews
-        )
+        
+        if self.placeDetailView.currentReviews.isEmpty {
+            self.placeDetailView.configure(
+                with: detail,
+                distanceText: self.viewModel.distanceText,
+                timeText: self.viewModel.timeText,
+                reviews: self.placeDetailView.currentReviews
+            )
+        }
 
         self.updateViewVisibility()
     }
@@ -1548,39 +1556,25 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MapReviewCell.identifier, for: indexPath) as! MapReviewCell
             cell.configure(with: viewModel.reviews[indexPath.row])
-           
+
             let review = viewModel.reviews[indexPath.row]
-            // TODO: replace with actual userId comparison if available
             let isMyReview = review.isMine ?? false
             cell.setDeleteButtonHidden(!isMyReview)
             cell.setReportButtonHidden(isMyReview)
         cell.onDeleteTap = { [weak self, weak tableView] in
-            guard let self = self else {
-                return
-            }
-            guard let tableView = tableView else {
-                return
-            }
-            guard let currentIndexPath = tableView.indexPath(for: cell) else {
-                return
-            }
-            guard currentIndexPath.row < self.viewModel.reviews.count else {
-                return
-            }
+            guard let self = self else { return }
+            guard let tableView = tableView else { return }
+            guard let currentIndexPath = tableView.indexPath(for: cell) else { return }
+            guard currentIndexPath.row < self.viewModel.reviews.count else { return }
 
             let reviewToDelete = self.viewModel.reviews[currentIndexPath.row]
-
             ReviewAlert.show(in: self, title: "후기 삭제", message: "작성하신 후기를 정말 삭제하시겠습니까?") { _ in
-
                 self.placeDetailView.isUserInteractionEnabled = false
-
                 self.viewModel.deleteReview(reviewId: reviewToDelete.reviewId) { [weak self] success in
                     guard let self = self else { return }
-
                     DispatchQueue.main.async {
                         self.placeDetailView.isUserInteractionEnabled = true
                     }
-
                     guard success else {
                         DispatchQueue.main.async {
                             ReviewAlert.showSingle(
@@ -1592,7 +1586,6 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
                         }
                         return
                     }
-
                     DispatchQueue.main.async {
                         self.fetchReviews(placeId: self.selectedPlaceId)
                         self.viewModel.fetchPlaceDetail(placeId: self.selectedPlaceId)
@@ -1604,23 +1597,13 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
             }
         }
         cell.onReportTap = { [weak self] in
-            guard let self = self else {
-                return
-            }
-            guard indexPath.row < self.viewModel.reviews.count else {
-                return
-            }
-
+            guard let self = self else { return }
+            guard indexPath.row < self.viewModel.reviews.count else { return }
+            let review = self.viewModel.reviews[indexPath.row]
             ReviewAlert.show(in: self, title: "후기 신고", message: "") { reason in
-                guard let reason = reason else {
-                    return
-                }
-
-                let review = self.viewModel.reviews[indexPath.row]
-
+                guard let reason = reason else { return }
                 self.viewModel.reportReview(reviewId: review.reviewId, reason: reason) { [weak self] success in
                     guard let self = self else { return }
-
                     guard success else {
                         DispatchQueue.main.async {
                             ReviewAlert.showSingle(
@@ -1632,10 +1615,8 @@ public func tableView(_ tableView: UITableView, numberOfRowsInSection section: I
                         }
                         return
                     }
-
                     DispatchQueue.main.async {
                         self.placeDetailView.isUserInteractionEnabled = false
-
                         ReviewAlert.show(
                             in: self,
                             title: "신고 완료",

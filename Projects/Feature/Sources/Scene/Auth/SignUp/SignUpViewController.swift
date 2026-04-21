@@ -282,6 +282,14 @@ public final class SignUpViewController: BaseViewController {
                 if success {
                     let authCodeVC = AuthCodeViewController(viewModel: self.viewModel, previousViewController: self, email: email + "@gsm.hs.kr")
                     self.navigationController?.pushViewController(authCodeVC, animated: true)
+                } else if statusCode == 409 {
+                    self.emailErrorLabel.text = "이미 존재하는 계정입니다."
+                    self.emailErrorLabel.isHidden = false
+                    self.emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+                    self.emailTextField.layer.borderColor = UIColor.systemRed.cgColor
+                    self.emailTextField.layer.borderWidth = 1
+                    self.defaultDomain.textColor = .color.gomsNegative.color
+                    self.view.layoutIfNeeded()
                 } else {
                     print("인증번호 요청 실패: \(statusCode)")
                 }
@@ -393,6 +401,7 @@ public final class SignUpViewController: BaseViewController {
     @objc private func emailEditingChanged(_ textField: UITextField) {
         let email = textField.text ?? ""
         emailTextField.layer.borderWidth = 0
+        emailTextField.layer.borderColor = UIColor.clear.cgColor
         defaultDomain.textColor = .color.sub2.color
         
         let emailRegex = "^s[0-9]{5}$"
@@ -405,6 +414,9 @@ public final class SignUpViewController: BaseViewController {
             emailErrorLabel.isHidden = false
             emailErrorLabel.text = "올바른 이메일 형식이 아닙니다."
             emailErrorLabel.snp.updateConstraints { $0.height.equalTo(19) }
+            emailTextField.layer.borderColor = UIColor.systemRed.cgColor
+            emailTextField.layer.borderWidth = 1
+            defaultDomain.textColor = .color.gomsNegative.color
         } else {
             emailErrorLabel.isHidden = true
             emailErrorLabel.snp.updateConstraints { $0.height.equalTo(0) }

@@ -66,7 +66,7 @@ public struct MapReview: Codable {
     public let name: String
     public let grade: Int
     public let department: String
-    public let profileImageUrl: String
+    public let profileImageUrl: String?
     public let content: String
     public let reviewedAt: String
     public let isMine: Bool?
@@ -78,10 +78,10 @@ public struct MapReview: Codable {
         name: String,
         grade: Int,
         department: String,
-        profileImageUrl: String,
+        profileImageUrl: String?,
         content: String,
         reviewedAt: String,
-        isMine: Bool
+        isMine: Bool?
     ) {
         self.reviewId = reviewId
         self.placeId = placeId

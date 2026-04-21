@@ -18,5 +18,5 @@ public struct LatecomerListResponse: Codable {
     public let grade: Int
     public let gender: String
     public let major: String
-    public let profileUrl: String?
+    public let profileImageUrl: String?
 }
