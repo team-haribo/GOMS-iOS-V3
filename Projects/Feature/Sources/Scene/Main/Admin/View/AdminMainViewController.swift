@@ -348,8 +348,11 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
     private func setupMapContainer() {
         addChild(mapVC)
         mapContainerView.addSubview(mapVC.view)
-        mapVC.view.frame = mapContainerView.bounds
-        mapVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        mapVC.view.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
         mapVC.didMove(toParent: self)
     }
 
@@ -431,7 +434,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     public override func setLayout() {
         scrollView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.top.equalToSuperview()
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
@@ -475,12 +478,12 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         updateLayout()
         
         mapContainerView.snp.makeConstraints {
-            $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            $0.top.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
 
         profileContainerView.snp.makeConstraints {
-            $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            $0.top.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(tabBar.snp.top)
         }
     }

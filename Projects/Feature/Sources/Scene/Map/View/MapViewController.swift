@@ -94,6 +94,8 @@ private func formatDate(_ date: Date) -> String {
 
 public override func viewDidLoad() {
     super.viewDidLoad()
+    self.navigationController?.setNavigationBarHidden(true, animated: false)
+    self.edgesForExtendedLayout = [.top]
     setupView()
     setupLayout()
     setupDelegate()
@@ -186,6 +188,7 @@ public override func viewWillDisappear(_ animated: Bool) {
 }
 
 private func setupView() {
+    self.view.backgroundColor = .black
     view.backgroundColor = .color.background.color
     view.addSubview(mapWrapperView)
     [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach { view.addSubview($0) }
