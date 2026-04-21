@@ -307,10 +307,37 @@ private func setupActions() {
     searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
     placeDetailView.onHeartToggled = { [weak self] isSelected in
         guard let self = self, self.selectedPlaceId != -1 else { return }
+
+        let previousRecommended = self.currentPlaceDetail?.recommended ?? false
+        let previousRecommendCount = self.currentPlaceDetail?.recommendCount ?? 0
+
         self.viewModel.toggleRecommend(placeId: self.selectedPlaceId, isSelected: isSelected) {
+            DispatchQueue.main.async {
+                if var detail = self.currentPlaceDetail {
+                    detail.recommended = isSelected
+
+                    if previousRecommended != isSelected {
+                        detail.recommendCount = max(
+                            0,
+                            previousRecommendCount + (isSelected ? 1 : -1)
+                        )
+                    }
+
+                    self.currentPlaceDetail = detail
+
+                    self.placeDetailView.configure(
+                        with: detail,
+                        distanceText: self.viewModel.distanceText,
+                        timeText: self.viewModel.timeText,
+                        reviews: self.placeDetailView.currentReviews
+                    )
+                }
+
+                self.updateBottomSheet()
+            }
+
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
-            self.viewModel.fetchPlaceDetail(placeId: self.selectedPlaceId)
         }
     }
     routeSelectionView.onCardTapped = { [weak self] routeTitle in
@@ -795,15 +822,12 @@ private func bindViewModel() {
         self.selectedPlaceId = detail.placeId
         self.currentPlaceDetail = detail
 
-        
-        if self.placeDetailView.currentReviews.isEmpty {
-            self.placeDetailView.configure(
-                with: detail,
-                distanceText: self.viewModel.distanceText,
-                timeText: self.viewModel.timeText,
-                reviews: self.placeDetailView.currentReviews
-            )
-        }
+        self.placeDetailView.configure(
+            with: detail,
+            distanceText: self.viewModel.distanceText,
+            timeText: self.viewModel.timeText,
+            reviews: self.placeDetailView.currentReviews
+        )
 
         self.updateViewVisibility()
     }

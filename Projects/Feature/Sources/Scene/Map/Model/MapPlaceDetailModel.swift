@@ -22,8 +22,8 @@ public struct MapPlaceDetailModel: Codable {
     public let phone: String
     public let placeUrl: String
     public let reviewCount: Int
-    public let recommendCount: Int
-    public let recommended: Bool
+    public var recommendCount: Int
+    public var recommended: Bool
 
     public init(
         placeId: Int,
