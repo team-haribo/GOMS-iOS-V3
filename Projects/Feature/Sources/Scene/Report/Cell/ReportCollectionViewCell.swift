@@ -112,7 +112,7 @@ final class ReportCollectionViewCell: UICollectionViewCell {
             output.dateFormat = "yy.MM.dd HH:mm:ss"
             dateLabel.text = output.string(from: date)
         } else {
-            print("❌ date parse 실패:", data.reportCreatedAt)
+            print("date parse:", data.reportCreatedAt)
             dateLabel.text = data.reportCreatedAt
         }
         

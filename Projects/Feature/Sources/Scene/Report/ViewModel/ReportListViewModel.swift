@@ -94,51 +94,33 @@ public final class ReportListViewModel {
         
         let group = DispatchGroup()
         
-        // 1. pending 요청
         group.enter()
         reportProvider.request(.reportPending(authorization: authorization)) { result in
             defer { group.leave() }
             switch result {
             case .success(let response):
-                print("🔥 [RAW PENDING RESPONSE]:", String(data: response.data, encoding: .utf8) ?? "nil")
                 if let decoded = try? JSONDecoder().decode(ReportListResponseDTO.self, from: response.data) {
                     pendingReports = decoded.reports.map { ReportData(dto: $0) }
-                    print("🔥 pending API count:", pendingReports.count)
-                    print("🔥 pending full:", decoded.reports)
-                    print("🔥 pending status:", decoded.reports.map { $0.reportStatus.rawValue })
                 }
             case .failure:
                 break
             }
         }
         
-        // 2. resolved 요청
         group.enter()
         reportProvider.request(.reportResolved(authorization: authorization)) { result in
             defer { group.leave() }
             switch result {
             case .success(let response):
-                print("🔥 [RAW RESOLVED RESPONSE]:", String(data: response.data, encoding: .utf8) ?? "nil")
                 if let decoded = try? JSONDecoder().decode(ReportListResponseDTO.self, from: response.data) {
                     resolvedReports = decoded.reports.map { ReportData(dto: $0) }
-                    print("🔥 resolved API count:", resolvedReports.count)
-                    print("🔥 resolved full:", decoded.reports)
-                    print("🔥 resolved status:", decoded.reports.map { $0.reportStatus.rawValue })
                 }
             case .failure:
                 break
             }
         }
         
-        // 3. 합치고 필터 적용
         group.notify(queue: .main) {
-            print("🔥 ===== FINAL MERGE DEBUG =====")
-            print("🔥 pending:", pendingReports.map { $0.reportId })
-            print("🔥 resolved:", resolvedReports.map { $0.reportId })
-            print("🔥 resolved status:",
-                  resolvedReports.map { $0.reportStatus.rawValue })
-            print("🔥 current filter:", self.filterType)
-
             self.allReports = pendingReports + resolvedReports
 
             switch self.filterType {
@@ -150,12 +132,6 @@ public final class ReportListViewModel {
                     $0.reportStatus == .approved || $0.reportStatus == .rejected
                 }
             }
-
-            print("🔥 pending count:", pendingReports.count)
-            print("🔥 resolved count:", resolvedReports.count)
-            print("🔥 final count:", self.reports.count)
-            print("🔥 reports:", self.reports.map { "\($0.reportId)-\($0.reportStatus.rawValue)" })
-            print("🔥 ===== END DEBUG =====")
 
             completion(true)
         }
@@ -169,14 +145,10 @@ public final class ReportListViewModel {
         let authorization = "Bearer \(token)"
         
         reportProvider.request(.reportDelete(reviewId: reviewId, authorization: authorization)) { result in
-        print("🔥 [DeleteReview] request reviewId:", reviewId)
             switch result {
             case .success(let response):
-                print("🔥 [DeleteReview] statusCode:", response.statusCode)
-                print("🔥 [DeleteReview] raw body:", String(data: response.data, encoding: .utf8) ?? "nil")
                 completion(response.statusCode == 200 || response.statusCode == 204)
             case .failure:
-                print("❌ [DeleteReview] Network Error")
                 completion(false)
             }
         }
@@ -190,14 +162,10 @@ public final class ReportListViewModel {
         let authorization = "Bearer \(token)"
         
         reportProvider.request(.reportReject(reportId: reportId, authorization: authorization)) { result in
-        print("🔥 [RejectReport] request reportId:", reportId)
             switch result {
             case .success(let response):
-                print("🔥 [RejectReport] statusCode:", response.statusCode)
-                print("🔥 [RejectReport] raw body:", String(data: response.data, encoding: .utf8) ?? "nil")
                 completion(response.statusCode == 200 || response.statusCode == 204)
             case .failure:
-                print("❌ [RejectReport] Network Error")
                 completion(false)
             }
         }
@@ -210,25 +178,17 @@ public final class ReportListViewModel {
         }
         let authorization = "Bearer \(token)"
         
-        print("🔥 [ResolveReport] request reportId:", reportId)
-        
         reportProvider.request(.reportResolve(reportId: reportId, authorization: authorization)) { result in
             switch result {
             case .success(let response):
-                print("🔥 [ResolveReport] statusCode:", response.statusCode)
-                print("🔥 [ResolveReport] raw body:", String(data: response.data, encoding: .utf8) ?? "nil")
                 completion(response.statusCode == 200 || response.statusCode == 204)
-            case .failure(let error):
-                print("❌ [ResolveReport] Network Error:", error)
+            case .failure:
                 completion(false)
             }
         }
     }
 
-    // MARK: - Local State Update (UI Sync)
-
     public func removeReport(reportId: Int) {
-        // ❌ 이제 실제 삭제하지 않고 상태만 변경하도록 수정
         updateReportStatus(reportId: reportId, status: .approved)
     }
 
@@ -257,7 +217,6 @@ public final class ReportListViewModel {
             return $0
         }
 
-        // 🔥 필터 상태에 따라 reports 재구성
         switch filterType {
         case .pending:
             reports = allReports.filter { $0.reportStatus == .pending }
@@ -272,7 +231,6 @@ public final class ReportListViewModel {
     public func filterReports(with text: String) {
         let base: [ReportData]
 
-        // 상태 필터 먼저 적용 (기본: pending)
         switch filterType {
         case .pending:
             base = allReports.filter { $0.reportStatus == .pending }
@@ -283,7 +241,6 @@ public final class ReportListViewModel {
             }
         }
 
-        // 검색 필터 적용
         if text.isEmpty {
             reports = base
         } else {

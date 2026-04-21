@@ -12,11 +12,11 @@ public final class IntrinsicTableView: UITableView {
     public override var contentSize: CGSize {
         didSet {
             invalidateIntrinsicContentSize()
+            superview?.layoutIfNeeded()
         }
     }
-    
+
     public override var intrinsicContentSize: CGSize {
-        layoutIfNeeded()
         return CGSize(width: UIView.noIntrinsicMetric, height: contentSize.height)
     }
 }

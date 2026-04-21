@@ -165,7 +165,8 @@ public final class MapReviewCell: UITableViewCell {
         contentLabel.text = data.content
         dateLabel.text = formatDate(data.reviewedAt)
 
-        if let url = URL(string: data.profileImageUrl) {
+        if let urlString = data.profileImageUrl,
+           let url = URL(string: urlString) {
             profileImageView.kf.setImage(
                 with: url,
                 placeholder: UIImage(named: "Profile", in: Bundle.module, compatibleWith: nil)

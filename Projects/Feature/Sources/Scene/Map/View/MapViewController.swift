@@ -750,6 +750,7 @@ private func bindViewModel() {
 
     viewModel.onReviewsUpdated = { [weak self] in
         guard let self = self else { return }
+       
 
 
         DispatchQueue.main.async {
@@ -786,19 +787,23 @@ private func bindViewModel() {
     }
 
     viewModel.onDetailUpdated = { [weak self] in
-        guard let self = self, let detail = self.viewModel.currentPlaceDetail else { return }
-       
+        guard let self = self,
+              let detail = self.viewModel.currentPlaceDetail else { return }
+
         guard detail.placeId == self.selectedPlaceId else { return }
 
         self.selectedPlaceId = detail.placeId
         self.currentPlaceDetail = detail
 
-        self.placeDetailView.configure(
-            with: detail,
-            distanceText: self.viewModel.distanceText,
-            timeText: self.viewModel.timeText,
-            reviews: self.viewModel.reviews
-        )
+        
+        if self.placeDetailView.currentReviews.isEmpty {
+            self.placeDetailView.configure(
+                with: detail,
+                distanceText: self.viewModel.distanceText,
+                timeText: self.viewModel.timeText,
+                reviews: self.placeDetailView.currentReviews
+            )
+        }
 
         self.updateViewVisibility()
     }
