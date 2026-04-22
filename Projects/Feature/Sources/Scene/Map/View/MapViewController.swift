@@ -16,6 +16,9 @@ import CoreLocation
 public final class MapViewController: UIViewController, MapControllerDelegate, KakaoMapEventDelegate, CLLocationManagerDelegate {
     private let schoolFrontLat: Double = 35.14342015456559
     private let schoolFrontLng: Double = 126.79997786265704
+
+    private var currentLocationPoi: Poi?
+    private var pulsePoi: Poi?
 private func resetUIForNewSelection() {
     routeSelectionView.isHidden = true
     recentSearchView.isHidden = true
@@ -77,6 +80,7 @@ private let placeDetailView = MapPlaceDetailView().then {
 private var bottomSheetHeight: Constraint?
 private var detailSheetHeight: Constraint?
 private let defaultHeight: CGFloat = 240
+private let firstHeight: CGFloat = 20
 private let detailMinHeight: CGFloat = 225
 private var selectedPlaceId: Int = -1
 private var currentPlaceDetail: MapPlaceDetailModel?
@@ -94,6 +98,8 @@ private func formatDate(_ date: Date) -> String {
 
 public override func viewDidLoad() {
     super.viewDidLoad()
+    self.navigationController?.setNavigationBarHidden(true, animated: false)
+    self.edgesForExtendedLayout = [.top]
     setupView()
     setupLayout()
     setupDelegate()
@@ -101,6 +107,9 @@ public override func viewDidLoad() {
     setupActions()
     setupReviewWriteAction()
     setupLocationManager()
+    if let location = locationManager.location {
+        showCurrentLocationMarker(location)
+    }
 
     setupMap()
     bindViewModel()
@@ -113,8 +122,14 @@ public override func viewDidLoad() {
 private func setupLocationManager() {
     locationManager.delegate = self
     locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    locationManager.distanceFilter = kCLDistanceFilterNone
+    locationManager.pausesLocationUpdatesAutomatically = false
+    locationManager.activityType = .fitness
+    locationManager.allowsBackgroundLocationUpdates = false
+    locationManager.showsBackgroundLocationIndicator = false
     locationManager.requestWhenInUseAuthorization()
     locationManager.startUpdatingLocation()
+    locationManager.requestLocation()
 }
 
 public override func viewDidAppear(_ animated: Bool) {
@@ -186,6 +201,7 @@ public override func viewWillDisappear(_ animated: Bool) {
 }
 
 private func setupView() {
+    self.view.backgroundColor = .black
     view.backgroundColor = .color.background.color
     view.addSubview(mapWrapperView)
     [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach { view.addSubview($0) }
@@ -307,10 +323,37 @@ private func setupActions() {
     searchBar.backButton.addTarget(self, action: #selector(backToHome), for: .touchUpInside)
     placeDetailView.onHeartToggled = { [weak self] isSelected in
         guard let self = self, self.selectedPlaceId != -1 else { return }
+
+        let previousRecommended = self.currentPlaceDetail?.recommended ?? false
+        let previousRecommendCount = self.currentPlaceDetail?.recommendCount ?? 0
+
         self.viewModel.toggleRecommend(placeId: self.selectedPlaceId, isSelected: isSelected) {
+            DispatchQueue.main.async {
+                if var detail = self.currentPlaceDetail {
+                    detail.recommended = isSelected
+
+                    if previousRecommended != isSelected {
+                        detail.recommendCount = max(
+                            0,
+                            previousRecommendCount + (isSelected ? 1 : -1)
+                        )
+                    }
+
+                    self.currentPlaceDetail = detail
+
+                    self.placeDetailView.configure(
+                        with: detail,
+                        distanceText: self.viewModel.distanceText,
+                        timeText: self.viewModel.timeText,
+                        reviews: self.placeDetailView.currentReviews
+                    )
+                }
+
+                self.updateBottomSheet()
+            }
+
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
-            self.viewModel.fetchPlaceDetail(placeId: self.selectedPlaceId)
         }
     }
     routeSelectionView.onCardTapped = { [weak self] routeTitle in
@@ -531,14 +574,9 @@ private func fetchReviews(placeId: Int) {
 
 private func showCurrentLocationMarker(_ location: CLLocation) {
     guard let map = mapController?.getView("mapview") as? KakaoMap else { return }
-
     let manager = map.getLabelManager()
 
-
-    if let layer = manager.getLabelLayer(layerID: "currentLocationLayer") {
-        let ids = layer.getAllPois()?.map { $0.itemID } ?? []
-        layer.removePois(poiIDs: ids)
-    } else {
+    if manager.getLabelLayer(layerID: "currentLocationLayer") == nil {
         _ = manager.addLabelLayer(
             option: LabelLayerOptions(
                 layerID: "currentLocationLayer",
@@ -549,8 +587,42 @@ private func showCurrentLocationMarker(_ location: CLLocation) {
             )
         )
     }
+    
+    if manager.getLabelLayer(layerID: "pulseLayer") == nil {
+        _ = manager.addLabelLayer(
+            option: LabelLayerOptions(
+                layerID: "pulseLayer",
+                competitionType: .none,
+                competitionUnit: .poi,
+                orderType: .rank,
+                zOrder: 29999
+            )
+        )
+    }
 
     guard let layer = manager.getLabelLayer(layerID: "currentLocationLayer") else { return }
+    guard let pulseLayer = manager.getLabelLayer(layerID: "pulseLayer") else { return }
+
+    if let poi = currentLocationPoi {
+        poi.moveAt(
+            MapPoint(
+                longitude: location.coordinate.longitude,
+                latitude: location.coordinate.latitude
+            ),
+            duration: 100
+        )
+        
+        if let pulsePoi = pulsePoi {
+            pulsePoi.moveAt(
+                MapPoint(
+                    longitude: location.coordinate.longitude,
+                    latitude: location.coordinate.latitude
+                ),
+                duration: 100
+            )
+        }
+        return
+    }
 
     let option = PoiOptions(styleID: "activePinStyle", poiID: "currentLocation")
     option.clickable = false
@@ -563,8 +635,26 @@ private func showCurrentLocationMarker(_ location: CLLocation) {
         )
     ) {
         poi.show()
+        currentLocationPoi = poi
+        
+        let pulseOption = PoiOptions(styleID: "pulseStyle", poiID: "pulse")
+        pulseOption.clickable = false
+
+        if let pPoi = pulseLayer.addPoi(
+            option: pulseOption,
+            at: MapPoint(
+                longitude: location.coordinate.longitude,
+                latitude: location.coordinate.latitude
+            )
+        ) {
+            pPoi.show()
+            pulsePoi = pPoi
+        }
     }
 }
+
+
+
 
 private func renderAllPlaceMarkers() {
     guard let view = mapController?.getView("mapview") as? KakaoMap else { return }
@@ -612,19 +702,30 @@ private func styleIDForCategory(_ category: String) -> String {
     let translation = gesture.translation(in: view)
     let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
     let newHeight = currentHeight - translation.y
-    let minH = isDetail ? detailMinHeight : defaultHeight
+    let minH = isDetail ? detailMinHeight : firstHeight
+    let secondH = defaultHeight
     let maxH = view.frame.height - (searchBar.frame.maxY + 20)
-    
     if gesture.state == .changed {
         let clampedHeight = max(minH, min(newHeight, maxH))
         if isDetail { detailSheetHeight?.update(offset: clampedHeight) }
         else { bottomSheetHeight?.update(offset: clampedHeight) }
     } else if gesture.state == .ended {
-        let velocity = gesture.velocity(in: view).y
-        let targetHeight: CGFloat = (velocity < -500 || (velocity <= 500 && newHeight > (minH + maxH) / 2)) ? maxH : minH
+        let targetHeight: CGFloat
+
+        if newHeight < (minH + secondH) / 2 {
+            targetHeight = minH
+        } else if newHeight < (secondH + maxH) / 2 {
+            targetHeight = secondH
+        } else {
+            targetHeight = maxH
+        }
+
         UIView.animate(withDuration: 0.3) {
-            if isDetail { self.detailSheetHeight?.update(offset: targetHeight) }
-            else { self.bottomSheetHeight?.update(offset: targetHeight) }
+            if isDetail {
+                self.detailSheetHeight?.update(offset: targetHeight)
+            } else {
+                self.bottomSheetHeight?.update(offset: targetHeight)
+            }
             self.view.layoutIfNeeded()
         }
     }
@@ -639,7 +740,6 @@ private func setupGesture() {
 private func showDetailView(with data: MapPlaceData? = nil) {
     let isFirstShow = placeDetailView.isHidden
 
-    
     if isFirstShow {
         self.detailSheetHeight?.update(offset: 0)
         self.view.layoutIfNeeded()
@@ -795,15 +895,12 @@ private func bindViewModel() {
         self.selectedPlaceId = detail.placeId
         self.currentPlaceDetail = detail
 
-        
-        if self.placeDetailView.currentReviews.isEmpty {
-            self.placeDetailView.configure(
-                with: detail,
-                distanceText: self.viewModel.distanceText,
-                timeText: self.viewModel.timeText,
-                reviews: self.placeDetailView.currentReviews
-            )
-        }
+        self.placeDetailView.configure(
+            with: detail,
+            distanceText: self.viewModel.distanceText,
+            timeText: self.viewModel.timeText,
+            reviews: self.placeDetailView.currentReviews
+        )
 
         self.updateViewVisibility()
     }
@@ -1300,17 +1397,41 @@ private func createPoiStyle() {
         case "PM9": image = FeatureAsset.Images.pm9.image
         default: continue
         }
-        let resized = resizedImage(image, size: CGSize(width: 32, height: 32))
-        let iconStyle = PoiIconStyle(symbol: resized, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+        let resized = resizedImage(image, size: CGSize(width: image.size.width * 0.5, height: image.size.height * 0.5))
+        let iconStyle = PoiIconStyle(symbol: resized, anchorPoint: CGPoint(x: 0.5, y: 0.5))
         let poiStyle = PoiStyle(styleID: styleID, styles: [PerLevelPoiStyle(iconStyle: iconStyle, level: 0)])
         manager.addPoiStyle(poiStyle)
     }
 
-
-    let defaultImage = UIImage(systemName: "mappin.and.ellipse")!
-    let activeIconStyle = PoiIconStyle(symbol: defaultImage, anchorPoint: CGPoint(x: 0.5, y: 1.0))
+    let defaultImage = FeatureAsset.Images.mypoint.image
+    let activeIconStyle = PoiIconStyle(symbol: defaultImage, anchorPoint: CGPoint(x: 0.5, y: 0.5))
     let activeStyle = PoiStyle(styleID: "activePinStyle", styles: [PerLevelPoiStyle(iconStyle: activeIconStyle, level: 0)])
     manager.addPoiStyle(activeStyle)
+
+    
+    let baseImage = FeatureAsset.Images.mypoint.image
+    let pulseImage = imageWithAlpha(baseImage, alpha: 0.3)
+    func imageWithAlpha(_ image: UIImage, alpha: CGFloat) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        return renderer.image { context in
+            image.draw(in: CGRect(origin: .zero, size: image.size), blendMode: .normal, alpha: alpha)
+        }
+    }
+    let baseSize = baseImage.size
+    let scale: CGFloat = 1.7
+    let resizedPulse = resizedImage(
+        pulseImage,
+        size: CGSize(
+            width: baseSize.width * scale,
+            height: baseSize.height * scale
+        )
+    )
+    let pulseIconStyle = PoiIconStyle(symbol: resizedPulse, anchorPoint: CGPoint(x: 0.5, y: 0.5))
+    let pulseStyle = PoiStyle(styleID: "pulseStyle", styles: [PerLevelPoiStyle(iconStyle: pulseIconStyle, level: 0)])
+    manager.addPoiStyle(pulseStyle)
 }
 
     private func moveCamera(to place: MapPlaceData) {
@@ -1341,7 +1462,6 @@ private func showActiveMarker(for place: MapPlaceData) {
     let manager = map.getLabelManager()
     guard let activeLayer = manager.getLabelLayer(layerID: "activePoiLayer") else { return }
 
-    
     let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
     activeLayer.removePois(poiIDs: ids)
 
@@ -1673,7 +1793,6 @@ extension MapViewController {
             lng: location.coordinate.longitude
         )
         showCurrentLocationMarker(location)
-
 
         if let pendingPlace = pendingRoutePlace {
     

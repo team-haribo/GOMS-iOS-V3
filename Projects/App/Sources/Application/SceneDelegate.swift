@@ -20,8 +20,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
 
         let defaults = UserDefaults.standard
-        let isSwitchOn = defaults.bool(forKey: "isSwitchOn")
+        let isSwitchOn = defaults.bool(forKey: "isCameraOn")
         let adminIsSwitchOn = defaults.bool(forKey: "isSwitchMakeOn")
+
+        
 
         #if !DEBUG
         checkForUpdates { needsUpdate in
@@ -80,12 +82,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     print("Admin Screen: AdminMainViewController")
                 }
             } else if authority == "ROLE_STUDENT" {
+                let navigationController = UINavigationController(rootViewController: MainViewController())
+                self.window?.rootViewController = navigationController
+
                 if isSwitchOn {
                     print("Student Screen: StudentQRViewController")
-                    self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
+                    let qrVC = StudentQRViewController()
+                    navigationController.pushViewController(qrVC, animated: false)
                 } else {
                     print("Student Screen: MainViewController")
-                    self.window?.rootViewController = UINavigationController(rootViewController: MainViewController())
                 }
             } else {
                 self.showLoginScreen()
