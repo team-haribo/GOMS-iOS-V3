@@ -220,7 +220,7 @@ public final class MapBottomSheetView: UIView {
         guard index < reviewPlaces.count else { return }
         let placeId = reviewPlaces[index].id
         onDeleteTapped?(placeId)
-        // 삭제는 ViewController에서 API 성공 후 데이터 갱신으로 처리
+       
     }
 
     @objc private func didTapCard(_ sender: UITapGestureRecognizer) {
