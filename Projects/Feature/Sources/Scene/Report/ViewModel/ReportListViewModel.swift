@@ -29,13 +29,11 @@ public struct ReportResponseDTO: Codable {
     public let reportContent: String?
     public let reviewContent: String?
     public let placeName: String?
-
 }
 
 public enum ReportStatusType: String, Codable {
     case pending = "PENDING"
     case approved = "APPROVED"
-
     case rejected = "REJECTED"
 }
 
@@ -68,6 +66,7 @@ public struct ReportData {
 }
 
 public enum ReportFilterType {
+    case all
     case pending
     case completed
 }
@@ -77,7 +76,8 @@ public final class ReportListViewModel {
     public var reports: [ReportData] = []
     private let reportProvider = MoyaProvider<ReportServices>()
     
-    public var filterType: ReportFilterType = .pending
+    public var filterType: ReportFilterType = .all
+    private var searchText: String = ""
     
     public init() {}
     
@@ -88,10 +88,8 @@ public final class ReportListViewModel {
         }
         
         let authorization = "Bearer \(token)"
-        
         var pendingReports: [ReportData] = []
         var resolvedReports: [ReportData] = []
-        
         let group = DispatchGroup()
         
         group.enter()
@@ -122,17 +120,7 @@ public final class ReportListViewModel {
         
         group.notify(queue: .main) {
             self.allReports = pendingReports + resolvedReports
-
-            switch self.filterType {
-            case .pending:
-                self.reports = self.allReports.filter { $0.reportStatus == .pending }
-
-            case .completed:
-                self.reports = self.allReports.filter {
-                    $0.reportStatus == .approved || $0.reportStatus == .rejected
-                }
-            }
-
+            self.applyFilters(with: self.searchText)
             completion(true)
         }
     }
@@ -216,38 +204,36 @@ public final class ReportListViewModel {
             }
             return $0
         }
-
-        switch filterType {
-        case .pending:
-            reports = allReports.filter { $0.reportStatus == .pending }
-
-        case .completed:
-            reports = allReports.filter {
-                $0.reportStatus == .approved || $0.reportStatus == .rejected
-            }
-        }
+        
+        applyFilters(with: searchText)
     }
 
     public func filterReports(with text: String) {
+        searchText = text
+        applyFilters(with: text)
+    }
+    
+    private func applyFilters(with text: String?) {
         let base: [ReportData]
 
         switch filterType {
+        case .all:
+            base = allReports
         case .pending:
             base = allReports.filter { $0.reportStatus == .pending }
-
         case .completed:
             base = allReports.filter {
                 $0.reportStatus == .approved || $0.reportStatus == .rejected
             }
         }
 
-        if text.isEmpty {
-            reports = base
-        } else {
+        if let text = text, !text.isEmpty {
             reports = base.filter {
                 $0.reviewerName.localizedCaseInsensitiveContains(text) ||
                 $0.reportContent.localizedCaseInsensitiveContains(text)
             }
+        } else {
+            reports = base
         }
     }
 }
