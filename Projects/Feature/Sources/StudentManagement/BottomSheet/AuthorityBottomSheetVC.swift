@@ -126,6 +126,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
     @objc private func outingSwitchChanged() {
         guard let data = userData else { return }
+        let previousState = !outingSwitch.isOn
         let isOn = outingSwitch.isOn
         
         GOMSAlert.show(
@@ -149,13 +150,14 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 }
             },
             cancelAction: { [weak self] in
-                self?.outingSwitch.isOn = data.isOuting
+                self?.outingSwitch.isOn = previousState
             }
         )
     }
     
     @objc private func blackListSwitchChanged() {
         guard let data = userData else { return }
+        let previousState = !blackListSwitch.isOn
         let isOn = blackListSwitch.isOn
         
         GOMSAlert.show(
@@ -179,7 +181,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 }
             },
             cancelAction: { [weak self] in
-                self?.blackListSwitch.isOn = data.isBlackList
+                self?.blackListSwitch.isOn = previousState
             }
         )
     }
