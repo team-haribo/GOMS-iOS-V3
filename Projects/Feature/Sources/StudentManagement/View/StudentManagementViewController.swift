@@ -109,10 +109,20 @@ public final class StudentManagementViewController: BaseViewController {
 
     @objc private func searchTextFieldDidChange(_ textField: UITextField) {
         let text = textField.text ?? ""
-        viewModel.searchStudent(searchString: text.isEmpty ? nil : text) { [weak self] in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                self.userList = self.viewModel.userListDatas
+        
+        if text.isEmpty {
+            viewModel.getUserList { [weak self] in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.userList = self.viewModel.userListDatas
+                }
+            }
+        } else {
+            viewModel.searchStudent(searchString: text) { [weak self] in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.userList = self.viewModel.userListDatas
+                }
             }
         }
     }
