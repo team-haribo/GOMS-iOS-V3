@@ -52,6 +52,7 @@ public final class MapBottomSheetView: UIView {
         $0.backgroundColor = UIColor.color.gomsDivider.color
         $0.layer.cornerRadius = 2.5
     }
+    private let handleTouchArea = UIView()
     private let scrollView = UIScrollView().then {
         $0.showsVerticalScrollIndicator = false
         $0.alwaysBounceVertical = true
@@ -93,19 +94,26 @@ public final class MapBottomSheetView: UIView {
     }
 
     private func addView() {
-        addSubview(handleView)
+        addSubview(handleTouchArea)
+        handleTouchArea.addSubview(handleView)
         addSubview(scrollView)
         scrollView.addSubview(contentStackView)
     }
     
     private func setLayout() {
+        handleTouchArea.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(40)
+        }
+
         handleView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(8)
-            $0.centerX.equalToSuperview()
-            $0.width.equalTo(40); $0.height.equalTo(5)
+            $0.center.equalToSuperview()
+            $0.width.equalTo(40)
+            $0.height.equalTo(5)
         }
         scrollView.snp.makeConstraints {
-            $0.top.equalTo(handleView.snp.bottom).offset(8)
+            $0.top.equalTo(handleTouchArea.snp.bottom).offset(8)
             $0.leading.trailing.bottom.equalToSuperview()
         }
         contentStackView.snp.makeConstraints {
@@ -212,8 +220,7 @@ public final class MapBottomSheetView: UIView {
         guard index < reviewPlaces.count else { return }
         let placeId = reviewPlaces[index].id
         onDeleteTapped?(placeId)
-        reviewPlaces.remove(at: index)
-        renderUI()
+       
     }
 
     @objc private func didTapCard(_ sender: UITapGestureRecognizer) {
