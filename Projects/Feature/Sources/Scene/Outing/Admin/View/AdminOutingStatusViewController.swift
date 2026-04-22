@@ -20,8 +20,8 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
-        $0.setTitleColor(UIColor.color.sub2.color, for: .normal)
-        $0.tintColor = UIColor.color.sub2.color
+        $0.setTitleColor(UIColor.color.admin.color, for: .normal)
+        $0.tintColor = UIColor.color.admin.color
         $0.titleLabel?.font = .suit(size: 18, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
@@ -72,7 +72,7 @@ public final class AdminOutingViewController: BaseViewController, AdminOutingCel
     
     private let outingNilLabel = UILabel().then {
         $0.text = "오늘은 외출하는 날이 아니에요!"
-        $0.textColor = .color.sub2.color
+        $0.textColor = .color.sub1.color
         $0.font = UIFont.suit(size: 14, weight: .semibold)
         $0.isHidden = true
     }
@@ -277,8 +277,8 @@ extension AdminOutingViewController: UICollectionViewDelegate {
             actionTitle: "복귀",
             isNegative: true,
             highlightKeywords: [],
-            action: {
-                guard index < self.outingList.count else { return }
+            action: { [weak self] in
+                guard let self = self, index < self.outingList.count else { return }
 
                 let target = self.outingList[index]
                 self.viewModel.forceOutingStudent(user: target) {
