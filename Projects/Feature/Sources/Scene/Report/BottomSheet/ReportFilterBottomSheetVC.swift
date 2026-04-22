@@ -92,7 +92,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
         } else if completedButton.isSelected {
             viewModel.filterType = .completed
         } else {
-            viewModel.filterType = .pending
+            viewModel.filterType = .all
         }
 
         viewModel.fetchReportList { [weak self] _ in
@@ -104,7 +104,7 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        viewModel.filterType = .pending
+        viewModel.filterType = .all
         viewModel.fetchReportList { [weak self] _ in
             DispatchQueue.main.async {
                 self?.reportListVC?.reloadReportList()

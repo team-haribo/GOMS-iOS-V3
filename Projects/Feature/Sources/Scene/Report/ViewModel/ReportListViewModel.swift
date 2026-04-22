@@ -29,13 +29,11 @@ public struct ReportResponseDTO: Codable {
     public let reportContent: String?
     public let reviewContent: String?
     public let placeName: String?
-
 }
 
 public enum ReportStatusType: String, Codable {
     case pending = "PENDING"
     case approved = "APPROVED"
-
     case rejected = "REJECTED"
 }
 
@@ -68,6 +66,7 @@ public struct ReportData {
 }
 
 public enum ReportFilterType {
+    case all
     case pending
     case completed
 }
@@ -77,7 +76,7 @@ public final class ReportListViewModel {
     public var reports: [ReportData] = []
     private let reportProvider = MoyaProvider<ReportServices>()
     
-    public var filterType: ReportFilterType = .pending
+    public var filterType: ReportFilterType = .all
     
     public init() {}
     
@@ -88,10 +87,8 @@ public final class ReportListViewModel {
         }
         
         let authorization = "Bearer \(token)"
-        
         var pendingReports: [ReportData] = []
         var resolvedReports: [ReportData] = []
-        
         let group = DispatchGroup()
         
         group.enter()
@@ -124,15 +121,15 @@ public final class ReportListViewModel {
             self.allReports = pendingReports + resolvedReports
 
             switch self.filterType {
+            case .all:
+                self.reports = self.allReports
             case .pending:
                 self.reports = self.allReports.filter { $0.reportStatus == .pending }
-
             case .completed:
                 self.reports = self.allReports.filter {
                     $0.reportStatus == .approved || $0.reportStatus == .rejected
                 }
             }
-
             completion(true)
         }
     }
@@ -218,9 +215,10 @@ public final class ReportListViewModel {
         }
 
         switch filterType {
+        case .all:
+            reports = allReports
         case .pending:
             reports = allReports.filter { $0.reportStatus == .pending }
-
         case .completed:
             reports = allReports.filter {
                 $0.reportStatus == .approved || $0.reportStatus == .rejected
@@ -232,9 +230,10 @@ public final class ReportListViewModel {
         let base: [ReportData]
 
         switch filterType {
+        case .all:
+            base = allReports
         case .pending:
             base = allReports.filter { $0.reportStatus == .pending }
-
         case .completed:
             base = allReports.filter {
                 $0.reportStatus == .approved || $0.reportStatus == .rejected
