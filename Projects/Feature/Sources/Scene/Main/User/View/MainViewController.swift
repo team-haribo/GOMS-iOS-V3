@@ -429,6 +429,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                 self?.refreshControl.endRefreshing()
                 return
             }
+            
             self.setupViewComponents()
             self.refreshControl.endRefreshing()
         }
@@ -447,10 +448,9 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     // MARK: - Setting
     func setup() {
         let isLateEmpty = self.mainViewModel.lateListDatas.isEmpty
-        let isOutingEmpty = self.mainViewModel.outingListDatas.isEmpty
 
         updateLateView(hasLateStudents: !isLateEmpty)
-        outingView.isHidden = isOutingEmpty
+        outingView.isHidden = false
 
         self.setCollectionView()
         self.setupCountLable()
@@ -513,14 +513,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
     func setupCountLable() {
         let count = mainViewModel.outingListDatas.count
-        outingCountLabel.isHidden = count == 0
-        guard count > 0 else { return }
-
         let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
         let range = (attributedString.string as NSString).range(of: "\(count)")
         attributedString.addAttribute(.foregroundColor, value: UIColor.color.gomsPrimary.color, range: range)
         attributedString.addAttribute(.font, value: UIFont.suit(size: 14, weight: .medium), range: range)
         outingCountLabel.attributedText = attributedString
+        outingCountLabel.isHidden = false
     }
 
     // MARK: - Configure UI
@@ -672,7 +670,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         if collectionView == latecomerCollectionView {
             return mainViewModel.lateListDatas.count
         } else if collectionView == outingStatusCollectionView {
-            return mainViewModel.outingListDatas.isEmpty ? 5 : mainViewModel.outingListDatas.count
+            return mainViewModel.outingListDatas.count
         }
         return 0
     }
@@ -685,9 +683,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             return cell
         } else if collectionView == outingStatusCollectionView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutingStatusCollectionViewCell.identifier, for: indexPath) as? OutingStatusCollectionViewCell else { return UICollectionViewCell() }
-            if mainViewModel.outingListDatas.isEmpty {
-                cell.configureDummy()
-            } else {
+            
+            if !mainViewModel.outingListDatas.isEmpty {
                 let data = mainViewModel.outingListDatas[indexPath.row]
                 cell.configure(with: data, showTime: false)
             }

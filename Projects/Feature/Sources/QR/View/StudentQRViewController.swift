@@ -29,7 +29,8 @@ public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutpu
     private let scanInterval: TimeInterval = 0.3
 
     private let gomsLogo = UIImageView().then {
-        $0.image = .image.gomsWhiteLogo.image
+        $0.image = .image.gomsWhiteLogo.image.withRenderingMode(.alwaysTemplate)
+        $0.tintColor = .color.sub2.color
     }
 
     private lazy var closeButton = UIButton().then {
@@ -73,7 +74,7 @@ public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutpu
 
     // MARK: - Add View
     public override func addView() {
-        [closeButton, qrFrame].forEach { self.view.addSubview($0) }
+        [gomsLogo, closeButton, qrFrame].forEach { self.view.addSubview($0) }
     }
 
     // MARK: - Layout
@@ -83,6 +84,12 @@ public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutpu
     }
 
     public override func setLayout() {
+        gomsLogo.snp.makeConstraints {
+            $0.top.equalTo(self.view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+            $0.width.equalTo(135)
+            $0.height.equalTo(56)
+        }
 
         closeButton.snp.makeConstraints {
             $0.width.height.equalTo(24)

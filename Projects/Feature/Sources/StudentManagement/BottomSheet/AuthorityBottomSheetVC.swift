@@ -18,6 +18,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     var userData: UserData? {
         didSet { if isViewLoaded { setupData() } }
     }
+    
+    private let dimmedView = UIView().then {
+        $0.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+    }
 
     private let bottomSheetView = UIView().then {
         $0.backgroundColor = UIColor.color.surface.color
@@ -72,6 +76,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
         self.modalPresentationStyle = .overFullScreen
+        self.modalTransitionStyle = .crossDissolve
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -81,6 +86,9 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         view.backgroundColor = .clear
         setupActions()
         setupData()
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(closeButtonTapped))
+        dimmedView.addGestureRecognizer(tapGesture)
     }
 
     private func setupData() {
@@ -113,25 +121,37 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             $0.height.equalTo(sheetHeight)
         }
         
-        UIView.animate(withDuration: 0.25) {
-            self.view.layoutIfNeeded()
-        }
+        self.view.layoutIfNeeded()
     }
 
     @objc private func outingSwitchChanged() {
         guard let data = userData else { return }
+        let isOn = outingSwitch.isOn
         
-        if outingSwitch.isOn {
-            viewModel.forceOutingStudent(user: data) { [weak self] in
-                guard let self = self else { return }
-                self.studentManagementVC.userList = self.viewModel.userListDatas
+        GOMSAlert.show(
+            in: self,
+            title: isOn ? "강제외출" : "강제외출 복귀",
+            message: isOn ? "이 학생을 외출 상태로 변경하시겠습니까?" : "학생을 복귀 상태로 변경하시겠습니까?",
+            actionTitle: isOn ? "외출" : "복귀",
+            isNegative: true,
+            highlightKeywords: [],
+            action: { [weak self] in
+                if isOn {
+                    self?.viewModel.forceOutingStudent(user: data) { [weak self] in
+                        guard let self = self else { return }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                    }
+                } else {
+                    self?.viewModel.deleteOutingStudent(user: data) { [weak self] in
+                        guard let self = self else { return }
+                        self.studentManagementVC.userList = self.viewModel.userListDatas
+                    }
+                }
+            },
+            cancelAction: { [weak self] in
+                self?.outingSwitch.isOn = data.isOuting
             }
-        } else {
-            viewModel.deleteOutingStudent(user: data) { [weak self] in
-                guard let self = self else { return }
-                self.studentManagementVC.userList = self.viewModel.userListDatas
-            }
-        }
+        )
     }
     
     @objc private func blackListSwitchChanged() {
@@ -172,7 +192,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.studentManagementVC.userList = self.viewModel.userListDatas
-                self.dismiss(animated: true)
+                self.dismiss(animated: false)
             }
         }
     }
@@ -183,10 +203,10 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         adminSwitch.addTarget(self, action: #selector(adminSwitchChanged), for: .valueChanged)
     }
 
-    @objc private func closeButtonTapped() { dismiss(animated: true) }
+    @objc private func closeButtonTapped() { dismiss(animated: false) }
 
     public override func addView() {
-        view.addSubview(bottomSheetView)
+        [dimmedView, bottomSheetView].forEach { view.addSubview($0) }
         [titleLabel, closeButton, contentStackView].forEach {
             bottomSheetView.addSubview($0)
         }
@@ -240,6 +260,9 @@ public final class AuthorityBottomSheetVC: BaseViewController {
     }
 
     public override func setLayout() {
+        dimmedView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
         bottomSheetView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(342)

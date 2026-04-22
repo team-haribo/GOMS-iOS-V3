@@ -68,6 +68,16 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         $0.font = UIFont.suit(size: 18, weight: .semibold)
     }
 
+    private lazy var moreLatecomerButton = UIButton().then {
+        $0.backgroundColor = .color.surface.color
+        $0.setTitle("더보기", for: .normal)
+        $0.setTitleColor(.color.sub2.color, for: .normal)
+        $0.titleLabel?.font = .suit(size: 13, weight: .regular)
+        $0.layer.cornerRadius = 4
+        $0.layer.masksToBounds = true
+        $0.addTarget(self, action: #selector(moreLatecomerButtonTapped), for: .touchUpInside)
+    }
+
     let lateNilView = LateNilView()
     private let outingView = UIView()
 
@@ -264,8 +274,8 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         let isLateEmpty = self.viewModel.lateListDatas.isEmpty
         updateLateView(hasLateStudents: !isLateEmpty)
         
-        let isOutingEmpty = self.viewModel.outingListDatas.isEmpty
-        outingView.isHidden = isOutingEmpty
+        // 외출 현황은 데이터 유무와 관계없이 항상 표시 (isHidden 로직 제거)
+        outingView.isHidden = false
 
         self.setCollectionView()
         self.setupCountLable()
@@ -283,10 +293,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     func setupCountLable() {
         let count = viewModel.outingListDatas.count
-        if count == 0 {
-            outingCountLabel.isHidden = true
-            return
-        }
+        // 0명일 때도 레이블을 숨기지 않고 0명임을 표시하거나, 필요에 따라 레이블만 비움
         outingCountLabel.isHidden = false
         let attributedString = NSMutableAttributedString(string: "\(count)명이 외출 중")
         let range = (attributedString.string as NSString).range(of: "\(count)")
@@ -295,7 +302,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         self.outingCountLabel.attributedText = attributedString
     }
 
-    // MARK: - Profile Setup (중요 로직 수정)
     func setupProfileView() {
         guard let profile = viewModel.profileData else { return }
         let grade = profile.grade ?? 0
@@ -310,7 +316,6 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.kf.setImage(with: url, placeholder: placeholder)
         }
 
-        // profileView가 본인을 관리자로 인식하게 합니다.
         profileView.isAdmin = true
         profileView.nameLabel.text = name
         profileView.profileStatus.text = "관리자"
@@ -354,6 +359,10 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         profileVC.view.frame = profileContainerView.bounds
         profileVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         profileVC.didMove(toParent: self)
+    }
+
+    @objc func moreLatecomerButtonTapped() {
+        navigationController?.pushViewController(LatecomerListViewController(), animated: true)
     }
 
     @objc func moreOutingStatusButtonTapped() {
@@ -416,7 +425,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         [outingStatusLabel, moreOutingStatusButton, outingCountLabel, outingStatusCollectionView].forEach { outingView.addSubview($0) }
-        [logo, profileView, basicsProfileView, latecomerLabel, latecomerCollectionView, lateNilView, outingView, reportButton].forEach { contentView.addSubview($0) }
+        [logo, profileView, basicsProfileView, latecomerLabel, moreLatecomerButton, latecomerCollectionView, lateNilView, outingView, reportButton].forEach { contentView.addSubview($0) }
         [mapContainerView, profileContainerView, tabBar, qrButton, codeButton].forEach { view.addSubview($0) }
     }
 
@@ -495,6 +504,13 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.height.equalTo(32)
         }
 
+        moreLatecomerButton.snp.makeConstraints {
+            $0.centerY.equalTo(latecomerLabel)
+            $0.trailing.equalToSuperview().inset(20)
+            $0.width.equalTo(48)
+            $0.height.equalTo(24)
+        }
+
         profileView.isHidden = !isClockOn
         basicsProfileView.isHidden = isClockOn
         
@@ -557,7 +573,9 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
             $0.top.equalTo(outingStatusLabel.snp.bottom).offset(17)
             $0.leading.trailing.equalToSuperview().inset(24)
             $0.bottom.equalToSuperview()
-            $0.height.equalTo(viewModel.outingListDatas.count * 48 + 20).priority(.low)
+            // 데이터가 0개여도 헤더 섹션은 유지되도록 최소 높이 확보 또는 계산 로직 유지
+            let collectionHeight = max(0, viewModel.outingListDatas.count * 48 + 20)
+            $0.height.equalTo(collectionHeight).priority(.low)
         }
     }
 

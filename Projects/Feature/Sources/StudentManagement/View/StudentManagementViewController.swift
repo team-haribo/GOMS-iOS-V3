@@ -17,13 +17,15 @@ public final class StudentManagementViewController: BaseViewController {
         didSet { studentCollectionView.reloadData() }
     }
     
+    private var activeAuthorityVC: AuthorityBottomSheetVC?
+    
     private lazy var customBackButton = UIButton().then {
         let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         $0.setImage(backImage, for: .normal)
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
     
@@ -196,18 +198,22 @@ extension StudentManagementViewController: UICollectionViewDataSource, UICollect
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self, viewModel: viewModel)
-        authorityVC.userData = userList[indexPath.row]
-        authorityVC.modalPresentationStyle = .overFullScreen
-
-        authorityVC.presentationController?.delegate = self
-
-        self.present(authorityVC, animated: false)
+        if let activeVC = activeAuthorityVC, activeVC.presentingViewController != nil {
+            activeVC.userData = userList[indexPath.row]
+        } else {
+            let authorityVC = AuthorityBottomSheetVC(studentManagementVC: self, viewModel: viewModel)
+            authorityVC.userData = userList[indexPath.row]
+            authorityVC.modalPresentationStyle = .overFullScreen
+            authorityVC.presentationController?.delegate = self
+            self.activeAuthorityVC = authorityVC
+            self.present(authorityVC, animated: false)
+        }
     }
 }
 
 extension StudentManagementViewController: UIAdaptivePresentationControllerDelegate {
     public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        self.activeAuthorityVC = nil
         viewModel.getUserList { [weak self] in
             guard let self = self else { return }
             DispatchQueue.main.async {

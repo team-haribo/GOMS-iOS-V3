@@ -2,7 +2,7 @@
 //  LetecomerViewModel.swift
 //  Feature
 //
-//  Created by 김준표 on 2/25/26.
+//  Created by 김민선 on 4/21/26.
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
@@ -45,16 +45,19 @@ public final class LetecomerViewModel: BaseViewModel {
             case .success(let result):
                 let responseData = result.data
                 do {
-                    self.latecomerList = try JSONDecoder().decode([LatecomerListResponse].self, from: responseData)
+                    let decodedResponse = try JSONDecoder().decode(LatecomerListWrappedResponse.self, from: responseData)
+                    self.latecomerList = decodedResponse.students
+                    
                     self.latecomerListDatas = self.latecomerList.map {
                         LatecomerListData(
-                            id: $0.memberid,
+                            id: $0.memberId,
                             profileImageURL: $0.profileImageUrl,
                             name: $0.name,
                             grade: $0.grade,
-                            department: $0.major
+                            department: $0.department
                         )
                     }
+                    
                     DispatchQueue.main.async {
                         completion(self.latecomerListDatas)
                     }
@@ -66,4 +69,16 @@ public final class LetecomerViewModel: BaseViewModel {
             }
         }
     }
+}
+
+struct LatecomerListWrappedResponse: Decodable {
+    let students: [LatecomerListResponse]
+}
+
+struct LatecomerListResponse: Decodable {
+    let memberId: Int
+    let name: String
+    let grade: Int
+    let department: String
+    let profileImageUrl: String?
 }

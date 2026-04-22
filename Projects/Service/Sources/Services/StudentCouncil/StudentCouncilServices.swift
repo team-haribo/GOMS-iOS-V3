@@ -119,16 +119,15 @@ extension StudentCouncilServices: TargetType {
             let parameters = makeQueryParameters(from: param)
             return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         case .lateList(_ , let date):
-            return .requestParameters(parameters: ["date": date], encoding: URLEncoding.default)
+            return .requestParameters(parameters: ["date": date], encoding: URLEncoding.queryString)
         }
     }
     
     public var headers: [String : String]? {
         switch self {
         case .makeQRCode(let authorization),
-             .studentList(let authorization):
-            return ["Content-Type" :"application/json", "Authorization" : authorization]
-        case .editAuthority(let authorization, _, _),
+             .studentList(let authorization),
+             .editAuthority(let authorization, _, _),
              .outingAllowed(let authorization, _, _),
              .forceOuting(let authorization, _),
              .deleteOuting(let authorization, _),

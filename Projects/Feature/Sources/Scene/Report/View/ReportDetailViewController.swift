@@ -22,7 +22,7 @@ public final class ReportDetailViewController: BaseViewController {
         $0.setTitle(" 돌아가기", for: .normal)
         $0.setTitleColor(UIColor.color.admin.color, for: .normal)
         $0.tintColor = UIColor.color.admin.color
-        $0.titleLabel?.font = .suit(size: 16, weight: .medium)
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
         $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
 

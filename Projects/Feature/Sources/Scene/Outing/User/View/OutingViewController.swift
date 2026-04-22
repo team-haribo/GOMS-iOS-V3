@@ -10,7 +10,6 @@ import UIKit
 
 public final class OutingViewController: BaseViewController, UITextFieldDelegate {
     
-    // MARK: - Properties
     private let viewModel = OutingViewModel()
      
     var outingList: [OutingListData] = [] {
@@ -20,6 +19,16 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
     }
     
     let refreshControl = UIRefreshControl()
+
+    private lazy var customBackButton = UIButton().then {
+        let backImage = UIImage(named: "Back", in: Bundle.module, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        $0.setImage(backImage, for: .normal)
+        $0.setTitle(" 돌아가기", for: .normal)
+        $0.setTitleColor(.color.gomsPrimary.color, for: .normal)
+        $0.tintColor = .color.gomsPrimary.color
+        $0.titleLabel?.font = .suit(size: 18, weight: .medium)
+        $0.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+    }
     
     private lazy var searchTextField = GOMSTextField(
         frame: CGRect(x: 0, y: 0, width: 0, height: 0),
@@ -77,25 +86,31 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         $0.addTarget(self, action: #selector(qrButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - Selectors
     @objc func qrButtonTapped() {
         let qrCodeVC = StudentQRViewController()
         self.navigationController?.pushViewController(qrCodeVC, animated: true)
+    }
+
+    @objc private func backButtonTapped() {
+        self.navigationController?.popViewController(animated: true)
     }
     
     @objc private func searchTextFieldEditingChanged(_ textField: UITextField) {
         let searchText = textField.text ?? ""
         if searchText.isEmpty {
             outingList = viewModel.outingListDatas
+            self.setup()
         } else {
             viewModel.searchStudent(searchString: searchText) {
                 self.outingList = self.viewModel.outingSearchListDatas
-                self.outingListCollectionView.reloadData()
+                DispatchQueue.main.async {
+                    self.setup()
+                    self.outingListCollectionView.reloadData()
+                }
             }
         }
     }
 
-    // MARK: - Life Cycel
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         outingListCollectionView.reloadData()
@@ -118,33 +133,40 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         self.outingList = []
         self.setup()
 
- 
         viewModel.getOutingList {
             self.outingList = self.viewModel.outingListDatas
-            self.setup()
+            DispatchQueue.main.async {
+                self.setup()
+                self.outingListCollectionView.reloadData()
+            }
         }
     }
     
-    // MARK: - Setting
     public override func configNavigation() {
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.title = "외출 현황"
-     
         self.navigationItem.hidesSearchBarWhenScrolling = false
-        self.navigationController?.navigationBar.isHidden = false
+        self.navigationController?.navigationBar.isHidden = true
+    }
+
+    public override func shouldShowCustomNavigation() -> Bool {
+        return false
     }
     
     func setup() {
-      
-        searchTitle.isHidden = false
-        outingListCollectionView.isHidden = false
-
-        
-        coffeeIcon.isHidden = true
-        outingNilLabel.isHidden = true
+        if outingList.isEmpty {
+            searchResultLabel.isHidden = true
+            outingListCollectionView.isHidden = true
+            coffeeIcon.isHidden = false
+            outingNilLabel.isHidden = false
+        } else {
+            searchResultLabel.isHidden = false
+            outingListCollectionView.isHidden = false
+            coffeeIcon.isHidden = true
+            outingNilLabel.isHidden = true
+        }
     }
     
-    // MARK: - Refresh Control Setup
     private func configureRefreshControl() {
         outingListCollectionView.refreshControl = refreshControl
         refreshControl.addTarget(self, action: #selector(handleRefreshControl), for: .valueChanged)
@@ -155,8 +177,8 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         viewModel.gomsRefreshToken.tokenReissuance(){ success in}
         viewModel.getOutingList {
             self.outingList = self.viewModel.outingListDatas
-            self.setup()
             DispatchQueue.main.async {
+                self.setup()
                 self.outingListCollectionView.reloadData()
                 self.refreshControl.endRefreshing()
             }
@@ -177,11 +199,16 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         outingListCollectionView.register(OutingListCollectionViewCell.self, forCellWithReuseIdentifier: OutingListCollectionViewCell.identifier)
     }
     
-    // MARK: - Configure UI
     public override func configureUI() {
         view.backgroundColor = .color.background.color
-        qrButton.layer.cornerRadius = 32
-        qrButton.clipsToBounds = true
+        qrButton.do {
+            $0.layer.cornerRadius = 32
+            $0.clipsToBounds = false
+            $0.layer.shadowColor = UIColor.color.gomsPrimary.color.cgColor
+            $0.layer.shadowOpacity = 0.8
+            $0.layer.shadowRadius = 13
+            $0.layer.shadowOffset = CGSize(width: 0.81, height: 0.81)
+        }
     }
     
     public override func viewDidLayoutSubviews() {
@@ -189,16 +216,19 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         qrButton.layer.cornerRadius = 32
     }
     
-    // MARK: - Add View
     public override func addView() {
-        [searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel, qrButton].forEach { view.addSubview($0) }
+        [customBackButton, searchTitle, searchTextField, searchResultLabel, outingListCollectionView, coffeeIcon, outingNilLabel, qrButton].forEach { view.addSubview($0) }
     }
     
-    // MARK: - Layout
     public override func setLayout() {
+        customBackButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.leading.equalToSuperview().offset(20)
+        }
+
         searchTitle.snp.makeConstraints {
             $0.height.equalTo(48)
-            $0.top.equalToSuperview().inset(100)
+            $0.top.equalTo(customBackButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(bounds.width * 0.05)
             $0.trailing.lessThanOrEqualToSuperview().inset(24)
         }
@@ -235,28 +265,22 @@ public final class OutingViewController: BaseViewController, UITextFieldDelegate
         }
         
         qrButton.snp.makeConstraints {
-            $0.height.width.equalTo(64)
-            $0.trailing.equalTo(-(bounds.width * 0.05))
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
+            $0.size.equalTo(64)
+            $0.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(100)
         }
     }
 }
 
-// MARK: - Extension
 extension OutingViewController: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-      
         return outingList.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = outingListCollectionView.dequeueReusableCell(withReuseIdentifier: OutingListCollectionViewCell.identifier, for: indexPath) as! OutingListCollectionViewCell
-
-       
         let outingData = outingList[indexPath.row]
         cell.configureData(with: outingData)
-
-        
         return cell
     }
 }
