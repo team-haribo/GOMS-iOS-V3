@@ -217,7 +217,7 @@ private func setupLayout() {
     }
     bottomSheetView.snp.makeConstraints {
         $0.leading.trailing.bottom.equalToSuperview()
-        self.bottomSheetHeight = $0.height.equalTo(firstHeight).constraint
+        self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
     }
     placeDetailView.snp.makeConstraints {
         $0.leading.trailing.bottom.equalToSuperview()
@@ -1069,7 +1069,7 @@ private func hideDetailView(completion: (() -> Void)? = nil) {
         self.placeDetailView.isHidden = true
         self.bottomSheetView.isHidden = false
 
-        self.bottomSheetHeight?.update(offset: self.firstHeight)
+        self.bottomSheetHeight?.update(offset: self.defaultHeight)
         self.view.layoutIfNeeded()
 
         self.selectedPlaceId = -1
@@ -1397,7 +1397,7 @@ private func createPoiStyle() {
         case "PM9": image = FeatureAsset.Images.pm9.image
         default: continue
         }
-        let resized = image
+        let resized = resizedImage(image, size: CGSize(width: image.size.width * 0.5, height: image.size.height * 0.5))
         let iconStyle = PoiIconStyle(symbol: resized, anchorPoint: CGPoint(x: 0.5, y: 0.5))
         let poiStyle = PoiStyle(styleID: styleID, styles: [PerLevelPoiStyle(iconStyle: iconStyle, level: 0)])
         manager.addPoiStyle(poiStyle)
