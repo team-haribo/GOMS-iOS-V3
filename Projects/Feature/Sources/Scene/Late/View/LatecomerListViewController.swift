@@ -20,11 +20,13 @@ public final class LatecomerListViewController: BaseViewController {
         }
     }
     
+    private static let dateFormatter = DateFormatter().then {
+        $0.locale = Locale(identifier: "ko")
+        $0.dateFormat = "yyyy년 M월 d일 (E)"
+    }
+    
     var date: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko")
-        formatter.dateFormat = "yyyy년 M월 d일 (E)"
-        return formatter.string(from: Date())
+        return Self.dateFormatter.string(from: Date())
     }
     
     private let titleLabel = UILabel().then {
@@ -182,7 +184,7 @@ extension LatecomerListViewController: UICollectionViewDataSource {
 
 extension LatecomerListViewController: UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = UIScreen.main.bounds.width - 40
+        let width = collectionView.bounds.width
         return CGSize(width: width, height: 80)
     }
     
