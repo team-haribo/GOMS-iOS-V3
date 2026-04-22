@@ -1465,7 +1465,8 @@ private func showActiveMarker(for place: MapPlaceData) {
     let ids = activeLayer.getAllPois()?.map { $0.itemID } ?? []
     activeLayer.removePois(poiIDs: ids)
 
-    let option = PoiOptions(styleID: "activePinStyle", poiID:"active_\(place.placeId)")
+    let styleID = styleIDForCategory(place.categoryName)
+    let option = PoiOptions(styleID: styleID, poiID:"active_\(place.placeId)")
     option.clickable = false
 
     if let poi = activeLayer.addPoi(

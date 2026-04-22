@@ -85,7 +85,7 @@ public final class IntroViewController: BaseViewController {
         $0.numberOfLines = 2
         $0.setLineSpacing(spacing: Layout.descLineSpacing)
         $0.textAlignment = .center
-        $0.textColor = .color.sub2.color
+        $0.textColor = .color.sub1.color
         $0.font = .suit(size: 16, weight: .medium)
     }
 
@@ -100,7 +100,7 @@ public final class IntroViewController: BaseViewController {
     private let signUpGuideLabel = UILabel().then {
         $0.text = "GOMS가 처음이라면?"
         $0.font = .suit(size: 12, weight: .medium)
-        $0.textColor = .color.mainText.color
+        $0.textColor = .color.sub1.color
     }
 
     private lazy var signUpButton = UIButton().then {
