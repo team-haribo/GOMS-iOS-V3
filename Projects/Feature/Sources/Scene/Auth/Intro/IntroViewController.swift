@@ -56,8 +56,8 @@ public final class IntroViewController: BaseViewController {
     }
 
     private let titleLabel = UILabel().then {
-        let fullText = "월수 외출제 관리 서비스"
-        let highlightText = "월수 외출제"
+        let fullText = "외출제 관리 서비스"
+        let highlightText = "외출제"
 
         $0.textAlignment = .center
         $0.font = .suit(size: 20, weight: .semibold)
@@ -81,7 +81,7 @@ public final class IntroViewController: BaseViewController {
     }
 
     private let descriptionLabel = UILabel().then {
-        $0.text = "GOMS로 간편하게\n월수 외출제를 이용해 보세요!"
+        $0.text = "GOMS로 간편하게\n외출제를 이용해 보세요!"
         $0.numberOfLines = 2
         $0.setLineSpacing(spacing: Layout.descLineSpacing)
         $0.textAlignment = .center
