@@ -77,6 +77,7 @@ public final class ReportListViewModel {
     private let reportProvider = MoyaProvider<ReportServices>()
     
     public var filterType: ReportFilterType = .all
+    private var searchText: String = ""
     
     public init() {}
     
@@ -119,17 +120,7 @@ public final class ReportListViewModel {
         
         group.notify(queue: .main) {
             self.allReports = pendingReports + resolvedReports
-
-            switch self.filterType {
-            case .all:
-                self.reports = self.allReports
-            case .pending:
-                self.reports = self.allReports.filter { $0.reportStatus == .pending }
-            case .completed:
-                self.reports = self.allReports.filter {
-                    $0.reportStatus == .approved || $0.reportStatus == .rejected
-                }
-            }
+            self.applyFilters(with: self.searchText)
             completion(true)
         }
     }
@@ -213,20 +204,16 @@ public final class ReportListViewModel {
             }
             return $0
         }
-
-        switch filterType {
-        case .all:
-            reports = allReports
-        case .pending:
-            reports = allReports.filter { $0.reportStatus == .pending }
-        case .completed:
-            reports = allReports.filter {
-                $0.reportStatus == .approved || $0.reportStatus == .rejected
-            }
-        }
+        
+        applyFilters(with: searchText)
     }
 
     public func filterReports(with text: String) {
+        searchText = text
+        applyFilters(with: text)
+    }
+    
+    private func applyFilters(with text: String?) {
         let base: [ReportData]
 
         switch filterType {
@@ -240,13 +227,13 @@ public final class ReportListViewModel {
             }
         }
 
-        if text.isEmpty {
-            reports = base
-        } else {
+        if let text = text, !text.isEmpty {
             reports = base.filter {
                 $0.reviewerName.localizedCaseInsensitiveContains(text) ||
                 $0.reportContent.localizedCaseInsensitiveContains(text)
             }
+        } else {
+            reports = base
         }
     }
 }
