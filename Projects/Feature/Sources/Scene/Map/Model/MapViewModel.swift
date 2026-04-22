@@ -69,6 +69,14 @@ public final class MapViewModel {
     public private(set) var routeResult: MapRouteModel?
     public var onRouteUpdated: (() -> Void)?
     public var currentLocation: (lat: Double, lng: Double)?
+
+    // MARK: - Route Step (Direction)
+    public struct RouteStep {
+        let instruction: String
+        let distance: Int
+    }
+
+    public private(set) var routeSteps: [RouteStep] = []
     
     // MARK: - School Gates
     private let mainGate = (lat: 35.143345842452526, lng:  126.80000822150454) // 정문
@@ -324,6 +332,8 @@ public final class MapViewModel {
                 do {
                     let decoded = try JSONDecoder().decode(MapRouteModel.self, from: response.data)
                     self?.routeResult = decoded
+                    // step parsing
+                    self?.routeSteps = self?.makeRouteSteps(from: decoded) ?? []
 
                     if let route = decoded.routes.first {
                         let summary = route.summary
@@ -517,5 +527,107 @@ public final class MapViewModel {
         }
         
         return coords
+    }
+    // MARK: - Route Parsing (Direction)
+    private func makeRouteSteps(from routeModel: MapRouteModel) -> [RouteStep] {
+        guard let route = routeModel.routes.first else { return [] }
+
+        var steps: [RouteStep] = []
+        var previousPoint: CLLocationCoordinate2D?
+
+        for section in route.sections {
+            for road in section.roads {
+                let vertexes = road.vertexes
+
+                for i in stride(from: 0, to: vertexes.count - 2, by: 2) {
+                    let current = CLLocationCoordinate2D(
+                        latitude: vertexes[i + 1],
+                        longitude: vertexes[i]
+                    )
+
+                    if let prev = previousPoint {
+                        let next = CLLocationCoordinate2D(
+                            latitude: vertexes[i + 3],
+                            longitude: vertexes[i + 2]
+                        )
+
+                        let direction = getDirection(from: prev, via: current, to: next)
+                        let distance = calculateDistance(from: current, to: next)
+
+                        steps.append(
+                            RouteStep(
+                                instruction: direction,
+                                distance: distance
+                            )
+                        )
+                    }
+
+                    previousPoint = current
+                }
+            }
+        }
+
+        return steps
+    }
+
+    private func getDirection(
+        from prev: CLLocationCoordinate2D,
+        via current: CLLocationCoordinate2D,
+        to next: CLLocationCoordinate2D
+    ) -> String {
+
+        let angle = calculateAngle(prev: prev, current: current, next: next)
+
+        if angle > 30 {
+            return "우회전"
+        } else if angle < -30 {
+            return "좌회전"
+        } else {
+            return "직진"
+        }
+    }
+
+    private func calculateAngle(
+        prev: CLLocationCoordinate2D,
+        current: CLLocationCoordinate2D,
+        next: CLLocationCoordinate2D
+    ) -> Double {
+
+        let v1 = (
+            x: current.longitude - prev.longitude,
+            y: current.latitude - prev.latitude
+        )
+
+        let v2 = (
+            x: next.longitude - current.longitude,
+            y: next.latitude - current.latitude
+        )
+
+        let dot = v1.x * v2.x + v1.y * v2.y
+        let det = v1.x * v2.y - v1.y * v2.x
+
+        return atan2(det, dot) * 180 / .pi
+    }
+
+    private func calculateDistance(
+        from: CLLocationCoordinate2D,
+        to: CLLocationCoordinate2D
+    ) -> Int {
+        let lat1 = from.latitude * .pi / 180
+        let lon1 = from.longitude * .pi / 180
+        let lat2 = to.latitude * .pi / 180
+        let lon2 = to.longitude * .pi / 180
+
+        let dLat = lat2 - lat1
+        let dLon = lon2 - lon1
+
+        let a = sin(dLat/2) * sin(dLat/2) +
+                cos(lat1) * cos(lat2) *
+                sin(dLon/2) * sin(dLon/2)
+
+        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        let distance = 6371000 * c
+
+        return Int(distance)
     }
 }

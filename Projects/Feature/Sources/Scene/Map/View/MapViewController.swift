@@ -77,7 +77,7 @@ private let placeDetailView = MapPlaceDetailView().then {
 private var bottomSheetHeight: Constraint?
 private var detailSheetHeight: Constraint?
 private let defaultHeight: CGFloat = 240
-private let firstHeight: CGFloat = 20 
+private let firstHeight: CGFloat = 20
 private let detailMinHeight: CGFloat = 225
 private var selectedPlaceId: Int = -1
 private var currentPlaceDetail: MapPlaceDetailModel?
@@ -643,10 +643,9 @@ private func styleIDForCategory(_ category: String) -> String {
     let translation = gesture.translation(in: view)
     let currentHeight = isDetail ? placeDetailView.frame.height : bottomSheetView.frame.height
     let newHeight = currentHeight - translation.y
-    let minH = isDetail ? detailMinHeight : firstHeight   // 1단계
-    let secondH = defaultHeight                           // 2단계 (기존)
-    let maxH = view.frame.height - (searchBar.frame.maxY + 20) // 3단계
-    
+    let minH = isDetail ? detailMinHeight : firstHeight
+    let secondH = defaultHeight
+    let maxH = view.frame.height - (searchBar.frame.maxY + 20)
     if gesture.state == .changed {
         let clampedHeight = max(minH, min(newHeight, maxH))
         if isDetail { detailSheetHeight?.update(offset: clampedHeight) }
@@ -655,11 +654,11 @@ private func styleIDForCategory(_ category: String) -> String {
         let targetHeight: CGFloat
 
         if newHeight < (minH + secondH) / 2 {
-            targetHeight = minH          // 👉 1단계
+            targetHeight = minH
         } else if newHeight < (secondH + maxH) / 2 {
-            targetHeight = secondH       // 👉 2단계 (기존 유지)
+            targetHeight = secondH
         } else {
-            targetHeight = maxH          // 👉 3단계 (기존 유지)
+            targetHeight = maxH
         }
 
         UIView.animate(withDuration: 0.3) {

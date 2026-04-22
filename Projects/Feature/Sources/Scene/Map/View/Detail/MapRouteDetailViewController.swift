@@ -171,17 +171,86 @@ public final class MapRouteDetailViewController: UIViewController {
 
         var steps: [RouteStepModel] = []
         steps.append(RouteStepModel(turnType: .start, title: "출발", description: "학교"))
+
+        var previousPoint: (lat: Double, lng: Double)?
+        var accumulatedDistance: Int = 0
+
         for section in route.sections {
             for road in section.roads {
-                let distance = road.vertexes.count / 2
-                steps.append(
-                    RouteStepModel(
-                        turnType: .straight,
-                        title: "이동",
-                        description: "\(distance)m 이동"
-                    )
-                )
+                let v = road.vertexes
+
+                for i in stride(from: 0, to: v.count - 2, by: 2) {
+                    if i + 3 >= v.count { break }
+                    let current = (lat: v[i + 1], lng: v[i])
+                    let next = (lat: v[i + 3], lng: v[i + 2])
+
+                    var direction: RouteTurnType = .straight
+                    var title = "직진"
+
+                    if let prev = previousPoint {
+                        let angle = calculateAngle(prev: prev, current: current, next: next)
+
+                        if angle > 30 {
+                            direction = .right
+                            title = "우회전"
+                        } else if angle < -30 {
+                            direction = .left
+                            title = "좌회전"
+                        }
+                    }
+
+                    let distance = calculateDistance(from: current, to: next)
+
+                    if direction == .straight {
+                        accumulatedDistance += distance
+                    } else {
+                        
+                        if accumulatedDistance > 0 {
+                            steps.append(
+                                RouteStepModel(
+                                    turnType: .straight,
+                                    title: "직진",
+                                    description: "\(accumulatedDistance)m 이동"
+                                )
+                            )
+                            accumulatedDistance = 0
+                        }
+
+                      
+                        steps.append(
+                            RouteStepModel(
+                                turnType: direction,
+                                title: title,
+                                description: "\(distance)m 이동"
+                            )
+                        )
+                    }
+
+                    previousPoint = current
+                }
             }
+        }
+
+       
+        if steps.count == 1 {
+            steps.append(
+                RouteStepModel(
+                    turnType: .straight,
+                    title: "직진",
+                    description: "\(max(1, summary.distance))m 이동"
+                )
+            )
+        }
+
+    
+        if accumulatedDistance > 0 {
+            steps.append(
+                RouteStepModel(
+                    turnType: .straight,
+                    title: "직진",
+                    description: "\(accumulatedDistance)m 이동"
+                )
+            )
         }
         steps.append(
             RouteStepModel(
@@ -222,4 +291,48 @@ extension MapRouteDetailViewController: UITableViewDelegate, UITableViewDataSour
         cell.configure(with: currentSteps[indexPath.row])
         return cell
     }
+}
+
+    private func calculateAngle(
+        prev: (lat: Double, lng: Double),
+        current: (lat: Double, lng: Double),
+        next: (lat: Double, lng: Double)
+    ) -> Double {
+
+        let v1 = (
+            x: current.lng - prev.lng,
+            y: current.lat - prev.lat
+        )
+
+        let v2 = (
+            x: next.lng - current.lng,
+            y: next.lat - current.lat
+        )
+
+        let dot = v1.x * v2.x + v1.y * v2.y
+        let det = v1.x * v2.y - v1.y * v2.x
+
+        return atan2(det, dot) * 180 / .pi
+    }
+
+private func calculateDistance(
+    from: (lat: Double, lng: Double),
+    to: (lat: Double, lng: Double)
+) -> Int {
+    let lat1 = from.lat * .pi / 180
+    let lon1 = from.lng * .pi / 180
+    let lat2 = to.lat * .pi / 180
+    let lon2 = to.lng * .pi / 180
+
+    let dLat = lat2 - lat1
+    let dLon = lon2 - lon1
+
+    let a = sin(dLat/2) * sin(dLat/2) +
+            cos(lat1) * cos(lat2) *
+            sin(dLon/2) * sin(dLon/2)
+
+    let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    let distance = 6371000 * c
+
+    return Int(distance)
 }
