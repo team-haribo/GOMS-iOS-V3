@@ -72,6 +72,9 @@ private let recentSearchView = MapRecentSearchView().then {
     $0.tableView.backgroundColor = .color.background.color
 }
 private let bottomSheetView = MapBottomSheetView()
+private let bottomSheetHandleTouchArea = UIView().then {
+    $0.backgroundColor = .clear
+}
 private let placeDetailView = MapPlaceDetailView().then {
     $0.isHidden = true
     $0.clipsToBounds = true
@@ -80,7 +83,7 @@ private let placeDetailView = MapPlaceDetailView().then {
 private var bottomSheetHeight: Constraint?
 private var detailSheetHeight: Constraint?
 private let defaultHeight: CGFloat = 240
-private let firstHeight: CGFloat = 20
+private let firstHeight: CGFloat = 30
 private let detailMinHeight: CGFloat = 225
 private var selectedPlaceId: Int = -1
 private var currentPlaceDetail: MapPlaceDetailModel?
@@ -204,7 +207,7 @@ private func setupView() {
     self.view.backgroundColor = .black
     view.backgroundColor = .color.background.color
     view.addSubview(mapWrapperView)
-    [bottomSheetView, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach { view.addSubview($0) }
+    [bottomSheetView, bottomSheetHandleTouchArea, recentSearchView, routeSelectionView, placeDetailView, searchBar].forEach { view.addSubview($0) }
 }
 
 private func setupLayout() {
@@ -218,6 +221,11 @@ private func setupLayout() {
     bottomSheetView.snp.makeConstraints {
         $0.leading.trailing.bottom.equalToSuperview()
         self.bottomSheetHeight = $0.height.equalTo(defaultHeight).constraint
+    }
+    bottomSheetHandleTouchArea.snp.makeConstraints {
+        $0.leading.trailing.equalToSuperview()
+        $0.bottom.equalTo(bottomSheetView.snp.top)
+        $0.height.equalTo(30)
     }
     placeDetailView.snp.makeConstraints {
         $0.leading.trailing.bottom.equalToSuperview()
@@ -733,6 +741,7 @@ private func styleIDForCategory(_ category: String) -> String {
 }
 
 private func setupGesture() {
+    bottomSheetHandleTouchArea.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
     bottomSheetView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
     placeDetailView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan)))
 }
