@@ -27,13 +27,13 @@ public final class StudentManagementViewModel: BaseViewModel {
     var userList: [Service.Student] = []
     var userListDatas: [UserData] = []
     
-    private var grade: Int?
-    private var gender: String?
-    private var isBlackList: Bool?
-    private var isOuting: Bool?
-    private var status: String?
-    private var authority: String?
-    private var major: String?
+    private(set) var grade: Int?
+    private(set) var gender: String?
+    private(set) var isBlackList: Bool?
+    private(set) var isOuting: Bool?
+    private(set) var status: String?
+    private(set) var authority: String?
+    private(set) var major: String?
     
     func setupGrade(grade: Int?) {
         guard let grade = grade else {
