@@ -16,7 +16,7 @@ public final class FilterBottomSheetVC: BaseViewController {
     var userList: [UserData] = []
     private var viewModel: StudentManagementViewModel
     var studentManagementVC: StudentManagementViewController
-            
+                
     init(studentManagementVC: StudentManagementViewController, viewModel: StudentManagementViewModel) {
         self.studentManagementVC = studentManagementVC
         self.viewModel = viewModel
@@ -86,21 +86,6 @@ public final class FilterBottomSheetVC: BaseViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
-        
-        grade1Button.isSelected = viewModel.grade == 10
-        grade2Button.isSelected = viewModel.grade == 9
-        grade3Button.isSelected = viewModel.grade == 8
-        
-        studentButton.isSelected = viewModel.authority == "ROLE_STUDENT"
-        adminButton.isSelected = viewModel.authority == "ROLE_STUDENT_COUNCIL"
-        blackListButton.isSelected = viewModel.status == "CANNOT_OUTING"
-        
-        manButton.isSelected = viewModel.gender == Gender.male.rawValue
-        womanButton.isSelected = viewModel.gender == Gender.female.rawValue
-        
-        swButton.isSelected = viewModel.major == Major.sw.rawValue
-        iotButton.isSelected = viewModel.major == Major.iot.rawValue
-        aiButton.isSelected = viewModel.major == Major.ai.rawValue
     }
     
     @objc func closeButtonTapped() { self.dismiss(animated: true) }
@@ -165,8 +150,13 @@ public final class FilterBottomSheetVC: BaseViewController {
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
         viewModel.resetInfo()
-        fetchData()
-        self.dismiss(animated: false)
+        viewModel.filterStudent { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.studentManagementVC.userList = self.viewModel.userListDatas
+                self.dismiss(animated: true)
+            }
+        }
     }
     
     public override func addView() {
