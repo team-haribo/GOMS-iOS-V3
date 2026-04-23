@@ -187,7 +187,7 @@ public final class ReportDetailViewController: BaseViewController {
             guard let self = self else { return }
             if success {
                 self.viewModel?.updateReportStatus(reportId: reportId, status: .rejected)
-                self.viewModel?.filterType = .completed
+                self.viewModel?.updateFilterType(.completed)
                 self.showAlert(title: "처리 완료", message: "신고가 기각되었습니다.", isSuccess: true)
             } else {
                 self.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
@@ -202,7 +202,7 @@ public final class ReportDetailViewController: BaseViewController {
             guard let self = self else { return }
             if success {
                 self.viewModel?.updateReportStatus(reportId: reportId, status: .approved)
-                self.viewModel?.filterType = .completed
+                self.viewModel?.updateFilterType(.completed)
                 self.showAlert(title: "처리 완료", message: "리뷰가 삭제되었습니다.", isSuccess: true)
             } else {
                 self.showAlert(title: "오류", message: "처리에 실패했습니다.", isSuccess: false)
@@ -342,7 +342,6 @@ public final class ReportDetailViewController: BaseViewController {
             return outputFormatter.string(from: date)
         }
         
-        // fallback (혹시 포맷 다를 때)
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
         if let date = inputFormatter.date(from: isoString) {
             let outputFormatter = DateFormatter()
