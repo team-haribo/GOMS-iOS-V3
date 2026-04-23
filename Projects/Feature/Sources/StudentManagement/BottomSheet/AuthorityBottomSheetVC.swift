@@ -98,6 +98,8 @@ public final class AuthorityBottomSheetVC: BaseViewController {
         blackListSwitch.isOn = data.isBlackList
         adminSwitch.isOn = (data.authority == "ROLE_STUDENT_COUNCIL")
 
+        blackListSwitch.isEnabled = !data.isOuting
+
         forceOutingContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL" || data.isBlackList
         blackListContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL"
         
@@ -140,11 +142,17 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 if isOn {
                     self?.viewModel.forceOutingStudent(user: data) { [weak self] in
                         guard let self = self else { return }
+                        if let updated = self.viewModel.userListDatas.first(where: { $0.id == data.id }) {
+                            self.userData = updated
+                        }
                         self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 } else {
                     self?.viewModel.deleteOutingStudent(user: data) { [weak self] in
                         guard let self = self else { return }
+                        if let updated = self.viewModel.userListDatas.first(where: { $0.id == data.id }) {
+                            self.userData = updated
+                        }
                         self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 }
@@ -171,11 +179,17 @@ public final class AuthorityBottomSheetVC: BaseViewController {
                 if isOn {
                     self?.viewModel.blackList(user: data) { [weak self] in
                         guard let self = self else { return }
+                        if let updated = self.viewModel.userListDatas.first(where: { $0.id == data.id }) {
+                            self.userData = updated
+                        }
                         self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 } else {
                     self?.viewModel.cancelBlackList(user: data) { [weak self] in
                         guard let self = self else { return }
+                        if let updated = self.viewModel.userListDatas.first(where: { $0.id == data.id }) {
+                            self.userData = updated
+                        }
                         self.studentManagementVC.userList = self.viewModel.userListDatas
                     }
                 }
