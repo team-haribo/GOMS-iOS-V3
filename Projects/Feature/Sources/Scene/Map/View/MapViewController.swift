@@ -151,7 +151,6 @@ public override func viewWillAppear(_ animated: Bool) {
         viewModel.fetchRecommendedPlaces()
     }
 
-    
     if viewModel.lastSearchKeyword.isEmpty {
         searchBar.updateState(.home)
         searchBar.textField.text = ""
@@ -160,7 +159,6 @@ public override func viewWillAppear(_ animated: Bool) {
         searchBar.textField.text = viewModel.lastSearchKeyword
     }
 
-    
     if isSearching {
         recentSearchView.isHidden = false
         bottomSheetView.isHidden = true
@@ -188,6 +186,25 @@ public override func viewWillAppear(_ animated: Bool) {
         bottomSheetView.isHidden = false
         placeDetailView.isHidden = true
     }
+
+
+    if selectedPlaceId != -1 {
+       
+        self.placeDetailView.isHidden = false
+        self.bottomSheetView.isHidden = true
+
+        self.bottomSheetHeight?.update(offset: 0)
+        self.detailSheetHeight?.update(offset: self.detailMinHeight)
+    } else {
+      
+        self.placeDetailView.isHidden = true
+        self.bottomSheetView.isHidden = false
+
+        self.bottomSheetHeight?.update(offset: self.defaultHeight)
+        self.detailSheetHeight?.update(offset: 0)
+    }
+
+    self.view.layoutIfNeeded()
 
     DispatchQueue.main.async {
         self.isRestoringState = false
@@ -570,11 +587,20 @@ private func fetchReviews(placeId: Int) {
     vc.onReviewCreated = { [weak self] in
         guard let self = self else { return }
 
-        
         self.fetchReviews(placeId: detailData.placeId)
         self.viewModel.fetchPlaceDetail(placeId: detailData.placeId)
         self.viewModel.fetchHotPlaces()
         self.viewModel.fetchRecommendedPlaces()
+       
+        self.selectedPlaceId = detailData.placeId
+
+        self.bottomSheetView.isHidden = true
+        self.placeDetailView.isHidden = false
+
+        self.bottomSheetHeight?.update(offset: 0)
+        self.detailSheetHeight?.update(offset: self.detailMinHeight)
+
+        self.view.layoutIfNeeded()
     }
 
     self.navigationController?.pushViewController(vc, animated: true)
