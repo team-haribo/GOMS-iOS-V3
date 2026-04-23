@@ -298,9 +298,16 @@ private func setupActions() {
     }
     bottomSheetView.onHeartTapped = { [weak self] placeId, isSelected in
         guard let self = self else { return }
+
+    
+        self.updateBottomSheet()
+
+       
         self.viewModel.toggleRecommend(placeId: placeId, isSelected: isSelected) {
+            
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
+            self.viewModel.fetchMyReviews()
         }
     }
 
@@ -374,11 +381,14 @@ private func setupActions() {
                     )
                 }
 
+              
                 self.updateBottomSheet()
             }
 
+       
             self.viewModel.fetchHotPlaces()
             self.viewModel.fetchRecommendedPlaces()
+            self.viewModel.fetchMyReviews()
         }
     }
     routeSelectionView.onCardTapped = { [weak self] routeTitle in
