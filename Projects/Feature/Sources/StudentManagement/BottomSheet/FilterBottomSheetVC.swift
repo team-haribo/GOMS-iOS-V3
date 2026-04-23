@@ -86,6 +86,21 @@ public final class FilterBottomSheetVC: BaseViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
+        
+        grade1Button.isSelected = viewModel.grade == 10
+        grade2Button.isSelected = viewModel.grade == 9
+        grade3Button.isSelected = viewModel.grade == 8
+        
+        studentButton.isSelected = viewModel.authority == "ROLE_STUDENT"
+        adminButton.isSelected = viewModel.authority == "ROLE_STUDENT_COUNCIL"
+        blackListButton.isSelected = viewModel.status == "CANNOT_OUTING"
+        
+        manButton.isSelected = viewModel.gender == "MAN"
+        womanButton.isSelected = viewModel.gender == "WOMAN"
+        
+        swButton.isSelected = viewModel.major == "SW_DEVELOP"
+        iotButton.isSelected = viewModel.major == "SMART_IOT"
+        aiButton.isSelected = viewModel.major == "AI_DEVELOP"
     }
     
     @objc func closeButtonTapped() { self.dismiss(animated: true) }
