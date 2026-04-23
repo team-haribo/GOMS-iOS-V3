@@ -69,6 +69,11 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
+        
+        let type = viewModel.currentFilterType
+        
+        pendingButton.isSelected = (type == .pending)
+        completedButton.isSelected = (type == .completed)
     }
     
     public override func shouldShowCustomNavigation() -> Bool {
@@ -87,13 +92,16 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     }
     
     private func applyFilter() {
+        let type: ReportFilterType
         if pendingButton.isSelected {
-            viewModel.filterType = .pending
+            type = .pending
         } else if completedButton.isSelected {
-            viewModel.filterType = .completed
+            type = .completed
         } else {
-            viewModel.filterType = .all
+            type = .all
         }
+        
+        viewModel.updateFilterType(type)
 
         viewModel.fetchReportList { [weak self] _ in
             DispatchQueue.main.async {
@@ -104,10 +112,13 @@ public final class ReportFilterBottomSheetVC: BaseViewController {
     
     @objc func resetButtonTapped() {
         [pendingButton, completedButton].forEach { $0.isSelected = false }
-        viewModel.filterType = .all
+        
+        viewModel.updateFilterType(.all)
+        
         viewModel.fetchReportList { [weak self] _ in
             DispatchQueue.main.async {
                 self?.reportListVC?.reloadReportList()
+                self?.dismiss(animated: true)
             }
         }
     }

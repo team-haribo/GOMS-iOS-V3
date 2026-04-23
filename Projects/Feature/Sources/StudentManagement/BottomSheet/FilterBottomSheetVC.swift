@@ -13,7 +13,6 @@ import Service
 
 public final class FilterBottomSheetVC: BaseViewController {
     
-    // MARK: - Propertie
     var userList: [UserData] = []
     private var viewModel: StudentManagementViewModel
     var studentManagementVC: StudentManagementViewController
@@ -39,7 +38,6 @@ public final class FilterBottomSheetVC: BaseViewController {
         $0.clipsToBounds = true
     }
     
-    
     private let titleLabel = UILabel().then {
         $0.text = "필터"
         $0.textColor = .color.mainText.color
@@ -61,7 +59,6 @@ public final class FilterBottomSheetVC: BaseViewController {
         }
     }
     
-    // 섹션 버튼들
     private lazy var gradeLabel = makeSectionLabel(title: "학년")
     private lazy var grade1Button = BottomSheetButton(frame: .zero, title: "1학년")
     private lazy var grade2Button = BottomSheetButton(frame: .zero, title: "2학년")
@@ -89,6 +86,21 @@ public final class FilterBottomSheetVC: BaseViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.view.backgroundColor = .clear
+        
+        grade1Button.isSelected = viewModel.grade == 10
+        grade2Button.isSelected = viewModel.grade == 9
+        grade3Button.isSelected = viewModel.grade == 8
+        
+        studentButton.isSelected = viewModel.authority == "ROLE_STUDENT"
+        adminButton.isSelected = viewModel.authority == "ROLE_STUDENT_COUNCIL"
+        blackListButton.isSelected = viewModel.status == "CANNOT_OUTING"
+        
+        manButton.isSelected = viewModel.gender == Gender.male.rawValue
+        womanButton.isSelected = viewModel.gender == Gender.female.rawValue
+        
+        swButton.isSelected = viewModel.major == Major.sw.rawValue
+        iotButton.isSelected = viewModel.major == Major.iot.rawValue
+        aiButton.isSelected = viewModel.major == Major.ai.rawValue
     }
     
     @objc func closeButtonTapped() { self.dismiss(animated: true) }
@@ -97,14 +109,12 @@ public final class FilterBottomSheetVC: BaseViewController {
         [studentButton, adminButton, blackListButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
         let role = sender.isSelected ? (sender == studentButton ? "ROLE_STUDENT" : (sender == adminButton ? "ROLE_STUDENT_COUNCIL" : nil)) : nil
         viewModel.setupAuthority(authority: role)
-
         
         if sender == blackListButton {
             viewModel.setupStatus(status: sender.isSelected ? "CANNOT_OUTING" : nil)
         } else {
             viewModel.setupStatus(status: nil)
         }
-
         fetchData()
     }
     
@@ -117,14 +127,12 @@ public final class FilterBottomSheetVC: BaseViewController {
     
     @objc func genderButtonTapped(sender: BottomSheetButton) {
         [manButton, womanButton].forEach { $0.isSelected = ($0 == sender) ? !sender.isSelected : false }
-
         var genderValue: Gender? = nil
         if manButton.isSelected {
             genderValue = .male
         } else if womanButton.isSelected {
             genderValue = .female
         }
-
         viewModel.setupGender(gender: genderValue?.rawValue)
         fetchData()
     }
@@ -144,6 +152,7 @@ public final class FilterBottomSheetVC: BaseViewController {
         viewModel.setupMajor(major: majorValue?.rawValue)
         fetchData()
     }
+
     private func fetchData() {
         viewModel.filterStudent { [weak self] in
             guard let self = self else { return }
@@ -152,10 +161,12 @@ public final class FilterBottomSheetVC: BaseViewController {
             }
         }
     }
+
     @objc func resetButtonTapped() {
         [studentButton, adminButton, blackListButton, grade1Button, grade2Button, grade3Button, manButton, womanButton, swButton, iotButton, aiButton].forEach { $0.isSelected = false }
         viewModel.resetInfo()
         fetchData()
+        self.dismiss(animated: false)
     }
     
     public override func addView() {
@@ -217,4 +228,3 @@ public final class FilterBottomSheetVC: BaseViewController {
         }
     }
 }
- 

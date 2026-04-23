@@ -76,8 +76,8 @@ public final class ReportListViewModel {
     public var reports: [ReportData] = []
     private let reportProvider = MoyaProvider<ReportServices>()
     
-    public var filterType: ReportFilterType = .all
-    private var searchText: String = ""
+    public private(set) var currentFilterType: ReportFilterType = .all
+    public private(set) var searchText: String = ""
     
     public init() {}
     
@@ -208,15 +208,20 @@ public final class ReportListViewModel {
         applyFilters(with: searchText)
     }
 
+    public func updateFilterType(_ type: ReportFilterType) {
+        self.currentFilterType = type
+        applyFilters(with: searchText)
+    }
+
     public func filterReports(with text: String) {
-        searchText = text
+        self.searchText = text
         applyFilters(with: text)
     }
     
     private func applyFilters(with text: String?) {
         let base: [ReportData]
 
-        switch filterType {
+        switch currentFilterType {
         case .all:
             base = allReports
         case .pending:
