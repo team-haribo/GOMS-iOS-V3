@@ -157,7 +157,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     private func showProfileOverlay() {
         if profileVC != nil { return }
 
-        let vc = UserProfileViewController()
+        // 현재 캐시된 프로필 정보를 넘겨줘서 뷰가 열릴 때 기본 이미지로 깜빡이는 현상 방지
+        let vc = UserProfileViewController(initialProfile: profileViewModel.profileInfo)
         profileVC = vc
 
         addChild(vc)
@@ -473,8 +474,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
-            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
-            profileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
+            let options: KingfisherOptionsInfo = [
+                .keepCurrentImageWhileLoading,
+                .transition(.none)
+            ]
+            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: options)
+            profileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: options)
         } else {
             basicsProfileView.profileImageView.image = .image.profile.image
             profileView.profileImageView.image = .image.profile.image

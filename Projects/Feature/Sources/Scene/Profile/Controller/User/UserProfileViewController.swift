@@ -443,6 +443,16 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         super.viewDidLoad()
         applySavedTheme()
         self.navigationController?.navigationBar.prefersLargeTitles = false
+
+        // 구독 등록 전에 이미 profileInfo가 있으면 이미지를 즉시 세팅해서 깜빡임 방지
+        if let initialProfile = profileViewModel.profileInfo {
+            if let urlString = initialProfile.profileImageUrl, let url = URL(string: urlString) {
+                userProfile.kf.setImage(with: url, placeholder: UIImage.image.gomsBasicProfile.image, options: [.keepCurrentImageWhileLoading])
+            } else {
+                userProfile.image = UIImage.image.gomsBasicProfile.image
+            }
+        }
+
         profileViewModel.loadProfileInfo { _, _ in }
 
         // 토글 버튼들의 초기 값 할답 (최초 1회만 고정 실행되도록 격리 유지)
