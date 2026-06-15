@@ -31,6 +31,13 @@ final class LateNilView: UIView {
         $0.font = .suit(size: 16, weight: .semibold)
     }
 
+    private let stackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.alignment = .center
+        $0.distribution = .fill
+        $0.spacing = 6
+    }
+
     // MARK: - Initializer
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -42,25 +49,19 @@ final class LateNilView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    
     private func addView() {
-        let stack = UIStackView(arrangedSubviews: [icon, mainLabel])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = 6
-        self.addSubview(stack)
+        [icon, mainLabel].forEach { stackView.addArrangedSubview($0) }
+        self.addSubview(stackView)
+    }
 
-        stack.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.centerY.equalToSuperview().offset(10)
+    private func setLayout() {
+        stackView.snp.makeConstraints {
+            $0.centerX.centerY.equalToSuperview()
+            $0.top.bottom.equalToSuperview()  
         }
 
         icon.snp.makeConstraints {
             $0.width.height.equalTo(24)
         }
-    }
-
-    private func setLayout() {
-        // Layout handled inside addView() with stack constraints
     }
 }

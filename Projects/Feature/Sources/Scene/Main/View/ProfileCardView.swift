@@ -71,7 +71,7 @@ final class ProfileCardView: UIView {
             profileImageView.kf.setImage(
                 with: url,
                 placeholder: UIImage.image.gomsBasicProfile.image,
-                options: [.transition(.fade(0.2))]
+                options: [.keepCurrentImageWhileLoading, .transition(.fade(0.2))]
             )
         } else {
             profileImageView.image = .image.gomsBasicProfile.image

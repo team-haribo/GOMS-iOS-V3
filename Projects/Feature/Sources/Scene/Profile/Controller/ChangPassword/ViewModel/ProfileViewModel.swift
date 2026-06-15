@@ -11,6 +11,7 @@ import Service
 import Moya
 import Combine
 import UIKit
+import Kingfisher
 
 public struct MyRoleResponse: Decodable {
     public let memberId: Int
@@ -165,6 +166,14 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                     case 200:
                         do {
                             let data = try JSONDecoder().decode(ProfileImageResponse.self, from: response.data)
+                            // 변경된 이미지 URL의 캐시를 제거해서 다음 로드 시 최신 이미지를 받아오도록 처리
+                            if let oldUrlString = self.profileInfo?.profileImageUrl,
+                               let oldUrl = URL(string: oldUrlString) {
+                                KingfisherManager.shared.cache.removeImage(forKey: oldUrl.absoluteString)
+                            }
+                            if !data.imageUrl.isEmpty, let newUrl = URL(string: data.imageUrl) {
+                                KingfisherManager.shared.cache.removeImage(forKey: newUrl.absoluteString)
+                            }
                             self.profileInfo = ProfileResponse(
                                 name: self.profileInfo?.name ?? "",
                                 grade: self.profileInfo?.grade ?? 0,
@@ -207,6 +216,11 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
                 case .success(let response):
                     switch response.statusCode {
                     case 204:
+                        // 기본 프로필로 변경 시 기존 이미지 캐시 제거
+                        if let oldUrlString = self.profileInfo?.profileImageUrl,
+                           let oldUrl = URL(string: oldUrlString) {
+                            KingfisherManager.shared.cache.removeImage(forKey: oldUrl.absoluteString)
+                        }
                         self.profileInfo = ProfileResponse(
                             name: self.profileInfo?.name ?? "",
                             grade: self.profileInfo?.grade ?? 0,
