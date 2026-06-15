@@ -191,6 +191,17 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.backgroundColor = .color.gomsDivider.color
     }
     
+    public init(initialProfile: ProfileResponse? = nil) {
+        super.init(nibName: nil, bundle: nil)
+        if let initialProfile = initialProfile {
+            self.profileViewModel.profileInfo = initialProfile
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+    
     @objc func withdrawalButtonTapped() {
         GOMSAlert.show(
             in: self,
@@ -355,7 +366,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         setNeedsStatusBarAppearanceUpdate()
     }
     
-    @IBAction func ShowActionSheetProfilImageChange(_ sender: UIButton) {
+    @objc func ShowActionSheetProfilImageChange(_ sender: UIButton) {
         updateImage(isActionSheetShowing: true)
         let actionSheet = UIAlertController(title: "프로필 사진 선택", message: nil, preferredStyle: .actionSheet)
 
@@ -404,9 +415,16 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         if let selectedImage = info[.originalImage] as? UIImage {
             userProfile.image = selectedImage
             if let jpegData = selectedImage.jpegData(compressionQuality: 0.5) {
+                // MARK: - 통신 트리거 및 데이터 새로고침 동기화
                 profileViewModel.updateProfileImage(imageData: jpegData)
-                    .sink { completion in
-                        if case .failure(let error) = completion { print("이미지 PATCH 실패: \(error)") }
+                    .sink { [weak self] completion in
+                        switch completion {
+                        case .finished:
+                            // 업로드 성공 후 유저 프로필 정보를 최신 상태로 새로고침
+                            self?.profileViewModel.loadProfileInfo { _, _ in }
+                        case .failure(let error):
+                            print("이미지 PATCH 실패: \(error)")
+                        }
                     } receiveValue: { [weak self] response in
                         if let url = URL(string: response.imageUrl) {
                             self?.userProfile.kf.setImage(with: url)
