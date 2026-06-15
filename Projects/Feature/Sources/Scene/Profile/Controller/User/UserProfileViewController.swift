@@ -34,6 +34,7 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         $0.layer.cornerRadius = 32
         $0.clipsToBounds = true
         $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.image = UIImage.image.gomsBasicProfile.image // 최초 기본 이미지 지정으로 깜빡임 방지
     }
     
     let userProfilePencil = UIButton().then {
@@ -47,15 +48,19 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
     }
     
     let userName = UILabel().then {
-        $0.text = "김준표"
+        $0.text = " "
         $0.textColor = .color.mainText.color
         $0.font = .suit(size: 18, weight: .bold)
+        $0.adjustsFontSizeToFitWidth = true
+        $0.minimumScaleFactor = 0.7
     }
     
     let userGradeDepartment = UILabel().then {
-        $0.text = "9기 | IoT"
+        $0.text = " "
         $0.textColor = .color.sub2.color
         $0.font = .suit(size: 14, weight: .medium)
+        $0.adjustsFontSizeToFitWidth = true
+        $0.minimumScaleFactor = 0.7
     }
     
     let perceptionCount = UILabel().then {
@@ -422,39 +427,45 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
         self.navigationController?.navigationBar.prefersLargeTitles = false
         profileViewModel.loadProfileInfo { _, _ in }
 
+        // 토글 버튼들의 초기 값 할답 (최초 1회만 고정 실행되도록 격리 유지)
         alarmsettingButton.isOn = UserDefaults.standard.bool(forKey: "isAlarmOn")
         cameraNowOntoggleButton.isOn = UserDefaults.standard.bool(forKey: "isCameraOn")
         clockToggleButton.isOn = UserDefaults.standard.bool(forKey: "isClockOn")
         
-        profileViewModel.$profileInfo.sink { [weak self] profileInfo in
-            guard let profileInfo = profileInfo else { return }
-            DispatchQueue.main.async {
-                self?.userName.text = profileInfo.name
-                self?.perceptionNum.text = String(describing: profileInfo.lateCount)
-                
-                let majorText: String
-                switch profileInfo.department {
-                case Major.sw.rawValue:
-                    majorText = "SW"
-                case Major.iot.rawValue:
-                    majorText = "IoT"
-                default:
-                    majorText = "AI"
-                }
-                
-                self?.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
-                if let urlString = profileInfo.profileImageUrl, let url = URL(string: urlString) {
-                    self?.userProfile.kf.setImage(
-                        with: url,
-                        placeholder: self?.userProfile.image,
-                        options: [.transition(.fade(0.2)), .keepCurrentImageWhileLoading]
-                    )
-                } else {
-                    self?.userProfile.image = UIImage.image.gomsBasicProfile.image
+        profileViewModel.$profileInfo
+            .compactMap { $0 } // nil 데이터는 스킵하여 불필요한 레이아웃 갱신 및 깜빡임 차단
+            .sink { [weak self] profileInfo in
+                DispatchQueue.main.async {
+                    // 애니메이션 없이 데이터만 매끄럽게 변경하도록 처리하여 깜빡임 제거
+                    UIView.performWithoutAnimation {
+                        self?.userName.text = profileInfo.name
+                        self?.perceptionNum.text = String(describing: profileInfo.lateCount)
+                        
+                        let majorText: String
+                        switch profileInfo.department {
+                        case Major.sw.rawValue:
+                            majorText = "SW"
+                        case Major.iot.rawValue:
+                            majorText = "IoT"
+                        default:
+                            majorText = "AI"
+                        }
+                        
+                        self?.userGradeDepartment.text = "\(profileInfo.grade)기 | \(majorText)"
+                        
+                        if let urlString = profileInfo.profileImageUrl, let url = URL(string: urlString) {
+                            self?.userProfile.kf.setImage(
+                                with: url,
+                                placeholder: self?.userProfile.image,
+                                options: [.transition(.none), .keepCurrentImageWhileLoading] // transition 무효화로 로딩 시 깜빡임 차단
+                            )
+                        } else {
+                            self?.userProfile.image = UIImage.image.gomsBasicProfile.image
+                        }
+                    }
                 }
             }
-        }
-        .store(in: &cancellables)
+            .store(in: &cancellables)
         
         view.backgroundColor = .color.background.color
         imagePickerController.delegate = self
@@ -536,10 +547,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.top.equalTo(cameraNowOnDescription.snp.bottom).offset(24)
         }
         themeChangText.snp.makeConstraints {
-            $0.width.equalTo(93)
-            $0.height.equalTo(28)
-            $0.top.equalTo(themeTopLine.snp.top).offset(24)
             $0.leading.equalToSuperview().inset(28)
+            $0.top.equalTo(themeTopLine.snp.top).offset(24)
+            $0.trailing.lessThanOrEqualTo(view.snp.trailing).offset(-28)
         }
         themeChangRec.snp.makeConstraints {
             $0.height.equalTo(64)
@@ -547,10 +557,10 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.top.equalTo(themeChangText.snp.bottom).offset(8)
         }
         themeSettingText.snp.makeConstraints {
-            $0.width.equalTo(106)
             $0.height.equalTo(28)
             $0.top.equalTo(themeChangRec.snp.top).offset(18)
             $0.leading.equalTo(themeChangRec.snp.leading).offset(12)
+            $0.trailing.lessThanOrEqualTo(themeSettingImg.snp.leading).offset(-8)
         }
         themeSettingImg.snp.makeConstraints {
             $0.width.equalTo(24)
@@ -585,10 +595,9 @@ public class UserProfileViewController: BaseViewController, UIImagePickerControl
             $0.centerY.equalTo(alarmText)
         }
         cameraNowOnText.snp.makeConstraints {
-            $0.width.equalTo(184)
-            $0.height.equalTo(28)
             $0.leading.equalToSuperview().inset(28)
             $0.top.equalTo(alarmDescription.snp.bottom).offset(25.5)
+            $0.trailing.lessThanOrEqualTo(cameraNowOntoggleButton.snp.leading).offset(-8)
         }
         cameraNowOnDescription.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(28)
