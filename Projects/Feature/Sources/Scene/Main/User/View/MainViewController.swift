@@ -581,7 +581,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         logo.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalTo(view.safeAreaLayoutGuide.snp.leading).offset(6)
             $0.top.equalTo(contentView.snp.top)
             $0.height.equalTo(56)
             $0.width.equalTo(135)
