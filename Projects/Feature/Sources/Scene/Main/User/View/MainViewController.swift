@@ -180,6 +180,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         profile.view.removeFromSuperview()
         profile.removeFromParent()
         profileVC = nil
+        
+        fetchData()
     }
 
     func selectHomeTab() {
@@ -415,7 +417,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         group.enter()
-        mainViewModel.getProfile { result in
+        mainViewModel.getProfile { _ in
             group.leave()
         }
 
@@ -424,12 +426,17 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             group.leave()
         }
 
+        group.enter()
+        profileViewModel.loadProfileInfo { _, _ in
+            group.leave()
+        }
+
         group.notify(queue: .main) { [weak self] in
             guard let self = self, self.isVisible else {
                 self?.refreshControl.endRefreshing()
                 return
             }
-            
+
             self.setupViewComponents()
             self.refreshControl.endRefreshing()
         }
@@ -639,12 +646,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             $0.height.equalTo(84)
         }
 
-        latecomerLabel.snp.remakeConstraints {
-            $0.top.equalTo(profileView.snp.bottom).offset(24)
-            $0.leading.equalToSuperview().inset(20)
-            $0.height.equalTo(32)
-        }
-
         basicsProfileView.snp.remakeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(84)
@@ -654,9 +655,21 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         if isClockOn {
             profileView.isHidden = false
             basicsProfileView.isHidden = true
+            
+            latecomerLabel.snp.remakeConstraints {
+                $0.top.equalTo(profileView.snp.bottom).offset(24)
+                $0.leading.equalToSuperview().inset(20)
+                $0.height.equalTo(32)
+            }
         } else {
             profileView.isHidden = true
             basicsProfileView.isHidden = false
+            
+            latecomerLabel.snp.remakeConstraints {
+                $0.top.equalTo(basicsProfileView.snp.bottom).offset(24)
+                $0.leading.equalToSuperview().inset(20)
+                $0.height.equalTo(32)
+            }
         }
         view.layoutIfNeeded()
     }
