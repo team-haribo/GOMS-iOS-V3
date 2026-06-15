@@ -157,7 +157,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
     private func showProfileOverlay() {
         if profileVC != nil { return }
 
-        let vc = UserProfileViewController()
+        // 현재 캐시된 프로필 정보를 넘겨줘서 뷰가 열릴 때 기본 이미지로 깜빡이는 현상 방지
+        let vc = UserProfileViewController(initialProfile: profileViewModel.profileInfo)
         profileVC = vc
 
         addChild(vc)
@@ -180,6 +181,8 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         profile.view.removeFromSuperview()
         profile.removeFromParent()
         profileVC = nil
+        
+        fetchData()
     }
 
     func selectHomeTab() {
@@ -415,7 +418,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         group.enter()
-        mainViewModel.getProfile { result in
+        mainViewModel.getProfile { _ in
             group.leave()
         }
 
@@ -424,12 +427,17 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             group.leave()
         }
 
+        group.enter()
+        profileViewModel.loadProfileInfo { _, _ in
+            group.leave()
+        }
+
         group.notify(queue: .main) { [weak self] in
             guard let self = self, self.isVisible else {
                 self?.refreshControl.endRefreshing()
                 return
             }
-            
+
             self.setupViewComponents()
             self.refreshControl.endRefreshing()
         }
@@ -466,8 +474,12 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
 
         if let urlString = profileViewModel.profileInfo?.profileImageUrl,
            let url = URL(string: urlString) {
-            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
-            profileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: [.forceRefresh])
+            let options: KingfisherOptionsInfo = [
+                .keepCurrentImageWhileLoading,
+                .transition(.none)
+            ]
+            basicsProfileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: options)
+            profileView.profileImageView.kf.setImage(with: url, placeholder: UIImage.image.profile.image, options: options)
         } else {
             basicsProfileView.profileImageView.image = .image.profile.image
             profileView.profileImageView.image = .image.profile.image
@@ -574,7 +586,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         }
 
         logo.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalTo(view.safeAreaLayoutGuide.snp.leading).offset(6)
             $0.top.equalTo(contentView.snp.top)
             $0.height.equalTo(56)
             $0.width.equalTo(135)
@@ -639,12 +651,6 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
             $0.height.equalTo(84)
         }
 
-        latecomerLabel.snp.remakeConstraints {
-            $0.top.equalTo(profileView.snp.bottom).offset(24)
-            $0.leading.equalToSuperview().inset(20)
-            $0.height.equalTo(32)
-        }
-
         basicsProfileView.snp.remakeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(84)
@@ -654,9 +660,21 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         if isClockOn {
             profileView.isHidden = false
             basicsProfileView.isHidden = true
+            
+            latecomerLabel.snp.remakeConstraints {
+                $0.top.equalTo(profileView.snp.bottom).offset(24)
+                $0.leading.equalToSuperview().inset(20)
+                $0.height.equalTo(32)
+            }
         } else {
             profileView.isHidden = true
             basicsProfileView.isHidden = false
+            
+            latecomerLabel.snp.remakeConstraints {
+                $0.top.equalTo(basicsProfileView.snp.bottom).offset(24)
+                $0.leading.equalToSuperview().inset(20)
+                $0.height.equalTo(32)
+            }
         }
         view.layoutIfNeeded()
     }
