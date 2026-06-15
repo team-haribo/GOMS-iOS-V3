@@ -21,9 +21,12 @@ public final class KeyChain {
             kSecValueData: token.data(using: .utf8, allowLossyConversion: false) as Any
         ]
 
+        print("[KeyChain Create] key=\(key)")
+        print("[KeyChain Create] token=\(token)")
         SecItemDelete(query)
 
         let status = SecItemAdd(query, nil)
+        print("[KeyChain Create] status=\(status)")
         assert(status == noErr, "failed to save Token")
     }
 
@@ -37,14 +40,19 @@ public final class KeyChain {
         ]
 
         var dataTypeRef: AnyObject?
+        print("[KeyChain Read] key=\(key)")
         let status = SecItemCopyMatching(query, &dataTypeRef)
 
         guard status == errSecSuccess,
               let retrievedData = dataTypeRef as? Data else {
-            print("failed to loading, status code = \(status)")
+            print("[KeyChain Read] failed to loading, status code = \(status)")
+            print("[KeyChain Read] key=\(key)")
+            print("[KeyChain Read] dataTypeRef=\(String(describing: dataTypeRef))")
             return nil
         }
 
+        print("[KeyChain Read] success")
+        print("[KeyChain Read] value=\(String(data: retrievedData, encoding: .utf8) ?? "nil")")
         return String(data: retrievedData, encoding: .utf8)
     }
 

@@ -15,15 +15,19 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>1.5.8</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>7</string>
+	<key>KAKAO_APP_KEY</key>
+	<string>7fe97f25eb228b1f07f0d982272290d1</string>
 	<key>LSApplicationCategoryType</key>
 	<string></string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>QR 코드를 스캔하기 위해 카메라를 사용합니다.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>학생의 현재 위치를 기반으로 주변 외출 장소 확인과 카카오맵 길찾기 기능을 제공하기 위해 위치 정보 접근 권한이 필요합니다.</string>
 	<key>SchoolBaseURL</key>
 	<string>https://goms.io.kr:23241/</string>
 	<key>UIApplicationSceneManifest</key>
@@ -61,9 +65,7 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<key>KAKAO_APP_KEY</key>
-	<string>7fe97f25eb228b1f07f0d982272290d1</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>위치 사용</string>
+	<key>CFBundleDisplayName</key>
+	<string>GOMS</string>
 </dict>
 </plist>

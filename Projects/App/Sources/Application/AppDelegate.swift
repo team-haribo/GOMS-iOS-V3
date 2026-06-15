@@ -8,6 +8,7 @@
 
 import UIKit
 import KakaoMapsSDK
+import SpriteKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
