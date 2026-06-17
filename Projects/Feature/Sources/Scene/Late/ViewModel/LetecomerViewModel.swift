@@ -23,13 +23,10 @@ public final class LetecomerViewModel: BaseViewModel {
     private let studentCouncilProvider = MoyaProvider<StudentCouncilServices>()
     
     var date: String = {
-        let currentDate = Date()
-        let lastWednesday = currentDate.lastWednesday()
-        
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         
-        return formatter.string(from: lastWednesday)
+        return formatter.string(from: Date())
     }()
     
     var latecomerList: [LatecomerListResponse] = []
