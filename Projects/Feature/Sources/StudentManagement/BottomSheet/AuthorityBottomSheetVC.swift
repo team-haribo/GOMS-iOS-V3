@@ -100,7 +100,7 @@ public final class AuthorityBottomSheetVC: BaseViewController {
 
         blackListSwitch.isEnabled = !data.isOuting
 
-        forceOutingContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL" || data.isBlackList
+        forceOutingContainer.isHidden = data.isBlackList
         blackListContainer.isHidden = data.authority == "ROLE_STUDENT_COUNCIL"
         
         updateLayoutForState()
