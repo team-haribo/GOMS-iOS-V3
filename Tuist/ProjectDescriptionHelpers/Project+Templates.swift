@@ -11,8 +11,7 @@ public extension Project {
         dependencies: [TargetDependency] = [],
         sources: SourceFilesList = ["Sources/**"],
         resources: ResourceFileElements? = nil,
-        infoPlist: InfoPlist = .default,
-        testSources: SourceFilesList? = nil
+        infoPlist: InfoPlist = .default
     ) -> Project {
         let settings: Settings = .settings(
             base: [:],
@@ -37,30 +36,13 @@ public extension Project {
             dependencies: dependencies
         )
 
-        var targets: [Target] = [appTarget]
-
-        if let testSources = testSources {
-            let testTarget = Target.target(
-                name: "\(name)Tests",
-                destinations: [.iPhone, .iPad],
-                product: .unitTests,
-                bundleId: "HARIBO.\(name)Tests",
-                deploymentTargets: deploymentTargets,
-                infoPlist: .default,
-                sources: testSources,
-                dependencies: [
-                    .target(name: name)
-                ]
-            )
-            targets.append(testTarget)
-        }
 
         return Project(
             name: name,
             organizationName: organizationName,
             packages: packages,
             settings: settings,
-            targets: targets
+            targets: [appTarget]
         )
     }
 }

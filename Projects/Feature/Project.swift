@@ -21,6 +21,5 @@ let project = Project.makeModule(
     ],
     sources: ["Sources/**"],
     resources: ["Resources/**"],
-    infoPlist: .default,
-    testSources: ["Tests/**"]
+    infoPlist: .default
 )
