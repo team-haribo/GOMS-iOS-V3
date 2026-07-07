@@ -50,6 +50,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     let providerAuth = MoyaProvider<AuthServices>(plugins: [NetworkLoggerPlugin()])
     let providerOuting = MoyaProvider<OutingServices>(plugins: [NetworkLoggerPlugin()])
     let providerProfile = MoyaProvider<ProfileServices>(plugins: [NetworkLoggerPlugin()])
+    let notificationViewModel = NotificationViewModel()
 
     private var password: String = ""
     private var rePassword: String = ""
@@ -254,9 +255,11 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
     }
     
     func profileLogout(completion: @escaping (Bool) -> Void) {
+        let currentAccessToken = accessToken
         providerAuth.request(.logoutToken(refreshToken: refreshToken)) { [weak self] result in
             switch result {
             case .success:
+                self?.notificationViewModel.deleteFcmToken(accessToken: currentAccessToken) { _ in }
                 self?.keyChain.delete(key: Const.KeyChainKey.accessToken)
                 print("Logout successfully")
                 completion(true)

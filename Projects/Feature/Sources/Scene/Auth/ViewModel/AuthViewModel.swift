@@ -117,7 +117,7 @@ public final class AuthViewModel: BaseViewModel {
                                let accessToken = KeyChain.shared.read(key: Const.KeyChainKey.accessToken) {
 
                                 self.notificationViewModel.setupFcmToken(fcmToken: savedToken)
-                                self.notificationViewModel.setupaccessToken(accessToken: accessToken)
+                                self.notificationViewModel.setupaccessToken(accessToken: "Bearer \(accessToken)")
 
                                 self.notificationViewModel.postFcmToken { success in
                                     if success {
