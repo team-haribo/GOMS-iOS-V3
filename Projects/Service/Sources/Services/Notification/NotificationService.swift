@@ -10,7 +10,8 @@ import Foundation
 import Moya
 
 public enum NotificationServices {
-    case postFcmToken(fcmToken: String, authorization: String)
+    case postFcmToken(fcmToken: String, deviceId: String, authorization: String)
+    case deleteFcmToken(deviceId: String, authorization: String)
 }
 
 extension NotificationServices: TargetType {
@@ -24,8 +25,10 @@ extension NotificationServices: TargetType {
 
     public var path: String {
         switch self {
-        case .postFcmToken(let fcmToken, _):
-            return "/\(fcmToken)"
+        case .postFcmToken:
+            return "/api/v3/notification/token"
+        case .deleteFcmToken(let deviceId, _):
+            return "/api/v3/notification/token/\(deviceId)"
         }
     }
 
@@ -33,19 +36,32 @@ extension NotificationServices: TargetType {
         switch self {
         case .postFcmToken:
             return .post
+        case .deleteFcmToken:
+            return .delete
         }
     }
 
     public var task: Task {
         switch self {
-        case .postFcmToken:
+        case .postFcmToken(let fcmToken, let deviceId, _):
+            return .requestParameters(
+                parameters: [
+                    "fcmToken": fcmToken,
+                    "platform": "IOS",
+                    "deviceId": deviceId
+                ],
+                encoding: JSONEncoding.default
+            )
+        case .deleteFcmToken:
             return .requestPlain
         }
     }
 
     public var headers: [String : String]? {
         switch self {
-        case .postFcmToken(_, let authorization):
+        case .postFcmToken(_, _, let authorization):
+            return ["Content-Type": "application/json", "Authorization": authorization]
+        case .deleteFcmToken(_, let authorization):
             return ["Content-Type": "application/json", "Authorization": authorization]
         }
     }

@@ -7,7 +7,9 @@
 //
 
 import UIKit
+import UserNotifications
 import KakaoMapsSDK
+import ThirdPartyLib
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,8 +20,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
 
         SDKInitializer.InitSDK(appKey: "7fe97f25eb228b1f07f0d982272290d1")
-        
+
+        FirebaseApp.configure()
+        Messaging.messaging().delegate = self
+
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            guard granted else { return }
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+            }
+        }
+
         return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("APNs 등록 실패: \(error.localizedDescription)")
     }
 
     // MARK: UISceneSession Lifecycle
@@ -36,4 +63,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didDiscardSceneSessions sceneSessions: Set<UISceneSession>
     ) {}
+}
+
+extension AppDelegate: MessagingDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken = fcmToken else { return }
+        print("FCM Token: \(fcmToken)")
+        UserDefaults.standard.set(fcmToken, forKey: "FCMToken")
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .badge, .sound])
+    }
 }
