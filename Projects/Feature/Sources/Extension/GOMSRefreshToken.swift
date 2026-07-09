@@ -68,16 +68,30 @@ public final class GOMSRefreshToken {
     }
 
     private func updateKeychainToken() {
+        let newAccessToken = reissuanceData?.accessToken ?? ""
+        let newRefreshToken = reissuanceData?.refreshToken ?? ""
 
         let accessTokenUpdated = keychain.updateItem(
-            token: reissuanceData?.accessToken ?? "",
+            token: newAccessToken,
             key: Const.KeyChainKey.accessToken
         )
 
         let refreshTokenUpdated = keychain.updateItem(
-            token: reissuanceData?.refreshToken ?? "",
+            token: newRefreshToken,
             key: Const.KeyChainKey.refreshToken
         )
+
+        // 새 accessToken의 JWT payload에서 role을 파싱해 authority 키체인도 갱신한다.
+        // 서버가 DB에서 role을 변경한 경우, 새로 발급된 토큰에는 변경된 role이 담기므로
+        // 이 시점에 authority를 덮어써야 앱이 최신 권한을 반영할 수 있다.
+        if let payload = newAccessToken.split(separator: ".").dropFirst().first {
+            let paddedPayload = String(payload) + String(repeating: "=", count: (4 - String(payload).count % 4) % 4)
+            if let data = Data(base64Encoded: paddedPayload),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let role = json["role"] as? String {
+                keychain.create(key: Const.KeyChainKey.authority, token: role)
+            }
+        }
 
         if accessTokenUpdated && refreshTokenUpdated {
             print("keychain update success")

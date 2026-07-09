@@ -151,7 +151,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
         super.viewWillAppear(animated)
         isVisible = true
         isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
-        fetchData()
+        syncRoleAndFetch()
         setupNavigationBar()
     }
 
@@ -236,6 +236,31 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
                 } else {
                     self.refreshControl.endRefreshing()
                 }
+            }
+        }
+    }
+
+    /// 앱 재진입 또는 화면 진입 시 최신 role을 서버에서 확인해 화면을 전환한다.
+    /// 1. reissue로 토큰을 갱신 (새 JWT에 최신 role 포함)
+    /// 2. /member/myrole로 현재 role 확인
+    /// 3. role이 ROLE_STUDENT로 바뀌었으면 MainViewController로 전환
+    private func syncRoleAndFetch() {
+        viewModel.gomsRefreshToken.tokenReissuance { [weak self] success in
+            guard let self else { return }
+            if success {
+                self.viewModel.getProfile { [weak self] authority in
+                    guard let self else { return }
+                    DispatchQueue.main.async {
+                        if authority == "ROLE_STUDENT" {
+                            let mainVC = MainViewController()
+                            self.navigationController?.setViewControllers([mainVC], animated: false)
+                            return
+                        }
+                        self.fetchData()
+                    }
+                }
+            } else {
+                self.fetchData()
             }
         }
     }
