@@ -251,6 +251,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
                 self.viewModel.getProfile { [weak self] authority in
                     guard let self else { return }
                     DispatchQueue.main.async {
+                        guard self.isVisible else { return }
                         if authority == "ROLE_STUDENT" {
                             let mainVC = MainViewController()
                             self.navigationController?.setViewControllers([mainVC], animated: false)
@@ -260,7 +261,10 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
                     }
                 }
             } else {
-                self.fetchData()
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.isVisible else { return }
+                    self.fetchData()
+                }
             }
         }
     }

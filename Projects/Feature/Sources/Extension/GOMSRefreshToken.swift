@@ -87,7 +87,11 @@ public final class GOMSRefreshToken {
         // 서버가 DB에서 role을 변경한 경우, 새로 발급된 토큰에는 변경된 role이 담기므로
         // 이 시점에 authority를 덮어써야 앱이 최신 권한을 반영할 수 있다.
         if let payload = newAccessToken.split(separator: ".").dropFirst().first {
-            let paddedPayload = String(payload) + String(repeating: "=", count: (4 - String(payload).count % 4) % 4)
+            let base64url = String(payload)
+            let base64 = base64url
+                .replacingOccurrences(of: "-", with: "+")
+                .replacingOccurrences(of: "_", with: "/")
+            let paddedPayload = base64 + String(repeating: "=", count: (4 - base64.count % 4) % 4)
             if let data = Data(base64Encoded: paddedPayload),
                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let role = json["role"] as? String {

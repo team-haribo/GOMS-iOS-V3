@@ -259,15 +259,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         super.viewWillAppear(animated)
         isVisible = true
         isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
-
-        mainViewModel.getLateList { [weak self] in
-            self?.mainViewModel.getOutingList { [weak self] in
-                self?.setup()
-            }
-        }
-
         syncRoleAndFetch()
-        
         self.navigationController?.navigationBar.prefersLargeTitles = false
         self.navigationItem.hidesBackButton = true
         self.navigationController?.setNavigationBarHidden(true, animated: false)
@@ -427,7 +419,10 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                     }
                 }
             } else {
-                self.fetchData()
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.isVisible else { return }
+                    self.fetchData()
+                }
             }
         }
     }
