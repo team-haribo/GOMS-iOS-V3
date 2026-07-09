@@ -15,6 +15,8 @@ public final class PasswordSettingViewController: BaseViewController {
 
     private var viewModel: AuthViewModel
     private let loader = LoaderViewController()
+    private let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~*])[a-zA-Z0-9!@#$%^&?~*]{6,15}$"
+    private lazy var passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
     // MARK: - UI Components
     
@@ -137,9 +139,6 @@ public final class PasswordSettingViewController: BaseViewController {
             return
         }
 
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
-        let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
-
         if !passwordPredicate.evaluate(with: password) {
             passwordFormatError.isHidden = false
             passwordFormatError.text = "잘못된 형식의 비밀번호입니다"
@@ -202,8 +201,6 @@ public final class PasswordSettingViewController: BaseViewController {
         }
 
         let password = passwordTextField.text ?? ""
-        let passwordRegex = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&?~])[a-zA-Z0-9!@#$%^&?~]{6,15}$"
-        let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
 
         if !passwordPredicate.evaluate(with: password) {
             passwordTextField.layer.borderColor = UIColor.systemRed.cgColor

@@ -6,6 +6,8 @@
 //  Copyright © 2026 HARIBO. All rights reserved.
 //
 
+import UIKit
+import Foundation
 import Moya
 import Service
 

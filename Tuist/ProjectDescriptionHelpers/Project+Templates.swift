@@ -11,13 +11,14 @@ public extension Project {
         dependencies: [TargetDependency] = [],
         sources: SourceFilesList = ["Sources/**"],
         resources: ResourceFileElements? = nil,
-        infoPlist: InfoPlist = .default
+        infoPlist: InfoPlist = .default,
+        entitlements: Entitlements? = nil
     ) -> Project {
         let settings: Settings = .settings(
             base: [:],
             configurations: [
-                .debug(name: .debug),
-                .release(name: .release)
+                .debug(name: .debug, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "development"]),
+                .release(name: .release, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "production"])
             ],
             defaultSettings: .recommended
         )
@@ -33,6 +34,7 @@ public extension Project {
             infoPlist: infoPlist,
             sources: sources,
             resources: resources,
+            entitlements: entitlements,
             dependencies: dependencies
         )
 
