@@ -259,15 +259,7 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
         super.viewWillAppear(animated)
         isVisible = true
         isClockOn = UserDefaults.standard.bool(forKey: "isClockOn")
-
-        mainViewModel.getLateList { [weak self] in
-            self?.mainViewModel.getOutingList { [weak self] in
-                self?.setup()
-            }
-        }
-
-        fetchData()
-        
+        syncRoleAndFetch()
         self.navigationController?.navigationBar.prefersLargeTitles = false
         self.navigationItem.hidesBackButton = true
         self.navigationController?.setNavigationBarHidden(true, animated: false)
@@ -404,6 +396,32 @@ public final class MainViewController: BaseViewController, UICollectionViewDataS
                     }
                 default:
                     self.refreshControl.endRefreshing()
+                }
+            }
+        }
+    }
+
+    /// 화면 진입 시 토큰을 갱신하고 최신 role을 확인해 필요하면 화면을 전환한다.
+    private func syncRoleAndFetch() {
+        mainViewModel.gomsRefreshToken.tokenReissuance { [weak self] success in
+            guard let self else { return }
+            if success {
+                self.mainViewModel.getProfile { [weak self] authority in
+                    guard let self else { return }
+                    DispatchQueue.main.async {
+                        guard self.isVisible else { return }
+                        if authority == "ROLE_STUDENT_COUNCIL" {
+                            let adminVC = AdminMainViewController()
+                            self.navigationController?.setViewControllers([adminVC], animated: false)
+                            return
+                        }
+                        self.fetchData()
+                    }
+                }
+            } else {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.isVisible else { return }
+                    self.fetchData()
                 }
             }
         }
