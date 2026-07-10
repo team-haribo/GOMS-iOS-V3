@@ -19,7 +19,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
 
-        SDKInitializer.InitSDK(appKey: "7fe97f25eb228b1f07f0d982272290d1")
+        let kakaoAppKey = Bundle.main.infoDictionary?["KAKAO_APP_KEY"] as? String ?? ""
+        SDKInitializer.InitSDK(appKey: kakaoAppKey)
 
         FirebaseApp.configure()
         Messaging.messaging().delegate = self

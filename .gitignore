@@ -9,3 +9,11 @@ Tuist/.build/
 
 # macOS
 .DS_Store
+
+# Secrets - API 키가 포함된 파일은 커밋하지 않습니다
+# 설정 방법: *.xcconfig.template 파일을 참고하여 복사 후 값을 채워주세요
+*.xcconfig
+!*.xcconfig.template
+
+# Firebase - Firebase Console에서 직접 다운로드 받으세요
+GoogleService-Info.plist

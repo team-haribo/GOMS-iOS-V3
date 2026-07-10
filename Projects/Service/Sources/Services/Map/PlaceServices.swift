@@ -136,7 +136,8 @@ extension PlaceServices: TargetType {
         
         switch self {
         case .getRoute:
-            commonHeaders["Authorization"] = "KakaoAK b47f0cac2134d01481d23d13ffa419e6"
+            let kakaoRestKey = Bundle.main.infoDictionary?["KAKAO_REST_API_KEY"] as? String ?? ""
+            commonHeaders["Authorization"] = "KakaoAK \(kakaoRestKey)"
         case .getRecommendedPlaces(let auth),
              .getRecommendedPlacesCount(let auth),
              .searchPlace(_, let auth),

@@ -32,5 +32,6 @@ let project = Project.makeModule(
     sources: ["Sources/**"],
     resources: ["Resources/**"],
     infoPlist: .file(path: "Support/Info.plist"),
-    entitlements: .file(path: "Support/GOMS-iOS-V3.entitlements")
+    entitlements: .file(path: "Support/GOMS-iOS-V3.entitlements"),
+    xcconfigPath: .relativeToRoot("Projects/App/Support/Secrets.xcconfig")
 )
