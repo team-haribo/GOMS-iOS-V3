@@ -62,7 +62,9 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>KAKAO_APP_KEY</key>
-	<string>7fe97f25eb228b1f07f0d982272290d1</string>
+	<string>$(KAKAO_NATIVE_APP_KEY)</string>
+	<key>KAKAO_REST_API_KEY</key>
+	<string>$(KAKAO_REST_API_KEY)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>위치 사용</string>
 </dict>

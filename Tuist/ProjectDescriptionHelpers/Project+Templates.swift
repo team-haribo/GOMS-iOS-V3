@@ -12,13 +12,14 @@ public extension Project {
         sources: SourceFilesList = ["Sources/**"],
         resources: ResourceFileElements? = nil,
         infoPlist: InfoPlist = .default,
-        entitlements: Entitlements? = nil
+        entitlements: Entitlements? = nil,
+        xcconfigPath: Path? = nil
     ) -> Project {
         let settings: Settings = .settings(
             base: [:],
             configurations: [
-                .debug(name: .debug, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "development"]),
-                .release(name: .release, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "production"])
+                .debug(name: .debug, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "development"], xcconfig: xcconfigPath),
+                .release(name: .release, settings: entitlements == nil ? [:] : ["APS_ENVIRONMENT": "production"], xcconfig: xcconfigPath)
             ],
             defaultSettings: .recommended
         )
