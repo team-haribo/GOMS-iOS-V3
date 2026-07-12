@@ -19,7 +19,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
 
-        let kakaoAppKey = Bundle.main.infoDictionary?["KAKAO_APP_KEY"] as? String ?? ""
+        guard let kakaoAppKey = Bundle.main.infoDictionary?["KAKAO_APP_KEY"] as? String,
+              !kakaoAppKey.isEmpty else {
+            fatalError("KAKAO_APP_KEY is not set in Info.plist or is empty. Please check your configuration.")
+        }
         SDKInitializer.InitSDK(appKey: kakaoAppKey)
 
         FirebaseApp.configure()
