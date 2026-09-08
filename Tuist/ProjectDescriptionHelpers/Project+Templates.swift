@@ -26,7 +26,7 @@ public extension Project {
 
         let appTarget = Target.target(
             name: name,
-            destinations: [.iPhone, .iPad],
+            destinations: [.iPhone],
             product: product,
             bundleId: product == .app
                 ? "HARIBO.GOMS-iOS-V2"
