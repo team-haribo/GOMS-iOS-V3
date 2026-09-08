@@ -10,6 +10,8 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>GOMS</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -17,9 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.6</string>
 	<key>CFBundleVersion</key>
-	<string>9</string>
-	<key>LSApplicationCategoryType</key>
-	<string></string>
+	<string>12</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
@@ -67,5 +67,7 @@
 	<string>$(KAKAO_REST_API_KEY)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>위치 사용</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 </dict>
 </plist>
