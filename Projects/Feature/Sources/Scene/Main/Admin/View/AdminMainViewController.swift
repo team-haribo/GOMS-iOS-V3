@@ -242,7 +242,7 @@ public class AdminMainViewController: BaseViewController, UICollectionViewDataSo
 
     /// 앱 재진입 또는 화면 진입 시 최신 role을 서버에서 확인해 화면을 전환한다.
     /// 1. reissue로 토큰을 갱신 (새 JWT에 최신 role 포함)
-    /// 2. /member/myrole로 현재 role 확인
+    /// 2. /member/profile로 현재 role 확인
     /// 3. role이 ROLE_STUDENT로 바뀌었으면 MainViewController로 전환
     private func syncRoleAndFetch() {
         viewModel.gomsRefreshToken.tokenReissuance { [weak self] success in

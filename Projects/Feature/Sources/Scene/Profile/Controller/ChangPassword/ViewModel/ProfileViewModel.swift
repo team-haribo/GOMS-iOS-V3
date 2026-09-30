@@ -65,7 +65,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
 
     public func loadProfileInfo(completion: @escaping (Bool, String?) -> Void) {
         let group = DispatchGroup()
-
+        
         var name: String = ""
         var authority: String = ""
         var isOuting: Bool = false
@@ -73,44 +73,28 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
         var department: String = ""
         var lateCount: Int = 0
         var profileImageUrl: String? = nil
-
         
-        group.enter()
-        providerMember.request(.myRole(authorization: accessToken)) { result in
-            switch result {
-            case .success(let response):
-                do {
-                    let data = try JSONDecoder().decode(MyRoleResponse.self, from: response.data)
-                    name = data.name
-                    authority = data.role
-                } catch {
-                    print("myRole decode error: \(error)")
-                }
-            case .failure(let err):
-                print("myRole error: \(err.localizedDescription)")
-            }
-            group.leave()
-        }
-
+        
+        
         // 2. outing status
         group.enter()
-        providerOuting.request(.outingStatus(authorization: accessToken)) { result in
-            switch result {
-            case .success(let response):
-                do {
-                    let data = try JSONDecoder().decode(OutingStatusResponse.self, from: response.data)
-                    isOuting = data.status == "OUTING"
-                    grade = data.grade
-                    department = data.department
-                    lateCount = data.lateCount
-                } catch {
-                    print("outingStatus decode error: \(error)")
+            providerOuting.request(.outingStatus(authorization: accessToken)) { result in
+                switch result {
+                case .success(let response):
+                    do {
+                        let data = try JSONDecoder().decode(OutingStatusResponse.self, from: response.data)
+                        isOuting = data.status == "OUTING"
+                        grade = data.grade
+                        department = data.department
+                        lateCount = data.lateCount
+                    } catch {
+                        print("outingStatus decode error: \(error)")
+                    }
+                case .failure(let err):
+                    print("outingStatus error: \(err.localizedDescription)")
                 }
-            case .failure(let err):
-                print("outingStatus error: \(err.localizedDescription)")
+                group.leave()
             }
-            group.leave()
-        }
 
         // 3. profile info (image 포함)
         group.enter()
@@ -119,7 +103,8 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
             case .success(let response):
                 do {
                     let data = try JSONDecoder().decode(ProfileResponseDTO.self, from: response.data)
-                    
+                    name = data.name
+                    authority = data.role
                     if let url = data.profileImageUrl, !url.isEmpty {
                         profileImageUrl = url
                     } else {
