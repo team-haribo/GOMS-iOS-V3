@@ -25,8 +25,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         SDKInitializer.InitSDK(appKey: kakaoAppKey)
 
-        FirebaseApp.configure()
-        Messaging.messaging().delegate = self
+        //FirebaseApp.configure()
+        //Messaging.messaging().delegate = self
 
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
