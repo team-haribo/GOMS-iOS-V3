@@ -158,12 +158,12 @@ public final class MainViewModel: BaseViewModel {
 
         
         group.enter()
-        self.profileProvider.request(.getProfile(authorization: accessToken)) { result in
+        self.providerMember.request(.myRole(authorization: accessToken)) { result in
             switch result {
             case .success(let response):
                 switch response.statusCode {
                 case 200:
-                    if let data = try? JSONDecoder().decode(ProfileResponseDTO.self, from: response.data) {
+                    if let data = try? JSONDecoder().decode(MyRoleResponse.self, from: response.data) {
                         name = data.name
                         authority = data.role
                     }
