@@ -32,7 +32,6 @@ public final class MainViewModel: BaseViewModel {
     private let lateProvider = MoyaProvider<LateService>()
     private let outingProvider = MoyaProvider<OutingServices>()
     private let profileProvider = MoyaProvider<ProfileServices>()
-    private let providerMember = MoyaProvider<MemberServices>()
     
     var lateList: [LatecomerResponse] = []
     var lateListDatas: [LatecomerData] = []
@@ -158,12 +157,12 @@ public final class MainViewModel: BaseViewModel {
 
         
         group.enter()
-        self.providerMember.request(.myRole(authorization: accessToken)) { result in
+        self.profileProvider.request(.getProfile(authorization: accessToken)) { result in
             switch result {
             case .success(let response):
                 switch response.statusCode {
                 case 200:
-                    if let data = try? JSONDecoder().decode(MyRoleResponse.self, from: response.data) {
+                    if let data = try? JSONDecoder().decode(ProfileResponseDTO.self, from: response.data) {
                         name = data.name
                         authority = data.role
                     }

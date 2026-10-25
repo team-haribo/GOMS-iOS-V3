@@ -13,13 +13,6 @@ import Combine
 import UIKit
 import Kingfisher
 
-public struct MyRoleResponse: Decodable {
-    public let memberId: Int
-    public let email: String
-    public let name: String
-    public let role: String
-}
-
 struct ProfileImageResponse: Decodable {
     let imageUrl: String
 }
@@ -73,25 +66,7 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
         var lateCount: Int = 0
         var profileImageUrl: String? = nil
 
-        
-        group.enter()
-        providerMember.request(.myRole(authorization: accessToken)) { result in
-            switch result {
-            case .success(let response):
-                do {
-                    let data = try JSONDecoder().decode(MyRoleResponse.self, from: response.data)
-                    name = data.name
-                    authority = data.role
-                } catch {
-                    print("myRole decode error: \(error)")
-                }
-            case .failure(let err):
-                print("myRole error: \(err.localizedDescription)")
-            }
-            group.leave()
-        }
-
-        // 2. outing status
+        // 1. outing status
         group.enter()
         providerOuting.request(.outingStatus(authorization: accessToken)) { result in
             switch result {
@@ -111,14 +86,16 @@ public final class ProfileViewModel: BaseViewModel, ObservableObject {
             group.leave()
         }
 
-        // 3. profile info (image 포함)
+        // 2. profile info (이름, 역할, 이미지)
         group.enter()
         providerProfile.request(.getProfile(authorization: accessToken)) { result in
             switch result {
             case .success(let response):
                 do {
                     let data = try JSONDecoder().decode(ProfileResponseDTO.self, from: response.data)
-                    
+                    name = data.name
+                    authority = data.role
+
                     if let url = data.profileImageUrl, !url.isEmpty {
                         profileImageUrl = url
                     } else {
