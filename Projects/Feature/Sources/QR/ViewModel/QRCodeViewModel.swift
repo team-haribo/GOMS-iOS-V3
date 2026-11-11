@@ -36,6 +36,16 @@ private var isRequesting: Bool = false
             defer { self.isRequesting = false }
             switch response {
             case .success(let result):
+                struct OutingErrorResponse: Decodable {
+                    let message: String
+                }
+
+                if result.statusCode == 403,
+                   let error = try? JSONDecoder().decode(OutingErrorResponse.self, from: result.data),
+                   error.message == "외출 가능 시간이 아닙니다." {
+                    completion("timeRestricted")
+                    return
+                }
                 let statusCode = result.statusCode
                 switch statusCode {
                 case 200:
