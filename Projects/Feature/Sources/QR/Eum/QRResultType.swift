@@ -14,6 +14,7 @@ enum QRResultType {
     case late
     case qrError
     case blacklist
+    case timeRestricted
 }
 
 extension QRResultType {
@@ -25,7 +26,7 @@ extension QRResultType {
             return .image.outingCheck.image
         case .late:
             return .image.banned.image
-        case .qrError:
+        case .qrError, .timeRestricted:
             return .image.outingFailed.image
         case .blacklist:
             return .image.banned.image
@@ -45,6 +46,8 @@ extension QRResultType {
             return "외출에 실패했어요.."
         case .blacklist:
             return "외출하실 수 없어요"
+        case .timeRestricted:
+            return "외출 가능 시간이 아니에요"
         }
     }
     
@@ -60,6 +63,8 @@ extension QRResultType {
             return "예기치 못한 오류가 발생했어요.\n다시 시도해 주세요!"
         case .blacklist:
             return "외출 금지 상태에서는 외출이 불가능합니다.\n다음 외출제를 이용해 주세요."
+        case .timeRestricted:
+            return ""
         }
     }
 }
