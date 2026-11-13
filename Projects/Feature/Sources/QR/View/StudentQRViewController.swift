@@ -120,6 +120,9 @@ public class StudentQRViewController: BaseViewController, AVCaptureMetadataOutpu
         } else if result == "uuidError" {
             let vc = QRResultViewController(resultType: .qrError)
             self.navigationController?.pushViewController(vc, animated: true)
+        } else if result == "timeRestricted" {
+            let vc = QRResultViewController(resultType: .timeRestricted)
+            self.navigationController?.pushViewController(vc, animated: true)
         }
     }
 
